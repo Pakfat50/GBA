@@ -17,20 +17,26 @@ AddNoise = True
 UseSensor = True
 AngularRateSens = True
 LowpassEna = True
-WindMode = 1 #1：波の重ね合わせ、2：t=5からのステップ波、3：0.5sec、10m/sの疑似インパルス波
+WindMode = 1 #1：波の重ね合わせ、2：t=5からのステップ波、3：0.01sec、20m/sの疑似インパルス波
 
 
 WindGain = 5
 WindOffset = 1
 LowpassGain = 0.2
-LowpassAngRateGain = 0.2
-LowpssFGain = 0.2
+LowpassAngRateGain = 1
+LowpssFGain = 1
 
-NoiseThetaGain = 2.0 #[deg]
+NoiseThetaGain = 0.5 #[deg]
 NoiseThetaDotGain = 1 #[deg/sec]
 S_ball = 0.15**2/4 * np.pi
 cd = 0.3
 rho = 1.225
+TMIN = 0
+TMAX = 30
+dt_sim = 0.001 # [sec] タイムステップ
+dt_obs = 0.02 # [sec] タイムステップ
+g = 9.81 # [m/sec^2] 重力加速度
+    
 
 class lowpass:
     def __init__(self, k, x0):
@@ -46,11 +52,8 @@ if Easy == True:
 
     m = 0.5
     l = 0.1
-    g = 9.81
     I = m*l**2
     eta = 0.01
-    dt_sim = 0.001
-    dt_obs = 0.02
     a_21 = -m*g*l/I
     a_22 = -eta/I
     
@@ -75,8 +78,6 @@ if Easy == True:
     x_array = np.array(x_array)
     plt.plot(t_array, x_array[:,0], 'b')
     
-
-
 else:
     if Easy_mdl == True:
         m_lod = 0 # [kg] #ロッドの重量
@@ -85,9 +86,7 @@ else:
         m_bal = 0 # [kg] 球の質量
         m_w = 0.5 # [kg] #錘の質量
         eta = 0.01 # 減衰率
-        dt_sim = 0.001 # [sec] タイムステップ
-        dt_obs = 0.02 # [sec] タイムステップ
-        g = 9.81 # [m/sec^2] 重力加速度    
+   
     else: 
         m_lod = 0.015 # [kg] #ロッドの重量
         l1 = 0.1 # [m] 支点から球までの長さ
@@ -95,10 +94,7 @@ else:
         m_bal = 0.015 # [kg] 球の質量
         m_w = 0.03 # [kg] #錘の質量
         eta = 0.01 # 減衰率
-        dt_sim = 0.001 # [sec] タイムステップ
-        dt_obs = 0.02 # [sec] タイムステップ
-        g = 9.81 # [m/sec^2] 重力加速度
-    
+
     L_lod = l1 + l2
     r_lod = abs(abs(l1-l2)-L_lod/2)
     I_lod = (m_lod*L_lod**2)/12 + m_lod*r_lod**2
@@ -211,8 +207,8 @@ else:
     #波の作成 https://qiita.com/mumei_456/items/edf32d67d83f423df87d
 
     num_waves = 11 #波の数
-    frequency = [0.007, 0.01, 0.1, 0.5, 1, 2, 3, 4, 5, 10, 20]
-    amplitude = [0,1, 0.5, 0.5, 0.2, 0.1, 0.05, 0.05, 0.05, 0.025, 0.025, 0.001]
+    frequency = [0.005, 0.01, 0.1, 0.5, 1,    2,    3,    4,    5,     10,    20]
+    amplitude = [0,1,   0.5,  0.2, 0.2, 0.01, 0.01, 0.01, 0.01, 0.025, 0.025, 0.001]
     amplitude/= np.sum(amplitude)
     phase = []
     #ランダムな位相の波の生成
@@ -230,13 +226,15 @@ else:
         elif WindMode == 2:
             if t < 5:
                 U = 0
-            else:
+            elif (t >= 5) and (t < 20):
                 U = WindGain
+            else:
+                U = 0
         else:
             if t < 5:
                 U = 0
-            elif (t >= 5) and (t < 5.5):
-                U = 10
+            elif (t >= 5) and (t < 5.01):
+                U = 20
             else:
                 U = 0
         return U
@@ -264,7 +262,7 @@ else:
 
     #simulation
     x_array = [x]
-    t_sim_array = np.arange(0,50, dt_sim)
+    t_sim_array = np.arange(TMIN,TMAX, dt_sim)
     
     i = 1
     
@@ -315,7 +313,7 @@ else:
     f_lowp = lowpass(LowpssFGain, 0)
     
     x_hat_array = [x_hat]
-    t_obs_array = np.arange(0,50, dt_obs)
+    t_obs_array = np.arange(TMIN,TMAX, dt_obs)
 
     i = 1
     
