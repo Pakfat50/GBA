@@ -104,6 +104,10 @@ else:
     a_22 = - eta/ I_tot
     a_23 = - l2/ I_tot
     
+    a_21_acc = a_21*1
+    a_22_acc = a_22*1
+    a_23_acc = a_23*1
+    
     
     # オブザーバーゲイン設計
     # https://qiita.com/trami/items/02f24e8eb68c05da4b1b
@@ -119,6 +123,11 @@ else:
     A = np.array([[0,    1,    0   ],\
                  [a_21, a_22, a_23],\
                  [0,    0,    0   ]])
+    
+    A_acc = np.array([[0,    1,    0   ],\
+                 [a_21_acc, a_22_acc, a_23_acc],\
+                 [0,    0,    0   ]])        
+        
     c = np.array([[1, 0, 0]])
     
     dim = np.shape(A)[0]
@@ -353,7 +362,7 @@ else:
         if ArrayMod == True:
             zx_hat = x_hat_array[i-1]
             zy = np.dot(c, zx)
-            x_hat_dot = np.dot((A + np.dot(L, c)), zx_hat) - np.dot(L, zy)
+            x_hat_dot = np.dot((A_acc + np.dot(L, c)), zx_hat) - np.dot(L, zy)
             x_hat = x_hat_dot*dt_obs + zx_hat
             x_hat_array.append(x_hat)
             
@@ -371,10 +380,10 @@ else:
             
             if NonLinear == True:
                 #オブザーバー更新
-                theta_dot_hat = (a_21*np.sin(z_theta_hat) + L[1][0]*(z_theta_hat - z_theta) + a_22*z_theta_dot_hat + a_23*z_f_hat*np.cos(z_theta_hat))*dt_obs + z_theta_dot_hat
+                theta_dot_hat = (a_21_acc*np.sin(z_theta_hat) + L[1][0]*(z_theta_hat - z_theta) + a_22_acc*z_theta_dot_hat + a_23_acc*z_f_hat*np.cos(z_theta_hat))*dt_obs + z_theta_dot_hat
             else:
                 #オブザーバー更新
-                theta_dot_hat = (a_21*z_theta_hat + L[1][0]*(z_theta_hat - z_theta) + a_22*z_theta_dot_hat + a_23*z_f_hat)*dt_obs + z_theta_dot_hat
+                theta_dot_hat = (a_21_acc*z_theta_hat + L[1][0]*(z_theta_hat - z_theta) + a_22_acc*z_theta_dot_hat + a_23_acc*z_f_hat)*dt_obs + z_theta_dot_hat
 
 
             x_hat = np.array([theta_hat, theta_dot_hat, f_hat])         
