@@ -45,7 +45,7 @@ def check_file(file_path):
         datas = line.split('\t')
         if len(datas) == 4:
             try:
-                time_list.append(float(datas[0])/10E6)
+                time_list.append(float(datas[0])/1000000)
                 inter_val_list.append(float(datas[2]))
                 outer_val_list.append(float(datas[1]))
                 gps_list.append(str(datas[3]))

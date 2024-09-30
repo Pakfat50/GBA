@@ -20,6 +20,20 @@ B_INTER = 120.248
 A_OUTER = -0.0835924
 B_OUTER = 203.251
 
+m_lod = 0.010 # [kg] #ロッドの重量
+l1 = 0.25 # [m] 支点から球までの長さ
+l2 = 0.25 # [m] 支点から錘までの長さ
+m_bal = 0.022 # [kg] 球の質量
+m_w = 0.032 # [kg] #錘の質量
+g = 9.81
+
+L_lod = l1 + l2
+r_lod = abs(abs(l1-l2)-L_lod/2)
+I_lod = (m_lod*L_lod**2)/12 + m_lod*r_lod**2
+I_tot = I_lod + m_bal*l1**2 + m_w*l2**2
+    
+lg = ((m_w*l2) - (m_bal*l1))/(m_w + m_bal)
+M = ((m_w*l2) - (m_bal*l1))/lg
 
 def get_inter_angle(val):
     return A_INTER*val + B_INTER
@@ -37,12 +51,13 @@ class lowpass:
         self.zx = temp_x
         return temp_x
 
-def damp_func(t, X0, xi, a, omega, t0, s0):
-    return X0*(1-a*(t-t0)) * np.exp(-xi* omega *(t-t0)) * np.cos(omega * (t-t0) + s0)
+def damp_func(t, X0, myu, d, omega, t0, s0):
+    T = 2*np.pi/omega
+    return X0*(1-4*d*(t-t0)/T) * np.exp(-myu *(t-t0)) * np.cos(omega * (t-t0) + s0)
 
 
-def fit_func(t, xi, a):
-    return (1-a*t) * np.exp(-xi *t)
+def fit_func(t, myu, a):
+    return (1-a*t) * np.exp(-myu *t)
 
 class DampData:
     def __init__(self, time_array, data_array, t0, t1):
@@ -63,16 +78,16 @@ class DampData:
             plt.plot(self.t_raw, self.data_lowpass)
             plt.plot(self.t_upper_peak, self.upper_peak, 'ro')
             plt.plot(self.t_lower_peak, self.lower_peak, 'go')
-            plt.plot(self.t_raw, damp_func(self.t_raw, self.X0, self.xi_fit, self.a, self.omega, self.t0, 0), 'k--')
-            plt.plot(self.t_raw, self.X0* fit_func(self.t_raw, self.xi_fit*self.omega , self.a), 'k--')
+            plt.plot(self.t_raw, damp_func(self.t_raw, self.X0, self.myu, self.d, self.omega, self.t0, 0), 'k--')
+            plt.plot(self.t_raw, self.X0* fit_func(self.t_raw, self.myu , self.d*4/self.T), 'k--')
             
         else:
             #plt.plot(self.t_raw, -self.data_raw)
             plt.plot(self.t_raw, -self.data_lowpass)
             plt.plot(self.t_upper_peak, -self.upper_peak, 'ro')
             plt.plot(self.t_lower_peak, -self.lower_peak, 'go')
-            plt.plot(self.t_raw, -damp_func(self.t_raw, self.X0, self.xi_fit, self.a, self.omega, self.t0, np.pi), 'k--')
-            plt.plot(self.t_raw, self.X0* fit_func(self.t_raw, self.xi_fit*self.omega , self.a), 'k--')
+            plt.plot(self.t_raw, -damp_func(self.t_raw, self.X0, self.myu, self.d, self.omega, self.t0, np.pi), 'k--')
+            plt.plot(self.t_raw, self.X0* fit_func(self.t_raw, self.myu , self.d*4/self.T), 'k--')
         
         plt.ylim([-40, 40])
         
@@ -151,56 +166,50 @@ class DampData:
             upper_T = (self.t_upper_peak[num_T] - self.t_upper_peak[0])/num_T
             lower_T = (self.t_lower_peak[num_T] - self.t_lower_peak[0])/num_T
             
-            self.eta = ((upper_delta + lower_delta)/2) / np.pi
-            self.xi = self.eta/2
             self.T = (upper_T + lower_T)/2
             self.omega = 2*np.pi / self.T
 
         else:
-            self.eta = 0
-            self.T = 1    
+            self.T = 1 
+            self.omega = 2*np.pi / self.T
         
         if self.is_upper_start == True:
-            opt, cov = curve_fit(fit_func, self.t_upper_peak, self.upper_peak/self.X0, p0 = [0.01*self.omega, 0.07], bounds=([0,0], [1, 1]))
+            opt, cov = curve_fit(fit_func, self.t_upper_peak, self.upper_peak/self.X0, p0 = [0.01, 0.07], bounds=([0,0], [1, 1]))
         
         else:
-            opt, cov = curve_fit(fit_func, self.t_lower_peak, -self.lower_peak/self.X0, p0 = [0.01*self.omega, 0.07], bounds=([0,0], [1, 1]))
+            opt, cov = curve_fit(fit_func, self.t_lower_peak, -self.lower_peak/self.X0, p0 = [0.01, 0.07], bounds=([0,0], [1, 1]))
         
-        self.xi_fit = opt[0]/self.omega
-        self.eta_fit = self.xi_fit*2
-        self.a = opt[1]
+        self.myu = opt[0]
+        self.d = opt[1]*self.T/4
         
-        
-        
-        
+        self.c = 2*self.myu*I_tot
+        self.T_loss = self.d * (M*lg*g)
 
 
 
 
-
-"""
 # Inter
 file_path = base_path + file_names[0]
 time, inter_val, outer_val, gps = decoder.check_file(file_path)
-st_list = [2.04, 4.705, 7.02, 9.325]
-ed_list = [3.2, 5.905, 8.2, 10.525]
+st_list = [20.4, 47.05, 70.2, 93.25]
+ed_list = [32.0, 59.05, 82.0, 105.25]
 angle_data = get_inter_angle(inter_val)
 #plt.plot(time, get_inter_angle(inter_val))
 offset = 0.5
-"""
+
 
 """
 # Outer
 file_path = base_path + file_names[1]
 time, inter_val, outer_val, gps = decoder.check_file(file_path)
-st_list = [1.105, 6.53, 15.46]
-ed_list = [2.72, 8.12, 17.18]
-#st_list = [1.105, 6.53]
-#ed_list = [2.72, 8.12]
+st_list = [11.05, 65.3, 154.6]
+ed_list = [27.2, 81.2, 171.8]
+#st_list = [11.05, 65.3]
+#ed_list = [27.2, 81.2]
 angle_data = get_outer_angle(outer_val)
 offset = 3.5
 #plt.plot(time, get_outer_angle(outer_val))
-
+"""
 
 
 i = 0
@@ -218,24 +227,24 @@ while i < len(st_list):
     i += 1
 
 
-xi_list = []
-a_list = []
+myu_list = []
+d_list = []
 omega_list = []
 
 for data in Data:
-    xi_list.append(data.xi_fit)
-    a_list.append(data.a)
+    myu_list.append(data.myu)
+    d_list.append(data.d)
     omega_list.append(data.omega)
 
-xi_list = np.array(xi_list)
-a_list = np.array(a_list)
+myu_list = np.array(myu_list)
+d_list = np.array(d_list)
 omega_list = np.array(omega_list)
 
-xi_ave = np.average(xi_list)
-a_ave = np.average(a_list)
+myu_ave = np.average(myu_list)
+d_ave = np.average(d_list)
 omega_ave = np.average(omega_list)
     
-print(xi_ave, a_ave, omega_ave)
+print(myu_ave, d_ave, omega_ave)
 
 #data = Data[2]
 #data.plot()
@@ -289,4 +298,4 @@ while i < len(st_list):
 num = 2
 cross_o_list[num].plot()
 cross_i_list[num].plot()
-
+"""
