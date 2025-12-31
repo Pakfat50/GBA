@@ -1,0 +1,154 @@
+{
+    "configurations": [
+        {
+            "name": "TWELITE BLUE",
+            "includePath": [
+                "${workspaceFolder}",
+                "${default}",
+                "${env:MWSDK_TWENET_LIBSRC}/include/VSC_BLUE_RED/**"
+            ],
+            "defines": [
+                "TWELITE_BLUE",
+                "JN5164=5164",
+                "JENNIC_CHIP_NAME=_JN5164",
+                "JENNIC_CHIP=JN5164",
+                "JENNIC_CHIP_JN5164",
+                "EMBEDDED",
+                "USER_VSR_HANDLER",
+                "JN516x=5160",
+                "JENNIC_CHIP_FAMILY_NAME=_JN516x",
+                "WATCHDOG_ENABLED",
+                "JENNIC_HW_BBC_RXINCCA=1",
+                "JENNIC_HW_BBC_DMA=1",
+                "JENNIC_HW_BBC_ISA=0",
+                "JENNIC_SW_EXTERNAL_FLASH=0",
+                "JN516X_DMA_UART_BACKWARDS_COMPATIBLE_API=1",
+                "UART_BACKWARDS_COMPATIBLE_API=1",
+                "JENNIC_CHIP_FAMILY=JN516x",
+                "JENNIC_CHIP_FAMILY_JN516x",
+                "JENNIC_STACK_MAC",
+                "JENNIC_MAC_MAC"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${default}",
+                    "${env:MWSDK_TWENET_LIBSRC}/include/VSC_BLUE_RED/**"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c99",
+            "cppStandard": "c++11"
+        },
+        {
+            "name": "TWELITE RED",
+            "includePath": [
+                "${workspaceFolder}",
+                "${env:MWSDK_TWENET_LIBSRC}/include/VSC_BLUE_RED/**",
+                "${default}"
+            ],
+            "defines": [
+                "TWELITE_RED",
+                "JN5169=5169",
+                "JENNIC_CHIP_NAME=_JN5169",
+                "JENNIC_CHIP=JN5169",
+                "JENNIC_CHIP_JN5169",
+                "RXPOWERADJUST_SUPPORT",
+                "EMBEDDED",
+                "USER_VSR_HANDLER",
+                "JN516x=5160",
+                "JENNIC_CHIP_FAMILY_NAME=_JN516x",
+                "WATCHDOG_ENABLED",
+                "JENNIC_HW_BBC_RXINCCA=1",
+                "JENNIC_HW_BBC_DMA=1",
+                "JENNIC_HW_BBC_ISA=0",
+                "JENNIC_SW_EXTERNAL_FLASH=0",
+                "JN516X_DMA_UART_BACKWARDS_COMPATIBLE_API=1",
+                "UART_BACKWARDS_COMPATIBLE_API=1",
+                "JENNIC_CHIP_FAMILY=JN516x",
+                "JENNIC_CHIP_FAMILY_JN516x",
+                "JENNIC_STACK_MAC",
+                "JENNIC_MAC_MAC"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${default}",
+                    "${env:MWSDK_TWENET_LIBSRC}/include/VSC_BLUE_RED/**"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c99",
+            "cppStandard": "c++11"
+        },
+        {
+            "name": "TWELITE GOLD",
+            "includePath": [
+                "${workspaceFolder}",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/board",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/component/MicroSpecific",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/component/ntag_i2c_plus",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/drivers/*",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/framework/**",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/main",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/startup",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/uMac",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/utilities",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETmwf/source",
+                "${env:MWSDK_TWENET_LIBSRC}/TWENETcmpt/source",
+                "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/dummy",
+                "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/dummy/serial_manager",
+                "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/dummy/device",
+                "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/gcc1/**",
+                "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/gcc2/**",
+                "${default}"
+            ],
+            "defines": [ 
+                "TWELITE_GOLD",
+                "CPU_JN518X",
+                "JN5189=5189",
+                "JENNIC_CHIP_FAMILY_JN518x",
+                "JENNIC_CHIP=JN5189",
+                "JENNIC_CHIP_JN5189",
+                "JENNIC_CHIP_FAMILY_NAME=_JN518x",
+                "T_ENUM_INT=int16_t",
+                "__MCUXPRESSO",
+                "CPU_JN5189THN",
+                "CPU_JN5189THN_cm4",
+                "SDK_DEBUGCONSOLE=2",
+                "__USE_CMSIS",
+                "NDEBUG",
+                "${default}"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/board",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/component/MicroSpecific",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/component/ntag_i2c_plus",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/drivers/*",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/framework/**",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/main",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/startup",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/uMac",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/utilities",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETmwf/source",
+                    "${env:MWSDK_TWENET_LIBSRC}/TWENETcmpt/source",
+                    "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/dummy",
+                    "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/dummy/serial_manager",
+                    "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/dummy/device",
+                    "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/gcc1/**",
+                    "${env:MWSDK_TWENET_LIBSRC}/include/VSC_GOLD/gcc2/**",
+                    "${default}"
+                ],
+                "limitSymbolsToIncludedHeaders": true,
+                "databaseFilename": ""
+            },
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
