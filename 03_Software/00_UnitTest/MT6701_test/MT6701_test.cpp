@@ -1,35 +1,50 @@
 #include <TWELITE>
+#include "mt6701.h"
 
+MT6701 angleSensor0;
+MT6701 angleSensor1;
 
 /*** the setup procedure (called on boot) */
 void setup() {
-    SPI.begin(1, SPISettings(1000000, SPI_CONF::MSBFIRST, SPI_CONF::SPI_MODE1));
+    angleSensor0.init(0, &SPI);
+    angleSensor1.init(1, &SPI);
 }
 
 /*** the loop procedure (called every event) */
 void loop() {
-    int angle=0;
+    float angle0, angle1;
+    MAG_STRENGTH mag_strength0, mag_strength1;
+    PUSH_BOTTON push_botton0, push_botton1;
+    TRACK track0, track1;
 
-    SPI.beginTransaction();
-    char data1 = SPI.transfer(0x00);
-    char data2 = SPI.transfer(0x00);
-    char data3 = SPI.transfer(0x00);
-    SPI.endTransaction();
+    angleSensor0.getAngle(&angle0);
+    angleSensor0.getStatus(&mag_strength0, &push_botton0, &track0);
 
-    angle += (int)data1<<6; //top 8 bits of 14bits
-    angle += (int)data2>>2; //bottom 6 bits of 14 bits
+    angleSensor1.getAngle(&angle1);
+    angleSensor1.getStatus(&mag_strength1, &push_botton1, &track1);
 
-    Serial.print(angle);
-    Serial.print(", ");
-    Serial.print(float(angle)*360.0/16384.0);
-    Serial.print(", ");
-    Serial.print(data1);
-    Serial.print(", ");
-    Serial.print(data2);
-    Serial.print(", ");
-    Serial.print(data3);
-    Serial.println();
+    Serial.print(millis());
+    Serial.print("\t");
+    
+    Serial.print(angle0);
+    Serial.print("\t");
+    Serial.print(angle1);
+    Serial.print("\t");
 
-    delay(100);
+    Serial.print(mag_strength0);
+    Serial.print("\t");
+    Serial.print(mag_strength1);
+    Serial.print("\t");
+
+    Serial.print(push_botton0);
+    Serial.print("\t");
+    Serial.print(push_botton1);
+    Serial.print("\t");
+
+    Serial.print(track0);
+    Serial.print("\t");
+    Serial.println(track1);
+
+    delay(10);
 
 }
