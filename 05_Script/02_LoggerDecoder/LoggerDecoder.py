@@ -9,15 +9,55 @@ import ctypes
 import struct
 
 
+class SerialData:
+    def __init__(self, clsId, subId, CtypeClass):
+        self.t = CtypeClass
+        self.clsId = clsId
+        self.subId = subId
+        self.length = ctypes.sizeof(self.t)
+        self.cksumErr = False
+        self.setReceiveDataStatus = False
+
+    def setReceiveData(self, byte_data):
+         clsId = byte_data[0].to_bytes(1,'big')
+         subId = byte_data[1].to_bytes(1,'big')
+         length = int.from_bytes(byte_data[2:4],'big')
+         payload = byte_data[4:-4]
+         checkSum = int.from_bytes(byte_data[-4:],'big')
+         
+         if (clsId == self.clsId) and (subId == self.subId) and (length == self.length):
+            calcCheckSum = calCheckSum(clsId, subId, length, payload)
+            
+            if(calcCheckSum == checkSum):
+                self.cksumErr = False
+                try:
+                    convertBytesToStructure(self.t, payload)
+                    self.setReceiveDataStatus = True #受信成功
+                except:
+                    print("0x{0:02x}".format(self.clsId), "0x{0:02x}".format(self.subId))
+            else:
+                #print('CKSum does not match at %s%s'%(self.__header_name[0],self.__header_name[1]))
+                self.cksumErr = True
+
+
 def convertBytesToStructure(struct, byte):
     if (ctypes.sizeof(struct) == len(byte)):
         ctypes.memmove(ctypes.addressof(struct), byte, ctypes.sizeof(struct))
 
-def calCheckSum(byte_array):
-    ck_sum = 0
-    for byte in byte_array:
-        ck_sum += int(byte)
-    return ck_sum
+
+def calCheckSum(clsId, subId, length, payload):
+    b_length = length.to_bytes(2, 'big')
+    
+    checkSum = 0
+    checkSum += int.from_bytes(clsId,'big')
+    checkSum += int.from_bytes(subId,'big')
+    checkSum += int(b_length[0])
+    checkSum += int(b_length[1])
+    
+    for byte in payload:
+        checkSum += int(byte)
+        
+    return checkSum
 
 
 class ANGLE(ctypes.BigEndianStructure): 
@@ -43,35 +83,17 @@ class ANGLE(ctypes.BigEndianStructure):
         }
 
 
-angle = ANGLE() 
-
-f = open("LOG00002.TXT", "rb")
+f = open("LOG00003.TXT", "rb")
 lines = f.read()
 f.close()
 
-b_datas = lines.split(b'\x3b\x3b\x47\x42')
-b_data = b_datas[1]
+anlgeData = SerialData(b'\x01', b'\x02', ANGLE())
 
-b_cksum = b_data[-4:]
-b_clsid = b_data[0]
-b_sub_id = b_data[1]
-b_len = b_data[2:4]
-b_payload = b_data[4:-4]
-b_data4cksum = b_data[:-4]
+b_datas = lines.split('##GB'.encode())
 
-length = int.from_bytes(b_len, 'little')
-cksum = int.from_bytes(b_cksum, 'little')
-calc_cksum = calCheckSum(b_data4cksum)
+anlgeData.setReceiveData(b_datas[3])
+print(anlgeData.t.time)
+print(anlgeData.t.angle1)
+print(anlgeData.t.angle2)
+print(anlgeData.t.id)
 
-convertBytesToStructure(angle, b_payload)
-
-print(angle.time)
-print(angle.angle1)
-print(angle.angle2)
-print("0x{0:02x}".format(angle.id))
-
-print("0x{0:02x}".format(b_clsid))
-print("0x{0:02x}".format(b_sub_id))
-print(length)
-print(cksum)
-print(calc_cksum)

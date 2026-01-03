@@ -3,9 +3,7 @@
 
 #include <TWELITE>
 
-const uint8_t header[2] = {0x47, 0x42}; // GB
-const uint8_t footer[2] = {0x3b, 0x3b}; // ;;
-
+const uint8_t header[4] = {0x23, 0x23, 0x47, 0x42}; // ##GB
 
 typedef union {
   uint8_t U1[2];
