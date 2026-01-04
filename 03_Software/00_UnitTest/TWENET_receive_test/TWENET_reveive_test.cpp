@@ -1,66 +1,62 @@
-// use twelite mwx c++ template library
 #include <TWELITE>
 #include <NWK_SIMPLE>
+#include "gba_twenet.h"
 
-/*** Config part */
-// application ID
-const uint32_t APP_ID = 0x1234abcd;
+#define SENSOR_ID 0x00
+#define CHANNEL 13
 
-// channel
-const uint8_t CHANNEL = 13;
+GBA_DATA gba_data;
+RX_INFO rx_info;
 
-/*** application defs */
-const int MSG_LEN = 4;
-
-/*** setup procedure (run once at cold boot) */
 void setup() {
-
-	// the twelite main class
-	the_twelite
-		<< TWENET::appid(APP_ID)    // set application ID (identify network group)
-		<< TWENET::channel(CHANNEL) // set channel (pysical channel)
-		<< TWENET::rx_when_idle();  // open receive circuit (if not set, it can't listen packts from others)
-
-	// Register Network
-	auto&& nwksmpl = the_twelite.network.use<NWK_SIMPLE>();
-	nwksmpl << NWK_SIMPLE::logical_id(0x00) // set Logical ID. (0xFE means a child device with no ID)
-	        << NWK_SIMPLE::repeat_max(0);   // can repeat a packet up to three times. (being kind of a router)
-
-	the_twelite.begin(); // start twelite!
-
+	gbaTwenetInit(SENSOR_ID, CHANNEL);
 }
 
-/*** loop procedure (called every event) */
 void loop() {
 
 }
 
-
-
 void on_rx_packet(packet_rx& rx, bool_t &handled) {
-	// rx >> Serial; // debugging (display longer packet information)
+	gbaTwenetReceive(&gba_data, &rx_info, &rx);
+	handled = true;
 
-	uint8_t msg[MSG_LEN];
-	uint32_t timestamp;
-
-	// expand packet payload (shall match with sent packet data structure, see pack_bytes())
-	expand_bytes(rx.get_payload().begin(), rx.get_payload().end()
-				, msg       // 4bytes of msg
-							//   also can be -> std::make_pair(&msg[0], MSG_LEN)
-				, timestamp // 4bytes of timestamp
-	);
-	
-	// display the packet
-	Serial << format("<RX ad=%x/lq=%d/ln=%d/sq=%d:" // note: up to 4 args!
-				, rx.get_psRxDataApp()->u32SrcAddr
-				, rx.get_lqi()
-				, rx.get_length()
-				, rx.get_psRxDataApp()->u8Seq
-				)
-			<< format(" %s TS=%dms>" // note: up to 4 args!
-				, msg
-				, timestamp
-				)
-			<< mwx::crlf
-			<< mwx::flush;
+    Serial.print(gba_data.year);
+	Serial.print("\t");
+    Serial.print(gba_data.month);
+	Serial.print("\t");
+    Serial.print(gba_data.day);
+	Serial.print("\t");
+    Serial.print(gba_data.hour);
+	Serial.print("\t");
+    Serial.print(gba_data.min);
+	Serial.print("\t");
+    Serial.print(gba_data.sec);
+	Serial.print("\t");
+    Serial.print(gba_data.ms);
+	Serial.print("\t");
+    Serial.print(gba_data.averageWindSpeedE);
+	Serial.print("\t");
+    Serial.print(gba_data.averagewindSpeedN);
+	Serial.print("\t");
+    Serial.print(gba_data.gustWindSpeedE);
+	Serial.print("\t");
+    Serial.print(gba_data.gustWindSpeedN);
+	Serial.print("\t");
+    Serial.print(gba_data.lon);
+	Serial.print("\t");
+    Serial.print(gba_data.lat);
+	Serial.print("\t");
+    Serial.print(gba_data.numSV);
+	Serial.print("\t");
+    Serial.print(gba_data.temperature);
+	Serial.print("\t");
+    Serial.print(gba_data.humidity);
+	Serial.print("\t");
+    Serial.print(gba_data.pressure);
+	Serial.print("\t");
+	Serial.print(rx_info.srcAddr, HEX);
+	Serial.print("\t");
+	Serial.print(rx_info.seq);
+	Serial.print("\t");
+	Serial.println(rx_info.lqi);	
 }
