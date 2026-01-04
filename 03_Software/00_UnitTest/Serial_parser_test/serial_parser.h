@@ -5,6 +5,9 @@
 
 #define MAX_BUF_SIZE 20
 
+#define EEPROM_ADDR_BASE 1024
+#define EEPROM_ADDR_END 0xEF0 //0xEFF - 16byte
+#define PARAM_NUM_MAX ((uint16_t)EEPROM_ADDR_END-(uint16_t)EEPROM_ADDR_BASE)/4
 
 //https://rakko.tools/tools/74/ 
 
@@ -25,8 +28,6 @@ enum MES_VAL{
   VAL,
   CRLF2
 };
-
-
 
 bool parseMode(uint8_t b_data, uint8_t *mode);
 bool parseVal(uint8_t b_data, uint16_t *cls_id, float*val);

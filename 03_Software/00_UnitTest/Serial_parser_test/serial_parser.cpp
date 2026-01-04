@@ -53,6 +53,7 @@ bool parseMode(uint8_t b_data, uint8_t *mode){
                 s_mes_pos = 0;
                 s_mode = 0;
                 s_mes_state = MODE_HEADER;
+                Serial.println("CRLF is not matched");
             }
             break;
     }
@@ -89,7 +90,8 @@ bool parseVal(uint8_t b_data, uint16_t *param_num, float*val){
             break;
 
         case PARAM_NUM:
-            if((s_mes_pos < MAX_BUF_SIZE)&&(b_data != b_crlf[0])){
+            // LRのみの場合を想定し、b_data != b_crlf[1]を追加
+            if((s_mes_pos < MAX_BUF_SIZE)&&(b_data != b_crlf[0])&&(b_data != b_crlf[1])){
                 s_param_num[s_mes_pos] = (char)b_data;
                 s_mes_pos += 1;
             }
@@ -109,11 +111,13 @@ bool parseVal(uint8_t b_data, uint16_t *param_num, float*val){
                 inizializeArray(s_param_num, MAX_BUF_SIZE);
                 inizializeArray(s_payload, MAX_BUF_SIZE);
                 s_mes_state = VAL_HEADER;
+                Serial.println("CRLF is not matched");
             }
             break;
 
         case VAL:
-            if((s_mes_pos < MAX_BUF_SIZE)&&(b_data != b_crlf[0])){
+            // LRのみの場合を想定し、b_data != b_crlf[1]を追加
+            if((s_mes_pos < MAX_BUF_SIZE)&&(b_data != b_crlf[0])&&(b_data != b_crlf[1])){
                 s_payload[s_mes_pos] = (char)b_data;
                 s_mes_pos += 1;
             }
@@ -130,13 +134,24 @@ bool parseVal(uint8_t b_data, uint16_t *param_num, float*val){
                 uint16_t  temp_param_num = (uint16_t)strtoul(s_param_num, &param_num_end, 10);
                 float temp_val = (float)strtod(s_payload, &val_end);
 
-                if((*param_num_end=='\0') && (*val_end=='\0')){
+                if((*param_num_end=='\0') && (*val_end=='\0') && (temp_param_num < PARAM_NUM_MAX)){
                     l_res = true;
                     *param_num = temp_param_num;
                     *val = temp_val;
                 }
                 else{
                     Serial.println("Convert Failed");
+                    if(*param_num_end !='\0'){
+                        Serial.println("PARAM_NUM inputs is invalid");
+                    }
+                    if(*val_end !='\0'){
+                        Serial.println("Val inputs is invalid");
+                    }
+                    if(temp_param_num >= PARAM_NUM_MAX){
+                        Serial.print("PARAM_NUM inputs overrange (Max size is ");
+                        Serial.print(PARAM_NUM_MAX);
+                        Serial.println(")");
+                    }
                 }
 
                 s_mes_pos = 0;
@@ -149,6 +164,7 @@ bool parseVal(uint8_t b_data, uint16_t *param_num, float*val){
                 inizializeArray(s_param_num, MAX_BUF_SIZE);
                 inizializeArray(s_payload, MAX_BUF_SIZE);
                 s_mes_state = VAL_HEADER;
+                Serial.println("CRLF is not matched");
             }
             break;
     } 
