@@ -3,23 +3,23 @@
 #include <stdio.h>
 #include "gba_twenet.h"
 
-void gbaTwenetInit(uint8_t id, uint8_t channel){
-	the_twelite
+void gbaTwenetInit(uint8_t id, uint8_t channel, mwx::twenet* twelite){
+	*twelite
 		<< TWENET::appid(APP_ID)    
 		<< TWENET::channel(channel) 
 		<< TWENET::rx_when_idle();
 
-	auto&& nwksmpl = the_twelite.network.use<NWK_SIMPLE>();
+	auto&& nwksmpl = twelite->network.use<NWK_SIMPLE>();
 	nwksmpl << NWK_SIMPLE::logical_id(id) 
 	        << NWK_SIMPLE::repeat_max(REPEAT_MAX);   
 
-	the_twelite.begin(); 
+	twelite->begin(); 
 }
 
-bool gbaTwenetTransmit(GBA_DATA *gba_data, uint32_t addr){
+bool gbaTwenetTransmit(GBA_DATA *gba_data, uint32_t addr, mwx::twenet* twelite){
 	uint8_t dest[MES_LEN] = {};
 
-	if (auto&& pkt = the_twelite.network.use<NWK_SIMPLE>().prepare_tx_packet()) {
+	if (auto&& pkt = twelite->network.use<NWK_SIMPLE>().prepare_tx_packet()) {
 		pkt << tx_addr(addr)
 			<< tx_retry(RETRY_NUM)
 			<< tx_packet_delay(TX_DELAY_ST,TX_DELAY_ED,TX_DELAY_INT);

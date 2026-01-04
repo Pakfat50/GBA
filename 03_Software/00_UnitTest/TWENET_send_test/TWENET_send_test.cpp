@@ -8,7 +8,7 @@
 GBA_DATA gba_data;
 
 void setup() {
-	gbaTwenetInit(SENSOR_ID, CHANNEL);
+	gbaTwenetInit(SENSOR_ID, CHANNEL, &the_twelite);
 }
 
 void loop() {
@@ -35,7 +35,7 @@ void loop() {
     gba_data.humidity = 0.58;
     gba_data.pressure = 1013.5;
 
-	gbaTwenetTransmit(&gba_data, 0xFF);
+	gbaTwenetTransmit(&gba_data, 0xFF, &the_twelite);
 	delay(200);
 }
 

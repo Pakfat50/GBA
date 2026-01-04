@@ -9,7 +9,7 @@ GBA_DATA gba_data;
 RX_INFO rx_info;
 
 void setup() {
-	gbaTwenetInit(SENSOR_ID, CHANNEL);
+	gbaTwenetInit(SENSOR_ID, CHANNEL, &the_twelite);
 }
 
 void loop() {

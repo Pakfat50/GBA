@@ -42,8 +42,8 @@ typedef struct{
     uint8_t lqi;
 }RX_INFO;
 
-void gbaTwenetInit(uint8_t id, uint8_t channel);
-bool gbaTwenetTransmit(GBA_DATA* gba_data, uint32_t addr);
+void gbaTwenetInit(uint8_t id, uint8_t channel, mwx::twenet* twelite);
+bool gbaTwenetTransmit(GBA_DATA* gba_data, uint32_t addr, mwx::twenet* twelite);
 void gbaTwenetReceive(GBA_DATA* gba_data, RX_INFO* rx_info, mwx::packet_rx* pkt);
 
 #endif
