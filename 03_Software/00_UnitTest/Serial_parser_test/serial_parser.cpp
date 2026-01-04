@@ -61,13 +61,13 @@ bool parseMode(uint8_t b_data, uint8_t *mode){
 }
 
 
-bool parseVal(uint8_t b_data, uint8_t *cls_id, float*val){
+bool parseVal(uint8_t b_data, uint16_t *param_num, float*val){
 
     bool l_res = false;
 
     static MES_VAL s_mes_state =  VAL_HEADER;
     static uint16_t s_mes_pos = 0;
-    static uint8_t s_cls_id = 0;
+    static char s_param_num[MAX_BUF_SIZE] = {0};
     static char s_payload[MAX_BUF_SIZE] = {0};
 
     switch (s_mes_state){
@@ -75,7 +75,7 @@ bool parseVal(uint8_t b_data, uint8_t *cls_id, float*val){
             if (b_data == val_header[s_mes_pos]){
                 if (s_mes_pos==sizeof(val_header)-1){
                     s_mes_pos = 0;
-                    s_mes_state = CLS_ID;
+                    s_mes_state = PARAM_NUM;
                 }
                 else{
                     s_mes_pos +=1;
@@ -83,37 +83,37 @@ bool parseVal(uint8_t b_data, uint8_t *cls_id, float*val){
             }
             else{
                 s_mes_pos = 0;
-                s_cls_id = 0;
+                inizializeArray(s_param_num, MAX_BUF_SIZE);
                 inizializeArray(s_payload, MAX_BUF_SIZE);
             }
             break;
 
-        case CLS_ID:
-            s_cls_id = b_data;
-            s_mes_pos = 0;
-            s_mes_state = CRLF1;
-            break;
-        
-        case CRLF1:
-            if (b_data == b_crlf[s_mes_pos]){
-                if (s_mes_pos==sizeof(b_crlf)-1){
-                    s_mes_pos = 0;
-                    s_mes_state = VAL;
-                }
-                else{
-                    s_mes_pos +=1;
-                }
+        case PARAM_NUM:
+            if((s_mes_pos < MAX_BUF_SIZE)&&(b_data != b_crlf[0])){
+                s_param_num[s_mes_pos] = (char)b_data;
+                s_mes_pos += 1;
             }
             else{
                 s_mes_pos = 0;
-                s_cls_id = 0;
+                s_mes_state = CRLF1;
+            }
+            break;
+
+        case CRLF1:
+            if (b_data == b_crlf[1]){
+                s_mes_pos = 0;
+                s_mes_state = VAL;
+            }
+            else{
+                s_mes_pos = 0;
+                inizializeArray(s_param_num, MAX_BUF_SIZE);
                 inizializeArray(s_payload, MAX_BUF_SIZE);
                 s_mes_state = VAL_HEADER;
             }
             break;
 
         case VAL:
-            if((s_mes_pos < MAX_BUF_SIZE)&&(b_data != val_dilimiter)){
+            if((s_mes_pos < MAX_BUF_SIZE)&&(b_data != b_crlf[0])){
                 s_payload[s_mes_pos] = (char)b_data;
                 s_mes_pos += 1;
             }
@@ -124,24 +124,29 @@ bool parseVal(uint8_t b_data, uint8_t *cls_id, float*val){
             break;
 
         case CRLF2:
-            if (b_data == b_crlf[s_mes_pos]){
-                if (s_mes_pos==sizeof(b_crlf)-1){
-                    *cls_id = s_cls_id;
-                    *val = (float)atof(s_payload);
-                    l_res = true;
+            if (b_data == b_crlf[1]){
+                char* param_num_end;
+                char* val_end;
+                uint16_t  temp_param_num = (uint16_t)strtoul(s_param_num, &param_num_end, 10);
+                float temp_val = (float)strtod(s_payload, &val_end);
 
-                    s_mes_pos = 0;
-                    s_cls_id = 0;
-                    inizializeArray(s_payload, MAX_BUF_SIZE);
-                    s_mes_state = VAL_HEADER;
+                if((*param_num_end=='\0') && (*val_end=='\0')){
+                    l_res = true;
+                    *param_num = temp_param_num;
+                    *val = temp_val;
                 }
                 else{
-                    s_mes_pos +=1;
+                    Serial.println("Convert Failed");
                 }
+
+                s_mes_pos = 0;
+                inizializeArray(s_param_num, MAX_BUF_SIZE);
+                inizializeArray(s_payload, MAX_BUF_SIZE);
+                s_mes_state = VAL_HEADER;
             }
             else{
                 s_mes_pos = 0;
-                s_cls_id = 0;
+                inizializeArray(s_param_num, MAX_BUF_SIZE);
                 inizializeArray(s_payload, MAX_BUF_SIZE);
                 s_mes_state = VAL_HEADER;
             }

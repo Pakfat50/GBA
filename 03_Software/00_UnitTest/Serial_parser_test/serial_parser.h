@@ -11,7 +11,6 @@
 const uint8_t mode_header[5] = {0x23,0x4d,0x4f,0x44,0x45}; // #MODE
 const uint8_t val_header[4] = {0x23,0x56,0x41,0x4c}; // #VAL
 const uint8_t b_crlf[2] = {0x0d, 0x0a}; // \r\n
-const uint8_t val_dilimiter = 0x3b; // ;
 
 enum MES_MODE{
   MODE_HEADER,
@@ -21,7 +20,7 @@ enum MES_MODE{
 
 enum MES_VAL{
   VAL_HEADER,
-  CLS_ID,
+  PARAM_NUM,
   CRLF1,
   VAL,
   CRLF2
@@ -30,6 +29,6 @@ enum MES_VAL{
 
 
 bool parseMode(uint8_t b_data, uint8_t *mode);
-bool parseVal(uint8_t b_data, uint8_t *cls_id, float*val);
+bool parseVal(uint8_t b_data, uint16_t *cls_id, float*val);
 
 #endif

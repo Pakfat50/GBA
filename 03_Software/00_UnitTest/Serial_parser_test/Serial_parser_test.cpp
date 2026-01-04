@@ -2,7 +2,7 @@
 #include "serial_parser.h"
 
 uint8_t mode = 0;
-uint8_t cls_id = 0;
+uint16_t param_num = 0;
 float val = 0;
 
 /*** the setup procedure (called on boot) */
@@ -25,9 +25,9 @@ void loop() {
             Serial.println();
         }
 
-        if(parseVal(b_data, &cls_id, &val) == true){
-            Serial.print("CLASS ID:");
-            Serial.write(cls_id);
+        if(parseVal(b_data, &param_num, &val) == true){
+            Serial.print("PARAM NUM:");
+            Serial.print(param_num);
             Serial.println();
             Serial.print("VALUE:");
             Serial.println(val);
