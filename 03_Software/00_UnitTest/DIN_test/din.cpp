@@ -27,7 +27,6 @@ uint8_t getChannel(void){
     channel |= din0<<3;
 
     return channel;
-
 }
 
 uint8_t getSensorId(void){
