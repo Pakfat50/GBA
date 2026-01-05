@@ -18,20 +18,49 @@ void loop() {
 
         Serial.write(c_data);
         
-        if(parseMode(b_data, &mode) == true){
-            Serial.print("MODE:");
-            Serial.write(mode);
-            Serial.println();
-            Serial.println();
+        switch (parseMode(b_data, &mode)){
+            case GET_VALUE:
+                Serial.print("MODE:");
+                Serial.write(mode);
+                Serial.println();
+                Serial.println();
+                break;
+            
+            case ERR_CRLF:
+                Serial.println("CRLF is not matched");
+                break;
+            
+            default:
+                break;
         }
 
-        if(parseVal(b_data, &param_num, &val) == true){
-            Serial.print("PARAM NUM:");
-            Serial.print(param_num);
-            Serial.println();
-            Serial.print("VALUE:");
-            Serial.println(val);
-            Serial.println();
+
+        switch (parseVal(b_data, &param_num, &val)){
+            case GET_VALUE:
+                Serial.print("PARAM NUM:");
+                Serial.print(param_num);
+                Serial.println();
+                Serial.print("VALUE:");
+                Serial.println(val);
+                Serial.println();
+                break;
+            
+            case ERR_INVALID_ID:
+                Serial.println("PARAM_NUM inputs is invalid");
+                break;
+
+            case ERR_INVALID_VAL:
+                Serial.println("Val inputs is invalid");
+                break;    
+
+            case ERR_OVER_RANGE:
+                Serial.print("PARAM_NUM inputs overrange (Max size is ");
+                Serial.print(PARAM_NUM_MAX);
+                Serial.println(")");            
+                break;
+
+            default:
+                break;
         }
     }
 }

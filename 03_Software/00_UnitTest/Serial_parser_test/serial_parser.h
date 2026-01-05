@@ -29,7 +29,16 @@ enum MES_VAL{
   CRLF2
 };
 
-bool parseMode(uint8_t b_data, uint8_t *mode);
-bool parseVal(uint8_t b_data, uint16_t *cls_id, float*val);
+enum SERIAL_ERR{
+  GET_VALUE,
+  PARSING,
+  ERR_CRLF,
+  ERR_INVALID_ID,
+  ERR_INVALID_VAL,
+  ERR_OVER_RANGE
+};
+
+SERIAL_ERR parseMode(uint8_t b_data, uint8_t *mode);
+SERIAL_ERR parseVal(uint8_t b_data, uint16_t *cls_id, float*val);
 
 #endif
