@@ -1,0 +1,23 @@
+{
+    "C_Cpp.default.includePath": [
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/printf",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETcore/source",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETmwx/source/**",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETstgs/source",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETutils/source/**",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETeastl/**",
+    ],
+    "C_Cpp.default.browse.path": [
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETmcu/printf",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETcore/source",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETmwx/source/**",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETstgs/source",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETutils/source/**",
+        "${env:MWSDK_TWENET_LIBSRC}/TWENETeastl/**",
+    ],
+    "C_Cpp.default.defines": [
+        "VERSION_MAIN=0",
+        "VERSION_SUB=1",
+        "VERSION_VAR=2"
+    ]
+}
