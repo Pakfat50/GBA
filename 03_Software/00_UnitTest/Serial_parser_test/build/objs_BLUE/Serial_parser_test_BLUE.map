@@ -311,11 +311,11 @@ c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-e
 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(truncdfsf2.o)
                               c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strtod.o) (__truncdfsf2)
 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__modsi3.o)
-                              C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o (__modsi3)
+                              C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o (__modsi3)
 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(_umoddi3.o)
-                              C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o (__umoddi3)
+                              C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o (__umoddi3)
 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(extendsfdf2.o)
-                              C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans1.ltrans.o (__extendsfdf2)
+                              C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans6.ltrans.o (__extendsfdf2)
 
 Allocating common symbols
 Common symbol       size              file
@@ -389,30 +389,30 @@ EEPROM_6X_SEGMENT_SIZE
 Discarded input sections
 
  .text          0x0000000000000000        0x0 objs_BLUE/_mwx_version.o (symbol from plugin)
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans0.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans1.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans2.ltrans.o
- .rodata        0x0000000000000000        0x8 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans2.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans3.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans3.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans6.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans7.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans8.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans8.ltrans.o
- .text.exit     0x0000000000000000        0x3 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans8.ltrans.o
- .text.startup  0x0000000000000000      0x101 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans8.ltrans.o
- .ctors         0x0000000000000000        0x4 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans8.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans9.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans10.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans11.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans11.ltrans.o
- .data          0x0000000000000000        0x1 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans12.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans13.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans13.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans14.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans15.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans15.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans0.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans1.ltrans.o
+ .rodata        0x0000000000000000        0x8 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans1.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans2.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans2.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans4.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans6.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans7.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans8.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans9.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans9.ltrans.o
+ .text.exit     0x0000000000000000        0x3 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans9.ltrans.o
+ .text.startup  0x0000000000000000      0x101 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans9.ltrans.o
+ .ctors         0x0000000000000000        0x4 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans9.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans10.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans11.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans11.ltrans.o
+ .data          0x0000000000000000        0x1 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans12.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans13.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans13.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans14.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans15.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans15.ltrans.o
  .data          0x0000000000000000        0x0 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__modsi3.o)
  .bss           0x0000000000000000        0x0 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__modsi3.o)
  .data          0x0000000000000000        0x0 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(_umoddi3.o)
@@ -424,8 +424,6 @@ Discarded input sections
  .gnu.linkonce.t._ZN3mwx2L110serial_jen7vOutputEcPv
                 0x0000000000000000        0x0 objs_BLUE/Serial_parser_test.o (symbol from plugin)
  .text          0x0000000000000000        0x0 objs_BLUE/serial_parser.o (symbol from plugin)
- .gnu.linkonce.t._ZN3mwx2L110serial_jen7vOutputEcPv
-                0x0000000000000000        0x0 objs_BLUE/serial_parser.o (symbol from plugin)
  .text          0x0000000000000000        0x0 AppApi.o (symbol from plugin)
  .text          0x0000000000000000        0x0 AppApiSleep.o (symbol from plugin)
  .text          0x0000000000000000        0x0 mac_main.o (symbol from plugin)
@@ -953,22 +951,22 @@ ram              0x000000000400004c 0x0000000000007fb4
 Linker script and memory map
 
 LOAD objs_BLUE/_mwx_version.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans0.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans1.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans2.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans3.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans6.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans7.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans8.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans9.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans10.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans11.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans12.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans13.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans14.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans15.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans0.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans1.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans2.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans4.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans6.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans7.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans8.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans9.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans10.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans11.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans12.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans13.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans14.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans15.ltrans.o
 LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a
 LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a
 LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a
@@ -1034,14 +1032,14 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x000000000008001c        0x2 SHORT 0x0
                 0x000000000008001e        0x2 SHORT 0x0 ABSOLUTE (_SwConfig)
                 0x0000000000080020                _enc_start = ABSOLUTE (.)
-                0x0000000000080020        0x4 LONG 0x12c48 ABSOLUTE (_image_len)
-                0x0000000000080024        0x4 LONG 0x92348 ABSOLUTE (_flash_data_start)
+                0x0000000000080020        0x4 LONG 0x12c4c ABSOLUTE (_image_len)
+                0x0000000000080024        0x4 LONG 0x9234c ABSOLUTE (_flash_data_start)
                 0x0000000000080028        0x2 SHORT 0x13 ((ABSOLUTE (_ram_data_start) / 0x4) & 0xffff)
                 0x000000000008002a        0x2 SHORT 0x240 ((ABSOLUTE (_ram_data_len) / 0x4) & 0xffff)
                 0x000000000008002c        0x2 SHORT 0x253 ((ABSOLUTE (_bss_start) / 0x4) & 0xffff)
-                0x000000000008002e        0x2 SHORT 0x720 ((ABSOLUTE (_bss_len) / 0x4) & 0xffff)
-                0x0000000000080030        0x4 LONG 0x8c322 ABSOLUTE (AppWarmStart)
-                0x0000000000080034        0x4 LONG 0x8be1e ABSOLUTE (AppColdStart)
+                0x000000000008002e        0x2 SHORT 0x71f ((ABSOLUTE (_bss_len) / 0x4) & 0xffff)
+                0x0000000000080030        0x4 LONG 0x8c324 ABSOLUTE (AppWarmStart)
+                0x0000000000080034        0x4 LONG 0x8be20 ABSOLUTE (AppColdStart)
                 0x0000000000000000                _enc_offset = (_enc_start & 0xf)
                 0x0000000000000044                PROVIDE (vException_BusError, restore_state)
                 0x0000000000000044                PROVIDE (vException_UnalignedAccess, restore_state)
@@ -1065,328 +1063,326 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000000080050                _exception_external_interrupt
                 0x00000000000800f8                _default_vsr_dummy
 
-.rodata         0x0000000000080100      0x981
+.rodata         0x0000000000080100      0x979
  *(.rodata*)
+ .rodata        0x0000000000080100       0x30 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans2.ltrans.o
+                0x0000000000080100                s_aprScanHandleEvt.7363
+ .rodata        0x0000000000080130       0xdc C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+                0x0000000000080130                apvActionCalls
+                0x00000000000801b8                psTamXcvContext
+                0x00000000000801bc                aprLPBMacVectorRamTable
+                0x00000000000801d0                gu8ModuleID
+                0x00000000000801d1                gbHighPowerMode
+                0x00000000000801d4                CSWTCH.35.17350.17350
+                0x00000000000801e8                au32TimerBaseAddress
+ .rodata        0x000000000008020c        0xd C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans4.ltrans.o
  .rodata.str1.1
-                0x0000000000080100       0x98 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans1.ltrans.o
- .rodata        0x0000000000080198       0x40 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans1.ltrans.o
- .rodata        0x00000000000801d8       0x30 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans3.ltrans.o
-                0x00000000000801d8                s_aprScanHandleEvt.7444
- .rodata        0x0000000000080208       0xdc C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
-                0x0000000000080208                apvActionCalls
-                0x0000000000080290                psTamXcvContext
-                0x0000000000080294                aprLPBMacVectorRamTable
-                0x00000000000802a8                gu8ModuleID
-                0x00000000000802a9                gbHighPowerMode
-                0x00000000000802ac                CSWTCH.35.17431.17431
-                0x00000000000802c0                au32TimerBaseAddress
+                0x0000000000080219       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o
+ *fill*         0x000000000008022b        0x5 00
+ .rodata        0x0000000000080230       0x68 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o
+                0x0000000000080230                u32HeapEnd
  .rodata.str1.1
-                0x00000000000802e4       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o
- *fill*         0x00000000000802f6        0x2 00
- .rodata        0x00000000000802f8       0x68 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o
-                0x00000000000802f8                u32HeapEnd
- .rodata        0x0000000000080360        0x4 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans6.ltrans.o
- .rodata        0x0000000000080364        0x8 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans7.ltrans.o
- .rodata        0x000000000008036c       0x18 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans9.ltrans.o
-                0x000000000008036c                psIntr.18236
- .rodata        0x0000000000080384       0x18 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans10.ltrans.o
- .rodata        0x000000000008039c        0x6 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans11.ltrans.o
-                0x000000000008039c                aeXcvPhyEvtToScanEvt.5394.7447
- .rodata        0x00000000000803a2       0xcb C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans14.ltrans.o
+                0x0000000000080298       0x89 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans6.ltrans.o
+ *fill*         0x0000000000080321        0x3 00
+ .rodata        0x0000000000080324       0x4c C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans6.ltrans.o
+                0x000000000008034c                psIntr.18155
+ .rodata        0x0000000000080370        0x4 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans7.ltrans.o
+ .rodata        0x0000000000080374        0x8 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans8.ltrans.o
+ .rodata        0x000000000008037c       0x18 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans10.ltrans.o
+ .rodata        0x0000000000080394        0x6 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans11.ltrans.o
+                0x0000000000080394                aeXcvPhyEvtToScanEvt.5394.7366
+ .rodata        0x000000000008039a       0xcb C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans14.ltrans.o
  .rodata.str1.1
-                0x000000000008046d       0x11 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
- *fill*         0x000000000008047e        0x2 00
+                0x0000000000080465       0x11 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
+ *fill*         0x0000000000080476        0x2 00
  .rodata.asStateFuncTbl
-                0x0000000000080480       0x38 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
+                0x0000000000080478       0x38 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
  .rodata.au8ToCoNetVersionInfo
-                0x00000000000804b8        0xc C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(Version.o)
-                0x00000000000804b8                au8ToCoNetVersionInfo
+                0x00000000000804b0        0xc C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(Version.o)
+                0x00000000000804b0                au8ToCoNetVersionInfo
  .rodata.str1.1
-                0x00000000000804c4       0x11 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
- .rodata        0x00000000000804d5       0x31 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
- *fill*         0x0000000000080506        0x2 00
+                0x00000000000804bc       0x11 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+ .rodata        0x00000000000804cd       0x31 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+ *fill*         0x00000000000804fe        0x2 00
  .rodata.au8k.5799
-                0x0000000000080508       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x0000000000080500       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
  .rodata.au8k.5780
-                0x0000000000080528       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x0000000000080520       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
  .rodata.str1.1
-                0x0000000000080548       0x11 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
- *fill*         0x0000000000080559        0x3 00
+                0x0000000000080540       0x11 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+ *fill*         0x0000000000080551        0x3 00
  .rodata.u32MacLow_TOCOS
-                0x000000000008055c        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008055c                u32MacLow_TOCOS
+                0x0000000000080554        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x0000000000080554                u32MacLow_TOCOS
  .rodata.u32MacHigh_TOCOS
-                0x0000000000080560        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x0000000000080560                u32MacHigh_TOCOS
+                0x0000000000080558        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x0000000000080558                u32MacHigh_TOCOS
  .rodata.u8CRCTable
-                0x0000000000080564      0x100 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ccitt8.o)
+                0x000000000008055c      0x100 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ccitt8.o)
  .rodata.str1.1
-                0x0000000000080664        0x9 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strtod.o)
+                0x000000000008065c        0x9 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strtod.o)
                                           0xc (size before relaxing)
- *fill*         0x000000000008066d        0x3 00
- .rodata        0x0000000000080670       0x28 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strtod.o)
- .rodata        0x0000000000080698      0x281 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-ctype_.o)
-                0x0000000000080698                _ctype_
+ *fill*         0x0000000000080665        0x3 00
+ .rodata        0x0000000000080668       0x28 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strtod.o)
+ .rodata        0x0000000000080690      0x281 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-ctype_.o)
+                0x0000000000080690                _ctype_
  .rodata.str1.1
-                0x0000000000080919       0x19 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-gdtoa-gethex.o)
+                0x0000000000080911       0x19 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-gdtoa-gethex.o)
  .rodata.str1.1
-                0x0000000000080932        0x2 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-impure.o)
+                0x000000000008092a        0x2 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-impure.o)
  .rodata.str1.1
-                0x0000000000080934        0x8 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-locale.o)
+                0x000000000008092c        0x8 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-locale.o)
                                           0xb (size before relaxing)
- *fill*         0x000000000008093c        0x4 00
- .rodata        0x0000000000080940      0x128 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mprec.o)
-                0x0000000000080940                __mprec_tinytens
-                0x0000000000080968                __mprec_bigtens
-                0x0000000000080990                __mprec_tens
- .rodata        0x0000000000080a68       0x19 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-glue.o)
+ *fill*         0x0000000000080934        0x4 00
+ .rodata        0x0000000000080938      0x128 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mprec.o)
+                0x0000000000080938                __mprec_tinytens
+                0x0000000000080960                __mprec_bigtens
+                0x0000000000080988                __mprec_tens
+ .rodata        0x0000000000080a60       0x19 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-glue.o)
 
-.text           0x0000000000080a84    0x118c1
+.text           0x0000000000080a7c    0x118cd
  *(.text*)
- .text          0x0000000000080a84      0xc15 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans0.ltrans.o
-                0x0000000000080a84                init_warmboot()
-                0x0000000000080a84                wakeup()
-                0x0000000000080a84                init_coldboot()
-                0x0000000000080a84                begin()
-                0x0000000000080a84                mwx_empty_callback
-                0x0000000000080a87                _out_fct.18379
-                0x0000000000080a99                _out_null.18385
-                0x0000000000080a9c                _ZN3mwx2L110serial_jen7vOutputEcPv.local.163
-                0x0000000000080ac6                vAHI_IntHandlerSpiMaster
-                0x0000000000080aec                vAHI_IntHandlerTimer2
-                0x0000000000080b0c                vAHI_IntHandlerSysCtrl
-                0x0000000000080b66                vAHI_IntHandlerTimer4
-                0x0000000000080b87                vAHI_IntHandlerTimer3
-                0x0000000000080ba8                vAHI_IntHandlerTimer1
-                0x0000000000080bc8                vAHI_IntHandlerTimer0
-                0x0000000000080be9                vTimerCallback.17083
-                0x0000000000080bf4                vTTIBLETimerExpired
-                0x0000000000080c6a                vTTITimer2Expired
-                0x0000000000080c70                vTTITimer1Expired
-                0x0000000000080c76                vTTITransactionTimerExpired
-                0x0000000000080ca0                pvHeap_Alloc
-                0x0000000000080ca2                vAHI_DioSetDirection
-                0x0000000000080cb6                vAHI_WakeTimerStop.part.3.17506
-                0x0000000000080cd6                mac_vLPBStopTimer
-                0x0000000000080ce0                vAHI_WakeTimerEnable.part.0.17490
-                0x0000000000080d35                vAHI_TimerEnable.part.1.17298
-                0x0000000000080dad                vACI_CmdWaitBusy
-                0x0000000000080e11                vACI_OptimisedCcmStar
-                0x0000000000081029                vTAIdisableInterrupt
-                0x0000000000081042                vUpdateRegisters.16698
-                0x0000000000081089                psRemove.part.0.16648
-                0x00000000000810b8                vMAC_MISCpollConfirm
-                0x00000000000810ea                MAC_u8AclFindInfo
-                0x0000000000081214                vTASretrieveSecurity
-                0x0000000000081236                MAC_bLookUpKeyDescriptor.14200
-                0x00000000000812b0                u8TSCframeIncrease
-                0x00000000000812e9                bUpdateTime.12428
-                0x0000000000081324                vTACbuildBeacon
-                0x000000000008152c                vTSCpostTransmitUpdate
-                0x000000000008155d                vCopyToDataFromMacAddr.14110
-                0x0000000000081590                bTSCgetOutgoingInfo
- *fill*         0x0000000000081699        0x3 00
- .text          0x000000000008169c      0xb5c C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans1.ltrans.o
-                0x000000000008186e                loop()
-                0x0000000000081c28                bTAM_AES_CCMstarPatch
-                0x0000000000081d6c                bTAM_AES_CCMstarPatch2006
-                0x0000000000081e73                vWriteFrame.11928
-                0x000000000008204b                bTATsendFrame
-                0x000000000008209e                bSendDataRequest.10230
-                0x00000000000821b0                phy_ePibSet.part.1.8911
- .text          0x00000000000821f8      0xb98 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans2.ltrans.o
-                0x00000000000821f8                cbToCoNet_vHwEvent
-                0x000000000008242c                cbToCoNet_vMain
-                0x00000000000824d6                vAppApiDefMlmeRequest
-                0x0000000000082505                vAppApiDefMcpsRequest
-                0x0000000000082534                eAppApiDefPlmeSet
-                0x000000000008258d                eAppApiDefPlmeGet
-                0x00000000000825dd                MAC_vHandleMlmeReqRsp
- .text          0x0000000000082d90      0xb5c C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans3.ltrans.o
-                0x0000000000082d90                eWBRTTxDone.7101
-                0x0000000000082dae                vTAMCOframeTXgoingIdle
-                0x0000000000082dc7                vTAMCOframeTXcap
-                0x0000000000082deb                vTAMDEframeTXDEnull
-                0x0000000000082e0e                vTAMDEframeTXtrackingCAPgts
-                0x0000000000082e3a                vTAMCOframeTXnobeacon
-                0x0000000000082e4f                vTAMCOframeStarting
-                0x0000000000082e68                eWCoRRxDone.7092
-                0x0000000000082f10                eWBcnRxDone.7104
-                0x00000000000830df                bTACprocessFrameRXcomplete
-                0x00000000000834f7                vTAMCOframeTXbeacon
-                0x00000000000835be                vTAMDEframeRXsyncReq
-                0x000000000008380d                vTAMDEint1FiredTrackingCAPgts
-                0x00000000000838be                eWONTTxDone.7098
- .text          0x00000000000838ec      0xa15 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
-                0x00000000000838ec                vTAMCOframeRXcap
-                0x00000000000838fe                vTAMCOframeRXgoingIdle
-                0x0000000000083914                vTAMCOframeRXnobeacon
-                0x0000000000083926                vTAMDEframeRX
-                0x000000000008394e                vTAMDEframePreSyncReq
-                0x0000000000083966                vMicroIntRestoreState
-                0x0000000000083972                vMicroIntEnableOnly
-                0x000000000008399e                vAHI_SpiRegisterCallback
-                0x00000000000839a7                vAHI_DioSetPullup
-                0x00000000000839c7                u32AHI_WakeTimerRead
-                0x00000000000839e5                u32AHI_WakeTimerCalibrate
-                0x0000000000083a1c                vAHI_WakeTimerStartLarge
-                0x0000000000083a6f                vAHI_WakeTimerEnable
-                0x0000000000083a79                vAHI_Timer4RegisterCallback
-                0x0000000000083a82                vAHI_Timer3RegisterCallback
-                0x0000000000083a8b                vAHI_Timer2RegisterCallback
-                0x0000000000083a94                vAHI_Timer1RegisterCallback
-                0x0000000000083a9d                vAHI_Timer0RegisterCallback
-                0x0000000000083aa6                vAHI_TimerConfigure
-                0x0000000000083ada                vAHI_TimerStop
-                0x0000000000083afc                vAHI_TimerStartRepeat
-                0x0000000000083b33                vAHI_TimerClockSelect
-                0x0000000000083b69                vAHI_TimerDisable
-                0x0000000000083b8a                vAHI_TimerEnable
-                0x0000000000083b94                bAHI_Clock32MHzStable
-                0x0000000000083ba1                u16AHI_ReadRandomNumber
-                0x0000000000083bab                vAHI_StopRandomNumberGenerator
-                0x0000000000083bb4                vAHI_StartRandomNumberGenerator
-                0x0000000000083be0                bAHI_Set32KhzClockMode
-                0x0000000000083d18                u8AHI_GetSystemClkSpeed
-                0x0000000000083d22                bAHI_SetClockRate
-                0x0000000000083e2d                vAHI_Sleep
-                0x0000000000083ee4                vAHI_WatchdogRestart
-                0x0000000000083ef1                vAHI_WatchdogStop
-                0x0000000000083f08                vAHI_WatchdogStart
-                0x0000000000083f2b                vAHI_HighPowerModuleEnable
-                0x0000000000083f5a                vAHI_SysCtrlRegisterCallback
-                0x0000000000083f63                vAHI_CpuDoze
-                0x00000000000840db                u32AppApiDefInit
-                0x0000000000084190                vAHI_ProtocolPower
-                0x00000000000841a7                vAppApiDefRestoreMacSettings
-                0x000000000008427a                mac_vLPBSleep
-                0x00000000000842be                vTAMDEframeRXtrackingDR
+ .text          0x0000000000080a7c      0xc15 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans0.ltrans.o
+                0x0000000000080a7c                wakeup()
+                0x0000000000080a7c                init_coldboot()
+                0x0000000000080a7c                init_warmboot()
+                0x0000000000080a7c                mwx_empty_callback
+                0x0000000000080a7c                begin()
+                0x0000000000080a7f                _out_fct.18298
+                0x0000000000080a91                _out_null.18304
+                0x0000000000080a94                _ZN3mwx2L110serial_jen7vOutputEcPv.local.163
+                0x0000000000080abe                vAHI_IntHandlerSpiMaster
+                0x0000000000080ae4                vAHI_IntHandlerTimer2
+                0x0000000000080b04                vAHI_IntHandlerSysCtrl
+                0x0000000000080b5e                vAHI_IntHandlerTimer4
+                0x0000000000080b7f                vAHI_IntHandlerTimer3
+                0x0000000000080ba0                vAHI_IntHandlerTimer1
+                0x0000000000080bc0                vAHI_IntHandlerTimer0
+                0x0000000000080be1                vTimerCallback.17002
+                0x0000000000080bec                vTTIBLETimerExpired
+                0x0000000000080c62                vTTITimer2Expired
+                0x0000000000080c68                vTTITimer1Expired
+                0x0000000000080c6e                vTTITransactionTimerExpired
+                0x0000000000080c98                pvHeap_Alloc
+                0x0000000000080c9a                vAHI_DioSetDirection
+                0x0000000000080cae                vAHI_WakeTimerStop.part.3.17425
+                0x0000000000080cce                mac_vLPBStopTimer
+                0x0000000000080cd8                vAHI_WakeTimerEnable.part.0.17409
+                0x0000000000080d2d                vAHI_TimerEnable.part.1.17217
+                0x0000000000080da5                vACI_CmdWaitBusy
+                0x0000000000080e09                vACI_OptimisedCcmStar
+                0x0000000000081021                vTAIdisableInterrupt
+                0x000000000008103a                vUpdateRegisters.16617
+                0x0000000000081081                psRemove.part.0.16567
+                0x00000000000810b0                vMAC_MISCpollConfirm
+                0x00000000000810e2                MAC_u8AclFindInfo
+                0x000000000008120c                vTASretrieveSecurity
+                0x000000000008122e                MAC_bLookUpKeyDescriptor.14119
+                0x00000000000812a8                u8TSCframeIncrease
+                0x00000000000812e1                bUpdateTime.12347
+                0x000000000008131c                vTACbuildBeacon
+                0x0000000000081524                vTSCpostTransmitUpdate
+                0x0000000000081555                vCopyToDataFromMacAddr.14029
+                0x0000000000081588                bTSCgetOutgoingInfo
+ *fill*         0x0000000000081691        0x3 00
+ .text          0x0000000000081694      0xb98 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans1.ltrans.o
+                0x0000000000081694                cbToCoNet_vHwEvent
+                0x00000000000818c8                cbToCoNet_vMain
+                0x0000000000081972                vAppApiDefMlmeRequest
+                0x00000000000819a1                vAppApiDefMcpsRequest
+                0x00000000000819d0                eAppApiDefPlmeSet
+                0x0000000000081a29                eAppApiDefPlmeGet
+                0x0000000000081a79                MAC_vHandleMlmeReqRsp
+ .text          0x000000000008222c      0xb5c C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans2.ltrans.o
+                0x000000000008222c                eWBRTTxDone.7020
+                0x000000000008224a                vTAMCOframeTXgoingIdle
+                0x0000000000082263                vTAMCOframeTXcap
+                0x0000000000082287                vTAMDEframeTXDEnull
+                0x00000000000822aa                vTAMDEframeTXtrackingCAPgts
+                0x00000000000822d6                vTAMCOframeTXnobeacon
+                0x00000000000822eb                vTAMCOframeStarting
+                0x0000000000082304                eWCoRRxDone.7011
+                0x00000000000823ac                eWBcnRxDone.7023
+                0x000000000008257b                bTACprocessFrameRXcomplete
+                0x0000000000082993                vTAMCOframeTXbeacon
+                0x0000000000082a5a                vTAMDEframeRXsyncReq
+                0x0000000000082ca9                vTAMDEint1FiredTrackingCAPgts
+                0x0000000000082d5a                eWONTTxDone.7017
+ .text          0x0000000000082d88      0xa15 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+                0x0000000000082d88                vTAMCOframeRXcap
+                0x0000000000082d9a                vTAMCOframeRXgoingIdle
+                0x0000000000082db0                vTAMCOframeRXnobeacon
+                0x0000000000082dc2                vTAMDEframeRX
+                0x0000000000082dea                vTAMDEframePreSyncReq
+                0x0000000000082e02                vMicroIntRestoreState
+                0x0000000000082e0e                vMicroIntEnableOnly
+                0x0000000000082e3a                vAHI_SpiRegisterCallback
+                0x0000000000082e43                vAHI_DioSetPullup
+                0x0000000000082e63                u32AHI_WakeTimerRead
+                0x0000000000082e81                u32AHI_WakeTimerCalibrate
+                0x0000000000082eb8                vAHI_WakeTimerStartLarge
+                0x0000000000082f0b                vAHI_WakeTimerEnable
+                0x0000000000082f15                vAHI_Timer4RegisterCallback
+                0x0000000000082f1e                vAHI_Timer3RegisterCallback
+                0x0000000000082f27                vAHI_Timer2RegisterCallback
+                0x0000000000082f30                vAHI_Timer1RegisterCallback
+                0x0000000000082f39                vAHI_Timer0RegisterCallback
+                0x0000000000082f42                vAHI_TimerConfigure
+                0x0000000000082f76                vAHI_TimerStop
+                0x0000000000082f98                vAHI_TimerStartRepeat
+                0x0000000000082fcf                vAHI_TimerClockSelect
+                0x0000000000083005                vAHI_TimerDisable
+                0x0000000000083026                vAHI_TimerEnable
+                0x0000000000083030                bAHI_Clock32MHzStable
+                0x000000000008303d                u16AHI_ReadRandomNumber
+                0x0000000000083047                vAHI_StopRandomNumberGenerator
+                0x0000000000083050                vAHI_StartRandomNumberGenerator
+                0x000000000008307c                bAHI_Set32KhzClockMode
+                0x00000000000831b4                u8AHI_GetSystemClkSpeed
+                0x00000000000831be                bAHI_SetClockRate
+                0x00000000000832c9                vAHI_Sleep
+                0x0000000000083380                vAHI_WatchdogRestart
+                0x000000000008338d                vAHI_WatchdogStop
+                0x00000000000833a4                vAHI_WatchdogStart
+                0x00000000000833c7                vAHI_HighPowerModuleEnable
+                0x00000000000833f6                vAHI_SysCtrlRegisterCallback
+                0x00000000000833ff                vAHI_CpuDoze
+                0x0000000000083577                u32AppApiDefInit
+                0x000000000008362c                vAHI_ProtocolPower
+                0x0000000000083643                vAppApiDefRestoreMacSettings
+                0x0000000000083716                mac_vLPBSleep
+                0x000000000008375a                vTAMDEframeRXtrackingDR
  .text.unlikely
-                0x0000000000084301       0x45 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
- .text          0x0000000000084346      0xc65 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o
-                0x000000000008453e                vACI_IntHandlerAes
-                0x0000000000084563                vAHI_IntHandlerSpiSlave
-                0x000000000008456e                vAHI_IntHandlerSi
-                0x00000000000845b9                vAHI_IntHandlerUart1
-                0x00000000000845e4                vAHI_IntHandlerUart0
-                0x000000000008460f                vAHI_IntHandlerAnalogPeriph
-                0x000000000008462f                TWETERM_iGetC.23250
-                0x000000000008464a                TWETERM_iPutC.23246
-                0x000000000008465b                TWETERM_iPutS.23242
-                0x0000000000084680                TWETERM_vFlush.23216
-                0x0000000000084687                _ftoa.18453.constprop.231
-                0x00000000000849e0                _ntoa_long_long.18427.constprop.228
-                0x0000000000084ab5                _ntoa_long.18415.constprop.233
-                0x0000000000084b82                _ZL15inizializeArrayPcm.1734.constprop.218
-                0x0000000000084b95                vPollClkSource.17091.constprop.208
-                0x0000000000084baa                _ZN3mwx2L115periph_analogue10_adc_startEv.local.7.constprop.182
-                0x0000000000084c93                mwx::L1::periph_analogue::ADC_handler(unsigned long, unsigned long)
-                0x0000000000084cda                bAHI_InitialiseEEPROM
-                0x0000000000084d22                _ZN3mwx2L120periph_pulse_counter10_on_wakeupEv.part.18.20702
-                0x0000000000084d98                operator new(unsigned long)
-                0x0000000000084dbc                _ZN3mwx2L114periph_twowireC1Eh.local.40
-                0x0000000000084df9                _ZN3mwx2L112periph_timer10_on_wakeupEv.local.94
-                0x0000000000084e37                _ZN3mwx2L113serial_parserINS0_10alloc_heapIhEEEC1Ev.local.16
-                0x0000000000084e59                _ZN3mwx2L16twenetC1Ev.local.22
-                0x0000000000084ef0                _ZN3mwx2L110serial_jenC1Eh.local.71
-                0x0000000000084f20                _ZN3mwx2L115periph_analogueC1Ev.local.88
-                0x0000000000084f4b                _ZN3mwx2L112appdefs_virt8on_eventEmRm.local.97
-                0x0000000000084f63                _ZN3mwx2L112appdefs_virt18cbToCoNet_vTxEventERNS0_12packet_ev_txE.local.100
-                0x0000000000084f7b                _ZN3mwx2L112appdefs_virt18cbToCoNet_vRxEventERNS0_9packet_rxE.local.101
-                0x0000000000084f93                _ZN3mwx2L112appdefs_virt19cbToCoNet_vNwkEventERNS0_13packet_ev_nwkE.local.102
- .text          0x0000000000084fab      0x965 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans6.ltrans.o
-                0x0000000000084fab                vTACintRXheader
-                0x00000000000857a6                vTAMCOreqTXinCAP
-                0x00000000000857cc                vTrySendFromDirectCAP.9683
-                0x00000000000857e8                vTrySendFromDirectNoBeacon.9687
-                0x0000000000085814                vTAMCOreqTXnoBeacon
-                0x0000000000085825                vTrySendUnslotted.10228
-                0x000000000008583f                bProcessBeaconRX.10233
- .text          0x0000000000085910      0x913 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans7.ltrans.o
-                0x0000000000085910                vAHI_UartSetClocksPerBit
-                0x000000000008593b                vAHI_Uart1RegisterCallback
-                0x0000000000085944                vAHI_Uart0RegisterCallback
-                0x000000000008594d                vAHI_UartSetRTSCTS
-                0x000000000008596c                u8AHI_UartReadData
-                0x000000000008598f                vAHI_UartWriteData
-                0x00000000000859ab                u8AHI_UartReadLineStatus
-                0x00000000000859ce                vAHI_UartReset
-                0x0000000000085a0a                vAHI_UartDisable
-                0x0000000000085a76                bAHI_UartEnable
-                0x0000000000085b48                vAHI_UartSetInterrupt
-                0x0000000000085ba3                vAHI_UartSetControl
-                0x0000000000085bf4                vAHI_UartSetBaudDivisor
-                0x0000000000085c37                _ZN3mwx2L110serial_jen13_set_baudrateEt.isra.2.20668
-                0x0000000000085cdd                _ZN3mwx2L110serial_jen6_beginEv.part.25.20721
-                0x0000000000085e51                vAHI_SwReset
-                0x0000000000085e81                vAHI_APRegisterCallback
-                0x0000000000085ed5                vAHI_ApConfigure
-                0x0000000000085f5e                cbAppWarmStart
- .text          0x0000000000086223      0x4f9 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans8.ltrans.o
-                0x0000000000086223                bAHI_APRegulatorEnabled
-                0x0000000000086230                bACI_CCMstar
-                0x0000000000086317                cbToCoNet_vRxEvent
-                0x00000000000864b6                cbToCoNet_vNwkEvent
-                0x0000000000086528                cbToCoNet_vTxEvent
-                0x000000000008668e                cbToCoNet_u8HwInt
- .text          0x000000000008671c      0x7d0 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans9.ltrans.o
-                0x000000000008671c                vXCV_IntHandlerPhy
-                0x00000000000867ce                vScanHandleTimer.6701
-                0x00000000000867d3                vXCV_IntHandlerBbc
-                0x0000000000086876                mac_vLPBStartTimer
-                0x000000000008695d                u32AHI_ReadIndexSectorBits.constprop.164
-                0x00000000000869be                vTAIsetCapTime
-                0x00000000000869df                vTAIsetRxEnableTime
-                0x0000000000086a00                vDoGoActive.13392
-                0x0000000000086a22                vTAMRXEint2Fired
-                0x0000000000086a58                _ZN3mwx2L110serial_jen5writeEi.local.109
-                0x0000000000086a89                _ZN3mwx2L16streamINS0_10serial_jenEE7printlnEv.local.154.constprop.236
-                0x0000000000086aa9                _ZN3mwx2L16streamINS0_10serial_jenEE6_printEPKc.local.156.constprop.221
-                0x0000000000086acc                _ZN3mwx2L16streamINS0_10serial_jenEE7printlnEPKc.local.153.constprop.219
-                0x0000000000086add                Delay.17101.constprop.203
-                0x0000000000086b58                vMLMEbeaconNotify
-                0x0000000000086cb6                vMCPSframeReceived
-                0x0000000000086d79                vTAMRXEsetPhy
-                0x0000000000086e3c                vTAHsetPhyState
-                0x0000000000086e6c                vTAMCOint2Fired
-                0x0000000000086e8c                vSetPHYfromMacValue.10226
-                0x0000000000086ebe                vTAMDEint1FiredWaitDR
-                0x0000000000086ecb                vTACsetPHYfromMacValue
- *fill*         0x0000000000086eec        0x0 00
- .text          0x0000000000086eec      0x928 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans10.ltrans.o
-                0x0000000000086eec                vPMICassocReqTO_1.5525
+                0x000000000008379d       0x45 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+ .text          0x00000000000837e2      0x9af C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans4.ltrans.o
+                0x00000000000839b4                vXCV_IntHandlerPhy
+                0x0000000000083a66                vScanHandleTimer.6620
+                0x0000000000083a6b                bTAM_AES_CCMstarPatch
+                0x0000000000083baf                bTAM_AES_CCMstarPatch2006
+                0x0000000000083cb6                vWriteFrame.11847
+                0x0000000000083e8e                bTATsendFrame
+                0x0000000000083ee1                bSendDataRequest.10149
+                0x0000000000083ff3                Delay.17020.constprop.203
+                0x000000000008406e                phy_ePibSet.part.1.8830
+                0x00000000000840b6                u32AHI_ReadIndexSectorBits.constprop.164
+                0x0000000000084117                vTAIsetCapTime
+                0x0000000000084138                vDoGoActive.13311
+                0x000000000008415b                vTAMRXEint2Fired
+ .text          0x0000000000084191      0xc65 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o
+                0x0000000000084389                vACI_IntHandlerAes
+                0x00000000000843ae                vAHI_IntHandlerSpiSlave
+                0x00000000000843b9                vAHI_IntHandlerSi
+                0x0000000000084404                vAHI_IntHandlerUart1
+                0x000000000008442f                vAHI_IntHandlerUart0
+                0x000000000008445a                vAHI_IntHandlerAnalogPeriph
+                0x000000000008447a                TWETERM_iGetC.23169
+                0x0000000000084495                TWETERM_iPutC.23165
+                0x00000000000844a6                TWETERM_iPutS.23161
+                0x00000000000844cb                TWETERM_vFlush.23135
+                0x00000000000844d2                _ftoa.18372.constprop.228
+                0x000000000008482b                _ntoa_long_long.18346.constprop.225
+                0x0000000000084900                _ntoa_long.18334.constprop.230
+                0x00000000000849cd                _ZL15inizializeArrayPcm.1701.constprop.216
+                0x00000000000849e0                vPollClkSource.17010.constprop.208
+                0x00000000000849f5                _ZN3mwx2L115periph_analogue10_adc_startEv.local.7.constprop.182
+                0x0000000000084ade                mwx::L1::periph_analogue::ADC_handler(unsigned long, unsigned long)
+                0x0000000000084b25                bAHI_InitialiseEEPROM
+                0x0000000000084b6d                _ZN3mwx2L120periph_pulse_counter10_on_wakeupEv.part.18.20621
+                0x0000000000084be3                operator new(unsigned long)
+                0x0000000000084c07                _ZN3mwx2L114periph_twowireC1Eh.local.40
+                0x0000000000084c44                _ZN3mwx2L112periph_timer10_on_wakeupEv.local.94
+                0x0000000000084c82                _ZN3mwx2L113serial_parserINS0_10alloc_heapIhEEEC1Ev.local.16
+                0x0000000000084ca4                _ZN3mwx2L16twenetC1Ev.local.22
+                0x0000000000084d3b                _ZN3mwx2L110serial_jenC1Eh.local.71
+                0x0000000000084d6b                _ZN3mwx2L115periph_analogueC1Ev.local.88
+                0x0000000000084d96                _ZN3mwx2L112appdefs_virt8on_eventEmRm.local.97
+                0x0000000000084dae                _ZN3mwx2L112appdefs_virt18cbToCoNet_vTxEventERNS0_12packet_ev_txE.local.100
+                0x0000000000084dc6                _ZN3mwx2L112appdefs_virt18cbToCoNet_vRxEventERNS0_9packet_rxE.local.101
+                0x0000000000084dde                _ZN3mwx2L112appdefs_virt19cbToCoNet_vNwkEventERNS0_13packet_ev_nwkE.local.102
+ *fill*         0x0000000000084df6        0x2 00
+ .text          0x0000000000084df8      0x980 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans6.ltrans.o
+                0x0000000000084df8                vXCV_IntHandlerBbc
+                0x0000000000084f20                loop()
+                0x00000000000852db                mac_vLPBStartTimer
+                0x00000000000853c2                vTAIsetRxEnableTime
+                0x00000000000853e3                vMLMEbeaconNotify
+                0x0000000000085541                vMCPSframeReceived
+                0x0000000000085604                vTAMRXEsetPhy
+                0x00000000000856c7                vTAHsetPhyState
+                0x00000000000856f7                vTAMCOint2Fired
+                0x0000000000085717                vSetPHYfromMacValue.10145
+                0x0000000000085749                vTAMDEint1FiredWaitDR
+                0x0000000000085756                vTACsetPHYfromMacValue
+ .text          0x0000000000085778      0x965 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans7.ltrans.o
+                0x0000000000085778                vTACintRXheader
+                0x0000000000085f73                vTAMCOreqTXinCAP
+                0x0000000000085f99                vTrySendFromDirectCAP.9602
+                0x0000000000085fb5                vTrySendFromDirectNoBeacon.9606
+                0x0000000000085fe1                vTAMCOreqTXnoBeacon
+                0x0000000000085ff2                vTrySendUnslotted.10147
+                0x000000000008600c                bProcessBeaconRX.10152
+ .text          0x00000000000860dd      0x913 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans8.ltrans.o
+                0x00000000000860dd                vAHI_UartSetClocksPerBit
+                0x0000000000086108                vAHI_Uart1RegisterCallback
+                0x0000000000086111                vAHI_Uart0RegisterCallback
+                0x000000000008611a                vAHI_UartSetRTSCTS
+                0x0000000000086139                u8AHI_UartReadData
+                0x000000000008615c                vAHI_UartWriteData
+                0x0000000000086178                u8AHI_UartReadLineStatus
+                0x000000000008619b                vAHI_UartReset
+                0x00000000000861d7                vAHI_UartDisable
+                0x0000000000086243                bAHI_UartEnable
+                0x0000000000086315                vAHI_UartSetInterrupt
+                0x0000000000086370                vAHI_UartSetControl
+                0x00000000000863c1                vAHI_UartSetBaudDivisor
+                0x0000000000086404                _ZN3mwx2L110serial_jen13_set_baudrateEt.isra.2.20587
+                0x00000000000864aa                _ZN3mwx2L110serial_jen6_beginEv.part.25.20640
+                0x000000000008661e                vAHI_SwReset
+                0x000000000008664e                vAHI_APRegisterCallback
+                0x00000000000866a2                vAHI_ApConfigure
+                0x000000000008672b                cbAppWarmStart
+ .text          0x00000000000869f0      0x4f9 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans9.ltrans.o
+                0x00000000000869f0                bAHI_APRegulatorEnabled
+                0x00000000000869fd                bACI_CCMstar
+                0x0000000000086ae4                cbToCoNet_vRxEvent
+                0x0000000000086c83                cbToCoNet_vNwkEvent
+                0x0000000000086cf5                cbToCoNet_vTxEvent
+                0x0000000000086e5b                cbToCoNet_u8HwInt
+ *fill*         0x0000000000086ee9        0x3 00
+ .text          0x0000000000086eec      0x928 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans10.ltrans.o
+                0x0000000000086eec                vPMICassocReqTO_1.5444
                 0x0000000000086f74                vTAM_MCPSdataRequest
                 0x0000000000086fb7                bTACcheckPANconflict
                 0x0000000000087070                vTAMDEstartSync
                 0x00000000000870ef                eTAMselect
                 0x0000000000087230                MAC_pvCtor
-                0x0000000000087616                vDeterminePowerState.10350
+                0x0000000000087616                vDeterminePowerState.10269
                 0x000000000008769a                vTAMDEint1FiredTrackingBeacon
                 0x000000000008773a                vTAMDEint2FiredTrackingDR
                 0x000000000008775f                vTAMDEframeTXtrackingDR
                 0x00000000000877b8                vTAMDEint2FiredPollActive
                 0x00000000000877ec                vTAMDEreqTXnullTrackingCAP
                 0x0000000000087805                vTAM_TxRetryTimer
- .text          0x0000000000087814      0x904 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans11.ltrans.o
+ .text          0x0000000000087814      0x904 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans11.ltrans.o
                 0x0000000000087814                TSV_eStop
                 0x0000000000087911                MAC_vHandleMcpsReqRsp
-                0x000000000008799e                bMCPSframeTXcomplete.8132
-                0x00000000000879f3                bSendSyncLoss.12363
-                0x0000000000087a0b                bPollReqSent.15959
+                0x000000000008799e                bMCPSframeTXcomplete.8051
+                0x00000000000879f3                bSendSyncLoss.12282
+                0x0000000000087a0b                bPollReqSent.15878
                 0x0000000000087a23                bTASsendCommStatusInd
-                0x0000000000087a38                bAssocRespSent.5517
-                0x0000000000087a4b                vPostDcfm.7088
+                0x0000000000087a38                bAssocRespSent.5436
+                0x0000000000087a4b                vPostDcfm.7007
                 0x0000000000087b1f                eTACprocessFrameTXcomplete
-                0x0000000000087c9d                bPMICassocReqSent.5513
-                0x0000000000087d1f                bPMICassocReqPollSent.5528
-                0x0000000000087d73                eWChCChanChgd.7112
-                0x0000000000087f0a                vSetNextChannel.7136
-                0x0000000000087f63                eGenTmrExpiry.7397
-                0x0000000000087fa5                eWEDTEdDone.7400
+                0x0000000000087c9d                bPMICassocReqSent.5432
+                0x0000000000087d1f                bPMICassocReqPollSent.5447
+                0x0000000000087d73                eWChCChanChgd.7031
+                0x0000000000087f0a                vSetNextChannel.7055
+                0x0000000000087f63                eGenTmrExpiry.7316
+                0x0000000000087fa5                eWEDTEdDone.7319
                 0x0000000000087fc9                vTAMDEint1FiredTracking
                 0x0000000000088039                vTAMDEint1FiredSyncReq
-                0x000000000008809e                bPMICdisassocReqSent.5521
- .text          0x0000000000088118      0x7db C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans12.ltrans.o
+                0x000000000008809e                bPMICdisassocReqSent.5440
+ .text          0x0000000000088118      0x7db C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans12.ltrans.o
                 0x0000000000088118                u32AHI_Init
                 0x00000000000881da                vAHI_TickTimerInterval
                 0x00000000000881f8                vAHI_TickTimerIntEnable
@@ -1401,8 +1397,8 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x00000000000884a3                bAHI_ReadMACID
                 0x00000000000884e9                bAHI_ReadUserData
                 0x0000000000088551                cbAppColdStart
- .text          0x00000000000888f3      0x8ae C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans13.ltrans.o
-                0x00000000000888f3                eGenRxHdrDone.7095
+ .text          0x00000000000888f3      0x8ae C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans13.ltrans.o
+                0x00000000000888f3                eGenRxHdrDone.7014
                 0x0000000000088903                TSV_eStart
                 0x00000000000889e7                eTAStransmitRequest
                 0x0000000000088d82                TSV_eOpen
@@ -1413,21 +1409,21 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000000088e52                MAC_vPibSetPanId
                 0x0000000000088e6d                vTAMCOint1Fired
                 0x0000000000088f89                vTAMCOstartBeacon
-                0x0000000000088fc4                vStartStoreValues.9751
-                0x000000000008907b                bStartCallback.9780
+                0x0000000000088fc4                vStartStoreValues.9670
+                0x000000000008907b                bStartCallback.9699
                 0x00000000000890aa                vTAMCOint1FiredCAP
                 0x000000000008911d                MAC_vPibSetShortAddr
                 0x000000000008912b                MAC_psPibGetHandle
                 0x0000000000089132                vAppApiDefSaveMacSettings
                 0x000000000008918f                pvAppApiDefGetMacAddrLocation
                 0x0000000000089198                pvAppApiDefGetMacHandle
- .text          0x00000000000891a1      0x7f9 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans14.ltrans.o
+ .text          0x00000000000891a1      0x7f9 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans14.ltrans.o
                 0x00000000000891a1                mac_vLPBAdjustBeaconOffset
                 0x00000000000891fe                mac_u32LPBGetBeaconTimeout
-                0x0000000000089207                eWEnDTmrExpiry.7085
-                0x0000000000089212                eWEnDEdDone.7082
-                0x000000000008926d                eGenlDontCare.7079
-                0x0000000000089272                eGenlIllegal.6704
+                0x0000000000089207                eWEnDTmrExpiry.7004
+                0x0000000000089212                eWEnDEdDone.7001
+                0x000000000008926d                eGenlDontCare.6998
+                0x0000000000089272                eGenlIllegal.6623
                 0x0000000000089279                u32GetTimer0
                 0x0000000000089280                vSetTimer0
                 0x000000000008928f                setup()
@@ -1446,8 +1442,8 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x00000000000894f3                vTATsetBLE
                 0x000000000008952a                vTATgetFramePayload
                 0x0000000000089547                eTATreadTXstatus
-                0x000000000008958d                vTAHsetPhyStateDirect.part.0.11569
-                0x00000000000895a9                vDoGoOff.13390
+                0x000000000008958d                vTAHsetPhyStateDirect.part.0.11488
+                0x00000000000895a9                vDoGoOff.13309
                 0x00000000000895c3                vMEMreturn
                 0x0000000000089634                vTACinformOriginator
                 0x0000000000089656                pvMEMget
@@ -1455,7 +1451,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x000000000008969c                vTAMCOupdatePendingList
                 0x000000000008976e                vTAMCOsetCoordinator
                 0x0000000000089794                vPhySetChannel
-                0x00000000000897ad                eScanHandleEvt.part.0.7115
+                0x00000000000897ad                eScanHandleEvt.part.0.7034
                 0x00000000000897d6                mac_eDcfmIndPost
                 0x00000000000897f7                mac_psDcfmIndGetBuf
                 0x0000000000089818                vMLMErxEnableConfirm
@@ -1463,13 +1459,13 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x00000000000898ad                vMLMEcommStatusFromFrame
                 0x00000000000898f1                vMLMEsyncLoss
                 0x0000000000089924                vPMICpostFailedAssocDcfm
-                0x000000000008995c                vPMICassocReqTO_2.5532
-                0x0000000000089973                vHandleTofRequest.3638
+                0x000000000008995c                vPMICassocReqTO_2.5451
+                0x0000000000089973                vHandleTofRequest.3557
                 0x0000000000089976                vAppApiDefSetPrbsSeed
- .text          0x000000000008999a      0x9cf C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans15.ltrans.o
-                0x000000000008999a                vExpireHead.16653
-                0x00000000000899ca                _etoa.18473.constprop.229
-                0x0000000000089d75                fctprintf.constprop.226
+ .text          0x000000000008999a      0x9cf C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans15.ltrans.o
+                0x000000000008999a                vExpireHead.16572
+                0x00000000000899ca                _etoa.18392.constprop.226
+                0x0000000000089d75                fctprintf.constprop.223
  *fill*         0x000000000008a369        0x3 00
  .text          0x000000000008a36c       0x24 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__modsi3.o)
                 0x000000000008a36c                __modsi3
@@ -1564,330 +1560,330 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
  .text.vAppQApiPostHwIntT
                 0x000000000008b929       0xbd C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .text.u32AppQApiInitInt_PATCH
-                0x000000000008b9e6        0x9 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000008b9e6        0xa C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
                 0x000000000008b9e6                u32AppQApiInitInt_PATCH
  .text.u32AppQApiInitNetwork
-                0x000000000008b9ef       0x1f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x000000000008b9ef                u32AppQApiInitNetwork
+                0x000000000008b9f0       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000008b9f0                u32AppQApiInitNetwork
  .text.u32AppQApiInitT
-                0x000000000008ba0e      0x1b8 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x000000000008ba0e                u32AppQApiInitT
+                0x000000000008ba10      0x1b8 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000008ba10                u32AppQApiInitT
  .text.psAppQApiReadMlmeIndT
-                0x000000000008bbc6        0x9 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x000000000008bbc6                psAppQApiReadMlmeIndT
+                0x000000000008bbc8        0x9 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000008bbc8                psAppQApiReadMlmeIndT
  .text.psAppQApiReadMcpsIndT
-                0x000000000008bbcf        0x9 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x000000000008bbcf                psAppQApiReadMcpsIndT
+                0x000000000008bbd1        0x9 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000008bbd1                psAppQApiReadMcpsIndT
  .text.psAppQApiReadHwIndT
-                0x000000000008bbd8        0x9 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x000000000008bbd8                psAppQApiReadHwIndT
+                0x000000000008bbda        0x9 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000008bbda                psAppQApiReadHwIndT
  .text.vAppQApiReturnMlmeIndBufferT
-                0x000000000008bbe1        0xb C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x000000000008bbe1                vAppQApiReturnMlmeIndBufferT
+                0x000000000008bbe3        0xb C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000008bbe3                vAppQApiReturnMlmeIndBufferT
  .text.vAppQApiReturnMcpsIndBufferT
-                0x000000000008bbec        0xb C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x000000000008bbec                vAppQApiReturnMcpsIndBufferT
+                0x000000000008bbee        0xb C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000008bbee                vAppQApiReturnMcpsIndBufferT
  .text.vAppQApiReturnHwIndBufferT
-                0x000000000008bbf7        0xb C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x000000000008bbf7                vAppQApiReturnHwIndBufferT
+                0x000000000008bbf9        0xb C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000008bbf9                vAppQApiReturnHwIndBufferT
  .text.PRSEV_vProcessEv_core
-                0x000000000008bc02       0xaf C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bc04       0xaf C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
  .text.PRSEV_vInit
-                0x000000000008bcb1       0x4a C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x000000000008bcb1                PRSEV_vInit
+                0x000000000008bcb3       0x4a C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bcb3                PRSEV_vInit
  .text.PRSEV_u8Register
-                0x000000000008bcfb       0x3e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x000000000008bcfb                PRSEV_u8Register
+                0x000000000008bcfd       0x3e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bcfd                PRSEV_u8Register
  .text.PRSEV_vSetStateAll
-                0x000000000008bd39       0x3b C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x000000000008bd39                PRSEV_vSetStateAll
+                0x000000000008bd3b       0x3b C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bd3b                PRSEV_vSetStateAll
  .text.PRSEV_vSetState
-                0x000000000008bd74       0x13 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x000000000008bd74                PRSEV_vSetState
+                0x000000000008bd76       0x13 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bd76                PRSEV_vSetState
  .text.PRSEV_vProcessEvPost
-                0x000000000008bd87       0x35 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x000000000008bd87                PRSEV_vProcessEvPost
+                0x000000000008bd89       0x35 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bd89                PRSEV_vProcessEvPost
  .text._PRSEV_vProcessEv
-                0x000000000008bdbc        0xf C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x000000000008bdbc                _PRSEV_vProcessEv
+                0x000000000008bdbe        0xf C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bdbe                _PRSEV_vProcessEv
  .text._PRSEV_vProcessEvSingle
-                0x000000000008bdcb        0xd C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x000000000008bdcb                _PRSEV_vProcessEvSingle
+                0x000000000008bdcd        0xd C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bdcd                _PRSEV_vProcessEvSingle
  .text._PRSEV_vProcessEvSingleH
-                0x000000000008bdd8        0xf C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x000000000008bdd8                _PRSEV_vProcessEvSingleH
+                0x000000000008bdda        0xf C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bdda                _PRSEV_vProcessEvSingleH
  .text.ToCoNet_Event_StateExec
-                0x000000000008bde7       0x37 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x000000000008bde7                ToCoNet_Event_StateExec
+                0x000000000008bde9       0x37 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x000000000008bde9                ToCoNet_Event_StateExec
  .text.AppColdStart
-                0x000000000008be1e      0x4de C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
-                0x000000000008be1e                AppColdStart
+                0x000000000008be20      0x4de C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x000000000008be20                AppColdStart
  .text._ToCoNet_vMacInit
-                0x000000000008c2fc       0x26 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
-                0x000000000008c2fc                _ToCoNet_vMacInit
+                0x000000000008c2fe       0x26 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x000000000008c2fe                _ToCoNet_vMacInit
  .text.AppWarmStart
-                0x000000000008c322       0x93 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
-                0x000000000008c322                AppWarmStart
+                0x000000000008c324       0x93 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x000000000008c324                AppWarmStart
  .text._ToCoNet_bRfChChannel
-                0x000000000008c3b5       0x97 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
-                0x000000000008c3b5                _ToCoNet_bRfChChannel
+                0x000000000008c3b7       0x97 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x000000000008c3b7                _ToCoNet_bRfChChannel
  .text._ToCoNet_vRfConfig
-                0x000000000008c44c       0xb9 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
-                0x000000000008c44c                _ToCoNet_vRfConfig
+                0x000000000008c44e       0xb9 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x000000000008c44e                _ToCoNet_vRfConfig
  .text.ToCoNet_u32GetSerialOnBoot
-                0x000000000008c505       0x43 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(getMacAddr.o)
-                0x000000000008c505                ToCoNet_u32GetSerialOnBoot
+                0x000000000008c507       0x43 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(getMacAddr.o)
+                0x000000000008c507                ToCoNet_u32GetSerialOnBoot
  .text.Mac_vInit
-                0x000000000008c548       0x4c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008c548                Mac_vInit
+                0x000000000008c54a       0x4c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000008c54a                Mac_vInit
  .text.Mac_bRxQueueReg
-                0x000000000008c594       0x38 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008c594                Mac_bRxQueueReg
+                0x000000000008c596       0x38 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000008c596                Mac_bRxQueueReg
  .text.bEncodeAES
-                0x000000000008c5cc       0xae C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008c5cc                bEncodeAES
+                0x000000000008c5ce       0xae C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000008c5ce                bEncodeAES
  .text.Mac_bTransmit
-                0x000000000008c67a      0x21c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008c67a                Mac_bTransmit
+                0x000000000008c67c      0x21c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000008c67c                Mac_bTransmit
  .text.bDecodeAES
-                0x000000000008c896       0xc5 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008c896                bDecodeAES
+                0x000000000008c898       0xc5 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000008c898                bDecodeAES
  .text.Mac_vHandleMcpsDataInd
-                0x000000000008c95b      0x2de C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008c95b                Mac_vHandleMcpsDataInd
+                0x000000000008c95d      0x2de C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000008c95d                Mac_vHandleMcpsDataInd
  .text.Mac_vReset
-                0x000000000008cc39       0x1d C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008cc39                Mac_vReset
+                0x000000000008cc3b       0x1d C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000008cc3b                Mac_vReset
  .text.Mac_vSetRetry
-                0x000000000008cc56       0x18 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008cc56                Mac_vSetRetry
+                0x000000000008cc58       0x18 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000008cc58                Mac_vSetRetry
  .text.Mac_vSetCCA
-                0x000000000008cc6e       0x29 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x000000000008cc6e                Mac_vSetCCA
+                0x000000000008cc70       0x29 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000008cc70                Mac_vSetCCA
  .text.bAES_CCM_DecodeKey
-                0x000000000008cc97       0x8e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
-                0x000000000008cc97                bAES_CCM_DecodeKey
+                0x000000000008cc99       0x8e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
+                0x000000000008cc99                bAES_CCM_DecodeKey
  .text.bAES_CCM_EncodeKey
-                0x000000000008cd25       0x7f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
-                0x000000000008cd25                bAES_CCM_EncodeKey
+                0x000000000008cd27       0x7f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
+                0x000000000008cd27                bAES_CCM_EncodeKey
  .text.bAES_CCM_KeyReg
-                0x000000000008cda4       0x3f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
-                0x000000000008cda4                bAES_CCM_KeyReg
+                0x000000000008cda6       0x3f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
+                0x000000000008cda6                bAES_CCM_KeyReg
  .text.bAES_CCM_Encode
-                0x000000000008cde3       0x1e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
-                0x000000000008cde3                bAES_CCM_Encode
+                0x000000000008cde5       0x1e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
+                0x000000000008cde5                bAES_CCM_Encode
  .text.bAES_CCM_Decode
-                0x000000000008ce01       0x1e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
-                0x000000000008ce01                bAES_CCM_Decode
+                0x000000000008ce03       0x1e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
+                0x000000000008ce03                bAES_CCM_Decode
  .text.vHandlerPatch
-                0x000000000008ce1f       0x37 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(no_ack_handler.o)
+                0x000000000008ce21       0x37 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(no_ack_handler.o)
  .text.vInstallNoAckHandler
-                0x000000000008ce56       0x2a C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(no_ack_handler.o)
-                0x000000000008ce56                vInstallNoAckHandler
+                0x000000000008ce58       0x2a C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(no_ack_handler.o)
+                0x000000000008ce58                vInstallNoAckHandler
  .text.SERIAL_vTxReady
-                0x000000000008ce80       0x2f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
-                0x000000000008ce80                SERIAL_vTxReady
- .text.vRxChar  0x000000000008ceaf       0x35 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
+                0x000000000008ce82       0x2f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
+                0x000000000008ce82                SERIAL_vTxReady
+ .text.vRxChar  0x000000000008ceb1       0x35 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
  .text.SERIAL_vInitEx
-                0x000000000008cee4       0x78 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
-                0x000000000008cee4                SERIAL_vInitEx
+                0x000000000008cee6       0x78 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
+                0x000000000008cee6                SERIAL_vInitEx
  .text.SERIAL_bTxChar
-                0x000000000008cf5c       0x8e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
-                0x000000000008cf5c                SERIAL_bTxChar
+                0x000000000008cf5e       0x8e C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
+                0x000000000008cf5e                SERIAL_bTxChar
  .text.SERIAL_i16RxChar
-                0x000000000008cfea       0x41 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
-                0x000000000008cfea                SERIAL_i16RxChar
+                0x000000000008cfec       0x41 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
+                0x000000000008cfec                SERIAL_i16RxChar
  .text.SERIAL_bRxQueueEmpty
-                0x000000000008d02b       0x17 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
-                0x000000000008d02b                SERIAL_bRxQueueEmpty
+                0x000000000008d02d       0x17 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
+                0x000000000008d02d                SERIAL_bRxQueueEmpty
  .text.SERIAL_vFlush
-                0x000000000008d042       0x49 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
-                0x000000000008d042                SERIAL_vFlush
+                0x000000000008d044       0x49 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
+                0x000000000008d044                SERIAL_vFlush
  .text.UART_vHandleUartInterrupt
-                0x000000000008d08b       0x70 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+                0x000000000008d08d       0x70 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
  .text.UART_vInit
-                0x000000000008d0fb      0x1ad C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
-                0x000000000008d0fb                UART_vInit
+                0x000000000008d0fd      0x1ad C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+                0x000000000008d0fd                UART_vInit
  .text.UART_vRtsStopFlow
-                0x000000000008d2a8       0x1f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
-                0x000000000008d2a8                UART_vRtsStopFlow
+                0x000000000008d2aa       0x1f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+                0x000000000008d2aa                UART_vRtsStopFlow
  .text.UART_vRtsStartFlow
-                0x000000000008d2c7       0x1f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
-                0x000000000008d2c7                UART_vRtsStartFlow
+                0x000000000008d2c9       0x1f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+                0x000000000008d2c9                UART_vRtsStartFlow
  .text.UART_vTxChar
-                0x000000000008d2e6        0x3 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
-                0x000000000008d2e6                UART_vTxChar
+                0x000000000008d2e8        0x3 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+                0x000000000008d2e8                UART_vTxChar
  .text.UART_bTxReady
-                0x000000000008d2e9        0xc C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
-                0x000000000008d2e9                UART_bTxReady
+                0x000000000008d2eb        0xc C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+                0x000000000008d2eb                UART_bTxReady
  .text.UART_vSetTxInterrupt
-                0x000000000008d2f5       0x17 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
-                0x000000000008d2f5                UART_vSetTxInterrupt
+                0x000000000008d2f7       0x17 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+                0x000000000008d2f7                UART_vSetTxInterrupt
  .text.QUEUE__vInit
-                0x000000000008d30c       0x12 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
-                0x000000000008d30c                QUEUE__vInit
+                0x000000000008d30e       0x12 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
+                0x000000000008d30e                QUEUE__vInit
  .text.QUEUE__vAddItem
-                0x000000000008d31e       0x71 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
-                0x000000000008d31e                QUEUE__vAddItem
+                0x000000000008d320       0x71 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
+                0x000000000008d320                QUEUE__vAddItem
  .text.QUEUE__u8RemoveItem
-                0x000000000008d38f       0x6c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
-                0x000000000008d38f                QUEUE__u8RemoveItem
+                0x000000000008d391       0x6c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
+                0x000000000008d391                QUEUE__u8RemoveItem
  .text.QUEUE__vFlush
-                0x000000000008d3fb       0x1f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
-                0x000000000008d3fb                QUEUE__vFlush
+                0x000000000008d3fd       0x1f C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
+                0x000000000008d3fd                QUEUE__vFlush
  .text.QUEUE__u16Count
-                0x000000000008d41a        0x6 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
-                0x000000000008d41a                QUEUE__u16Count
+                0x000000000008d41c        0x6 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ByteQueue.o)
+                0x000000000008d41c                QUEUE__u16Count
  .text.u8CCITT8
-                0x000000000008d420       0x26 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ccitt8.o)
-                0x000000000008d420                u8CCITT8
+                0x000000000008d422       0x26 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(ccitt8.o)
+                0x000000000008d422                u8CCITT8
  .text.s_div_by
-                0x000000000008d446       0x31 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(utils.o)
-                0x000000000008d446                s_div_by
- *fill*         0x000000000008d477        0x1 00
+                0x000000000008d448       0x31 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(utils.o)
+                0x000000000008d448                s_div_by
+ *fill*         0x000000000008d479        0x3 00
  .text.vTimerConfig
-                0x000000000008d478      0x164 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(utils.o)
-                0x000000000008d478                vTimerConfig
+                0x000000000008d47c      0x164 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(utils.o)
+                0x000000000008d47c                vTimerConfig
  .text.vTimerStart
-                0x000000000008d5dc       0x8b C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(utils.o)
-                0x000000000008d5dc                vTimerStart
+                0x000000000008d5e0       0x8b C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(utils.o)
+                0x000000000008d5e0                vTimerStart
  .text.vMicroSyscall
-                0x000000000008d667       0x17 C:/Users/hirar/Documents/MWSTAGE/MWSDK/ChipLib/SW4063V1416/Components/Library\libMicroSpecific_JN516x.a(MicroSyscall_ba.o)
-                0x000000000008d667                vMicroSyscall
+                0x000000000008d66b       0x17 C:/Users/hirar/Documents/MWSTAGE/MWSDK/ChipLib/SW4063V1416/Components/Library\libMicroSpecific_JN516x.a(MicroSyscall_ba.o)
+                0x000000000008d66b                vMicroSyscall
  .text.ToCoNet_vReg_mod_TxRxQueueMid
-                0x000000000008d67e       0x81 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
-                0x000000000008d67e                ToCoNet_vReg_mod_TxRxQueueMid
- .text          0x000000000008d6ff       0x25 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-memcmp.o)
-                0x000000000008d6ff                memcmp
- .text          0x000000000008d724       0x19 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-memcpy.o)
- .text          0x000000000008d73d       0x12 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-memset.o)
-                0x000000000008d73d                memset
- .text          0x000000000008d74f       0x12 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strlen.o)
-                0x000000000008d74f                strlen
- *fill*         0x000000000008d761        0x3 00
- .text          0x000000000008d764      0xce4 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strtod.o)
-                0x000000000008d79b                _strtod_r
-                0x000000000008e40b                strtod
-                0x000000000008e41a                strtof
- .text          0x000000000008e448      0x13d c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strtoul.o)
-                0x000000000008e448                _strtoul_r
-                0x000000000008e573                strtoul
- .text          0x000000000008e585      0x594 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-gdtoa-gethex.o)
-                0x000000000008e627                __hexdig_init
-                0x000000000008e650                __gethex
- .text          0x000000000008eb19      0x160 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-gdtoa-hexnan.o)
-                0x000000000008eb46                __hexnan
- .text          0x000000000008ec79       0x86 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-locale.o)
-                0x000000000008ec79                _setlocale_r
-                0x000000000008ecbf                __locale_charset
-                0x000000000008ecc8                __locale_mb_cur_max
-                0x000000000008ecd1                __locale_msgcharset
-                0x000000000008ecda                __locale_cjk_lang
-                0x000000000008ecdf                _localeconv_r
-                0x000000000008ece8                setlocale
-                0x000000000008ecf6                localeconv
- .text          0x000000000008ecff      0x8bb c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mprec.o)
-                0x000000000008ecff                _Balloc
-                0x000000000008ed57                _Bfree
-                0x000000000008ed71                __multadd
-                0x000000000008edfe                __s2b
-                0x000000000008ee8b                __hi0bits
-                0x000000000008eee0                __lo0bits
-                0x000000000008ef59                __i2b
-                0x000000000008ef6e                __multiply
-                0x000000000008f0af                __pow5mult
-                0x000000000008f12e                __lshift
-                0x000000000008f1e2                __mcmp
-                0x000000000008f221                __mdiff
-                0x000000000008f303                __ulp
-                0x000000000008f347                __b2d
-                0x000000000008f3ea                __d2b
-                0x000000000008f4a9                __ratio
-                0x000000000008f4f9                _mprec_log10
-                0x000000000008f52d                __copybits
-                0x000000000008f566                __any_on
- .text          0x000000000008f5ba        0x9 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-sf_nan.o)
-                0x000000000008f5ba                nanf
- .text          0x000000000008f5c3       0x5c c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-s_fpclassify.o)
-                0x000000000008f5c3                __fpclassifyd
- .text          0x000000000008f61f       0x25 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strcmp.o)
-                0x000000000008f61f                strcmp
- .text          0x000000000008f644       0x38 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strncmp.o)
-                0x000000000008f644                strncmp
- .text          0x000000000008f67c       0x64 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-callocr.o)
-                0x000000000008f67c                _calloc_r
- .text          0x000000000008f6e0      0x4ba c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mallocr.o)
-                0x000000000008f6e0                _malloc_r
- .text          0x000000000008fb9a        0x6 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mlock.o)
-                0x000000000008fb9a                __malloc_lock
-                0x000000000008fb9d                __malloc_unlock
- .text          0x000000000008fba0       0x23 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-sbrkr.o)
-                0x000000000008fba0                _sbrk_r
- .text          0x000000000008fbc3      0x270 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-freer.o)
-                0x000000000008fbc3                _malloc_trim_r
-                0x000000000008fc77                _free_r
- .text          0x000000000008fe33      0x1d0 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-glue.o)
-                0x000000000008fe33                _read
-                0x000000000008fe4d                _write
-                0x000000000008fe67                _open
-                0x000000000008fe81                _close
-                0x000000000008fe9b                _isatty
-                0x000000000008feb6                _lseek
-                0x000000000008fed1                _fstat
-                0x000000000008feec                _times
-                0x000000000008ff07                _time
-                0x000000000008ff22                _creat
-                0x000000000008ff3d                _link
-                0x000000000008ff58                _unlink
-                0x000000000008ff73                _fork
-                0x000000000008ff8d                isatty
-                0x000000000008ff8f                __unlink
-                0x000000000008ff91                _exit
-                0x000000000008ff95                _kill
-                0x000000000008ff99                _getpid
-                0x000000000008ff9e                _sbrk
- .text          0x0000000000090003        0x9 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-errno.o)
-                0x0000000000090003                __errno
- *fill*         0x000000000009000c        0x0 00
- .text          0x000000000009000c      0x204 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__udivsi3.o)
-                0x000000000009000c                __udivsi3
- .text          0x0000000000090210       0x30 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__divsi3.o)
-                0x0000000000090210                __divsi3
- .text          0x0000000000090240      0x1b0 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__umodsi3.o)
-                0x0000000000090240                __umodsi3
- .text          0x00000000000903f0       0x39 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(_fixunsdfsi.o)
-                0x00000000000903f0                __fixunsdfsi
- .text          0x0000000000090429      0x350 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(_udivdi3.o)
-                0x0000000000090429                __udivdi3
- .text          0x0000000000090779      0x682 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(adddf3.o)
-                0x0000000000090779                __adddf3
- *fill*         0x0000000000090dfb        0x1 00
- .text          0x0000000000090dfc      0x5c8 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(divdf3.o)
-                0x0000000000090dfc                __divdf3
- .text          0x00000000000913c4       0x7f c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(eqdf2.o)
-                0x00000000000913c4                __nedf2
-                0x00000000000913c4                __eqdf2
- .text          0x0000000000091443       0xca c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(gedf2.o)
-                0x0000000000091443                __gedf2
-                0x0000000000091443                __gtdf2
- .text          0x000000000009150d       0xcb c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(ledf2.o)
-                0x000000000009150d                __ledf2
-                0x000000000009150d                __ltdf2
- .text          0x00000000000915d8      0x488 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(muldf3.o)
-                0x00000000000915d8                __muldf3
- .text          0x0000000000091a60      0x693 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(subdf3.o)
-                0x0000000000091a60                __subdf3
- .text          0x00000000000920f3       0x64 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(fixdfsi.o)
-                0x00000000000920f3                __fixdfsi
- .text          0x0000000000092157       0x61 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(floatsidf.o)
-                0x0000000000092157                __floatsidf
- .text          0x00000000000921b8       0x4f c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(floatunsidf.o)
-                0x00000000000921b8                __floatunsidf
- .text          0x0000000000092207      0x13e c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(truncdfsf2.o)
-                0x0000000000092207                __truncdfsf2
-                0x0000000000092345                _flash_end = ABSOLUTE (.)
+                0x000000000008d682       0x81 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
+                0x000000000008d682                ToCoNet_vReg_mod_TxRxQueueMid
+ .text          0x000000000008d703       0x25 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-memcmp.o)
+                0x000000000008d703                memcmp
+ .text          0x000000000008d728       0x19 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-memcpy.o)
+ .text          0x000000000008d741       0x12 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-memset.o)
+                0x000000000008d741                memset
+ .text          0x000000000008d753       0x12 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strlen.o)
+                0x000000000008d753                strlen
+ *fill*         0x000000000008d765        0x3 00
+ .text          0x000000000008d768      0xce4 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strtod.o)
+                0x000000000008d79f                _strtod_r
+                0x000000000008e40f                strtod
+                0x000000000008e41e                strtof
+ .text          0x000000000008e44c      0x13d c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strtoul.o)
+                0x000000000008e44c                _strtoul_r
+                0x000000000008e577                strtoul
+ .text          0x000000000008e589      0x594 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-gdtoa-gethex.o)
+                0x000000000008e62b                __hexdig_init
+                0x000000000008e654                __gethex
+ .text          0x000000000008eb1d      0x160 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-gdtoa-hexnan.o)
+                0x000000000008eb4a                __hexnan
+ .text          0x000000000008ec7d       0x86 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-locale.o)
+                0x000000000008ec7d                _setlocale_r
+                0x000000000008ecc3                __locale_charset
+                0x000000000008eccc                __locale_mb_cur_max
+                0x000000000008ecd5                __locale_msgcharset
+                0x000000000008ecde                __locale_cjk_lang
+                0x000000000008ece3                _localeconv_r
+                0x000000000008ecec                setlocale
+                0x000000000008ecfa                localeconv
+ .text          0x000000000008ed03      0x8bb c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mprec.o)
+                0x000000000008ed03                _Balloc
+                0x000000000008ed5b                _Bfree
+                0x000000000008ed75                __multadd
+                0x000000000008ee02                __s2b
+                0x000000000008ee8f                __hi0bits
+                0x000000000008eee4                __lo0bits
+                0x000000000008ef5d                __i2b
+                0x000000000008ef72                __multiply
+                0x000000000008f0b3                __pow5mult
+                0x000000000008f132                __lshift
+                0x000000000008f1e6                __mcmp
+                0x000000000008f225                __mdiff
+                0x000000000008f307                __ulp
+                0x000000000008f34b                __b2d
+                0x000000000008f3ee                __d2b
+                0x000000000008f4ad                __ratio
+                0x000000000008f4fd                _mprec_log10
+                0x000000000008f531                __copybits
+                0x000000000008f56a                __any_on
+ .text          0x000000000008f5be        0x9 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-sf_nan.o)
+                0x000000000008f5be                nanf
+ .text          0x000000000008f5c7       0x5c c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-s_fpclassify.o)
+                0x000000000008f5c7                __fpclassifyd
+ .text          0x000000000008f623       0x25 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strcmp.o)
+                0x000000000008f623                strcmp
+ .text          0x000000000008f648       0x38 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-strncmp.o)
+                0x000000000008f648                strncmp
+ .text          0x000000000008f680       0x64 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-callocr.o)
+                0x000000000008f680                _calloc_r
+ .text          0x000000000008f6e4      0x4ba c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mallocr.o)
+                0x000000000008f6e4                _malloc_r
+ .text          0x000000000008fb9e        0x6 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mlock.o)
+                0x000000000008fb9e                __malloc_lock
+                0x000000000008fba1                __malloc_unlock
+ .text          0x000000000008fba4       0x23 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-sbrkr.o)
+                0x000000000008fba4                _sbrk_r
+ .text          0x000000000008fbc7      0x270 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-freer.o)
+                0x000000000008fbc7                _malloc_trim_r
+                0x000000000008fc7b                _free_r
+ .text          0x000000000008fe37      0x1d0 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-glue.o)
+                0x000000000008fe37                _read
+                0x000000000008fe51                _write
+                0x000000000008fe6b                _open
+                0x000000000008fe85                _close
+                0x000000000008fe9f                _isatty
+                0x000000000008feba                _lseek
+                0x000000000008fed5                _fstat
+                0x000000000008fef0                _times
+                0x000000000008ff0b                _time
+                0x000000000008ff26                _creat
+                0x000000000008ff41                _link
+                0x000000000008ff5c                _unlink
+                0x000000000008ff77                _fork
+                0x000000000008ff91                isatty
+                0x000000000008ff93                __unlink
+                0x000000000008ff95                _exit
+                0x000000000008ff99                _kill
+                0x000000000008ff9d                _getpid
+                0x000000000008ffa2                _sbrk
+ .text          0x0000000000090007        0x9 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-errno.o)
+                0x0000000000090007                __errno
+ *fill*         0x0000000000090010        0x0 00
+ .text          0x0000000000090010      0x204 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__udivsi3.o)
+                0x0000000000090010                __udivsi3
+ .text          0x0000000000090214       0x30 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__divsi3.o)
+                0x0000000000090214                __divsi3
+ .text          0x0000000000090244      0x1b0 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(__umodsi3.o)
+                0x0000000000090244                __umodsi3
+ .text          0x00000000000903f4       0x39 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(_fixunsdfsi.o)
+                0x00000000000903f4                __fixunsdfsi
+ .text          0x000000000009042d      0x350 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(_udivdi3.o)
+                0x000000000009042d                __udivdi3
+ .text          0x000000000009077d      0x682 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(adddf3.o)
+                0x000000000009077d                __adddf3
+ *fill*         0x0000000000090dff        0x1 00
+ .text          0x0000000000090e00      0x5c8 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(divdf3.o)
+                0x0000000000090e00                __divdf3
+ .text          0x00000000000913c8       0x7f c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(eqdf2.o)
+                0x00000000000913c8                __nedf2
+                0x00000000000913c8                __eqdf2
+ .text          0x0000000000091447       0xca c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(gedf2.o)
+                0x0000000000091447                __gedf2
+                0x0000000000091447                __gtdf2
+ .text          0x0000000000091511       0xcb c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(ledf2.o)
+                0x0000000000091511                __ledf2
+                0x0000000000091511                __ltdf2
+ .text          0x00000000000915dc      0x488 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(muldf3.o)
+                0x00000000000915dc                __muldf3
+ .text          0x0000000000091a64      0x693 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(subdf3.o)
+                0x0000000000091a64                __subdf3
+ .text          0x00000000000920f7       0x64 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(fixdfsi.o)
+                0x00000000000920f7                __fixdfsi
+ .text          0x000000000009215b       0x61 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(floatsidf.o)
+                0x000000000009215b                __floatsidf
+ .text          0x00000000000921bc       0x4f c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(floatunsidf.o)
+                0x00000000000921bc                __floatunsidf
+ .text          0x000000000009220b      0x13e c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(truncdfsf2.o)
+                0x000000000009220b                __truncdfsf2
+                0x0000000000092349                _flash_end = ABSOLUTE (.)
 
-.rela.dyn       0x0000000000092348        0x0
+.rela.dyn       0x000000000009234c        0x0
  .rela.text.vProcessIncomingHwEvent
                 0x0000000000000000        0x0 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
  .rela.text.u8HwEventHandler
@@ -2039,16 +2035,16 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
  .rela.data     0x0000000000000000        0x0 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
                 0x000000000400004c                . = ORIGIN (ram)
 
-.data           0x000000000400004c      0x900 load address 0x0000000000092348
+.data           0x000000000400004c      0x900 load address 0x000000000009234c
                 0x000000000400004c                _ram_data_start = ABSOLUTE (.)
  *(.data*)
  .data.initinboot
-                0x000000000400004c        0x8 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
- .data          0x0000000004000054        0x4 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o
+                0x000000000400004c        0x8 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+ .data          0x0000000004000054        0x4 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o
                 0x0000000004000054                u32HeapStart
- .data          0x0000000004000058        0x1 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans10.ltrans.o
+ .data          0x0000000004000058        0x1 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans10.ltrans.o
  .data.initinboot
-                0x0000000004000059        0x1 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans10.ltrans.o
+                0x0000000004000059        0x1 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans10.ltrans.o
                 0x0000000004000059                gMAC_u8MaxBuffers
  .data.u16last_INT_tick.5268
                 0x000000000400005a        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
@@ -2074,287 +2070,285 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x000000000400094c                . = ALIGN (0x4)
                 0x000000000400094c                _ram_data_end = ABSOLUTE (.)
 
-.bss            0x000000000400094c     0x1c80 load address 0x0000000000092c48
+.bss            0x000000000400094c     0x1c7c load address 0x0000000000092c4c
                 0x000000000400094c                _bss_start = ABSOLUTE (.)
  *(.bss*)
- .bss           0x000000000400094c        0x4 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans0.ltrans.o
- .bss           0x0000000004000950       0x40 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans1.ltrans.o
+ .bss           0x000000000400094c        0x4 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans0.ltrans.o
+ .bss           0x0000000004000950       0x24 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans1.ltrans.o
+                0x0000000004000950                sAssocSecurity.6061
+                0x000000000400095c                bScanInProgress.7359
+                0x000000000400095d                g_bJenieBackwardsCompatibilityMode
+                0x000000000400095e                u8AssocResponsesInProgress.6060
+                0x0000000004000960                prMcpsRequest.2444
+                0x0000000004000964                g_pvMac
+                0x0000000004000968                prMlmeRequest.2443
+ .bss.initinboot
+                0x0000000004000974      0x1bc C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans1.ltrans.o
+                0x0000000004000974                g_sMac
+ .bss.initinboot
+                0x0000000004000b30        0x4 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans2.ltrans.o
+ .bss           0x0000000004000b34       0x90 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+                0x0000000004000b34                s_sTimerList
+                0x0000000004000b44                sStoredMacData.2648
+                0x0000000004000b60                g_sXcv
+                0x0000000004000b64                au16TimerSettings.17351
+                0x0000000004000b70                apfTimerAppCallback.17402
+                0x0000000004000b84                g_sLP
+                0x0000000004000bc0                prSpiAppCallback.17855
+ .bss.initinboot
+                0x0000000004000bc4        0x4 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+                0x0000000004000bc4                prSysCtrlAppCallback.17193
  .bss.dontinitinboot
-                0x0000000004000990        0x1 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans1.ltrans.o
- *fill*         0x0000000004000991        0x3 00
- .bss           0x0000000004000994       0x24 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans2.ltrans.o
-                0x0000000004000994                sAssocSecurity.6142
-                0x00000000040009a0                bScanInProgress.7440
-                0x00000000040009a1                g_bJenieBackwardsCompatibilityMode
-                0x00000000040009a2                u8AssocResponsesInProgress.6141
-                0x00000000040009a4                prMcpsRequest.2525
-                0x00000000040009a8                g_pvMac
-                0x00000000040009ac                prMlmeRequest.2524
- .bss.initinboot
-                0x00000000040009b8      0x1bc C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans2.ltrans.o
-                0x00000000040009b8                g_sMac
- .bss.initinboot
-                0x0000000004000b74        0x4 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans3.ltrans.o
- .bss           0x0000000004000b78       0x90 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
-                0x0000000004000b78                s_sTimerList
-                0x0000000004000b88                sStoredMacData.2729
-                0x0000000004000ba4                g_sXcv
-                0x0000000004000ba8                au16TimerSettings.17432
-                0x0000000004000bb4                apfTimerAppCallback.17483
-                0x0000000004000bc8                g_sLP
-                0x0000000004000c04                prSpiAppCallback.17936
- .bss.initinboot
-                0x0000000004000c08        0x4 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
-                0x0000000004000c08                prSysCtrlAppCallback.17274
+                0x0000000004000bc8        0x8 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+ .bss           0x0000000004000bd0        0x1 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans4.ltrans.o
+                0x0000000004000bd0                gbTimeOutFlag.17189
  .bss.dontinitinboot
-                0x0000000004000c0c        0x8 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
- .bss           0x0000000004000c14        0x2 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o
- *fill*         0x0000000004000c16        0x2 00
+                0x0000000004000bd1        0x1 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans4.ltrans.o
+ .bss           0x0000000004000bd2        0x2 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o
  .bss.dontinitinboot
-                0x0000000004000c18        0x4 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o
- .bss           0x0000000004000c1c        0x8 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans6.ltrans.o
- .bss           0x0000000004000c24       0x18 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans7.ltrans.o
-                0x0000000004000c24                bIntEnableFlag.22458
-                0x0000000004000c28                prApAppCallback.22461
-                0x0000000004000c2c                prUart0AppCallback.22831
-                0x0000000004000c30                prUart1AppCallback.22832
- .bss           0x0000000004000c3c       0x6c C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans9.ltrans.o
-                0x0000000004000c3c                bTxEventQueued.13258
-                0x0000000004000c3d                u8TxEventStatus.13259
-                0x0000000004000c3e                gbTimeOutFlag.17270
-                0x0000000004000c40                sAppHousekeeping
-                0x0000000004000c58                sIntrct_Context.18237
+                0x0000000004000bd4        0x4 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o
+ .bss           0x0000000004000bd8       0xac C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans6.ltrans.o
+                0x0000000004000bd8                bTxEventQueued.13177
+                0x0000000004000bd9                u8TxEventStatus.13178
+                0x0000000004000bdc                sAppHousekeeping
+                0x0000000004000bf4                sIntrct_Context.18156
+ .bss           0x0000000004000c84        0x8 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans7.ltrans.o
+ .bss           0x0000000004000c8c       0x18 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans8.ltrans.o
+                0x0000000004000c8c                bIntEnableFlag.22377
+                0x0000000004000c90                prApAppCallback.22380
+                0x0000000004000c94                prUart0AppCallback.22750
+                0x0000000004000c98                prUart1AppCallback.22751
  .bss.initinboot
-                0x0000000004000ca8        0x8 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans10.ltrans.o
-                0x0000000004000ca8                g_u32MacAddrLocation
-                0x0000000004000cac                prvUserTxStartedCallback
- .bss           0x0000000004000cb0      0x1f8 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans12.ltrans.o
-                0x0000000004000cb0                the_mac
-                0x0000000004000ccc                Buttons
-                0x0000000004000cd4                Timer4
-                0x0000000004000cdc                Timer3
-                0x0000000004000ce4                Timer2
-                0x0000000004000cec                Timer1
-                0x0000000004000cf4                Timer0
-                0x0000000004000cfc                PulseCounter1
-                0x0000000004000d00                PulseCounter0
-                0x0000000004000d04                Analogue
-                0x0000000004000d1c                SPI
-                0x0000000004000d20                Wire
-                0x0000000004000d38                SerialParser
-                0x0000000004000d74                Serial1
-                0x0000000004000d94                Serial
-                0x0000000004000db4                _ZL5_vcbs.21460
-                0x0000000004000dc8                the_vnet2
-                0x0000000004000dcc                the_vnet
-                0x0000000004000dd0                the_vhw
-                0x0000000004000dd4                the_vsettings
-                0x0000000004000dd8                the_vapp
-                0x0000000004000ddc                the_twelite
-                0x0000000004000e74                mwx_pf_wakeup
-                0x0000000004000e78                mwx_pf_init_warmboot
-                0x0000000004000e7c                mwx_pf_loop
-                0x0000000004000e80                mwx_pf_begin
-                0x0000000004000e84                u8EEPROMinitialiseCount.23016
-                0x0000000004000e88                prSiAppCallback.23098
+                0x0000000004000ca4        0x8 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans10.ltrans.o
+                0x0000000004000ca4                g_u32MacAddrLocation
+                0x0000000004000ca8                prvUserTxStartedCallback
+ .bss           0x0000000004000cac      0x1f8 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans12.ltrans.o
+                0x0000000004000cac                the_mac
+                0x0000000004000cc8                Buttons
+                0x0000000004000cd0                Timer4
+                0x0000000004000cd8                Timer3
+                0x0000000004000ce0                Timer2
+                0x0000000004000ce8                Timer1
+                0x0000000004000cf0                Timer0
+                0x0000000004000cf8                PulseCounter1
+                0x0000000004000cfc                PulseCounter0
+                0x0000000004000d00                Analogue
+                0x0000000004000d18                SPI
+                0x0000000004000d1c                Wire
+                0x0000000004000d34                SerialParser
+                0x0000000004000d70                Serial1
+                0x0000000004000d90                Serial
+                0x0000000004000db0                _ZL5_vcbs.21379
+                0x0000000004000dc4                the_vnet2
+                0x0000000004000dc8                the_vnet
+                0x0000000004000dcc                the_vhw
+                0x0000000004000dd0                the_vsettings
+                0x0000000004000dd4                the_vapp
+                0x0000000004000dd8                the_twelite
+                0x0000000004000e70                mwx_pf_wakeup
+                0x0000000004000e74                mwx_pf_init_warmboot
+                0x0000000004000e78                mwx_pf_loop
+                0x0000000004000e7c                mwx_pf_begin
+                0x0000000004000e80                u8EEPROMinitialiseCount.22935
+                0x0000000004000e84                prSiAppCallback.23017
  .bss.initinboot
-                0x0000000004000ea8        0x1 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans13.ltrans.o
- *fill*         0x0000000004000ea9        0x3 00
- .bss           0x0000000004000eac        0x8 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans14.ltrans.o
+                0x0000000004000ea4        0x1 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans13.ltrans.o
+ *fill*         0x0000000004000ea5        0x3 00
+ .bss           0x0000000004000ea8        0x8 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans14.ltrans.o
  .bss.dontinitinboot
-                0x0000000004000eb4       0x40 C:/Users/hirar/Documents/MWSTAGE/MWSDK/ChipLib/SW4063V1416/Components/Library\libBoot_JN516x.a(ExceptionHandler.o)
-                0x0000000004000eb4                isr_handlers
+                0x0000000004000eb0       0x40 C:/Users/hirar/Documents/MWSTAGE/MWSDK/ChipLib/SW4063V1416/Components/Library\libBoot_JN516x.a(ExceptionHandler.o)
+                0x0000000004000eb0                isr_handlers
  .bss._b_cpudoze_dirty
-                0x0000000004000ef4        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
-                0x0000000004000ef4                _b_cpudoze_dirty
- *fill*         0x0000000004000ef5        0x3 00
+                0x0000000004000ef0        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
+                0x0000000004000ef0                _b_cpudoze_dirty
+ *fill*         0x0000000004000ef1        0x3 00
  .bss.u32TickCount_ms
-                0x0000000004000ef8        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
-                0x0000000004000ef8                u32TickCount_ms
+                0x0000000004000ef4        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
+                0x0000000004000ef4                u32TickCount_ms
  .bss.sRxQueueCmd
-                0x0000000004000efc       0x1c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
+                0x0000000004000ef8       0x1c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
  .bss.u16Tick_Counting_Second.5290
-                0x0000000004000f18        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
+                0x0000000004000f14        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
  .bss.u16Tick_Counting_dozens.5291
-                0x0000000004000f1a        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
- .bss.asTx      0x0000000004000f1c        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
+                0x0000000004000f16        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
+ .bss.asTx      0x0000000004000f18        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
  .bss.TxWorker_u8Num
-                0x0000000004000f20        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
+                0x0000000004000f1c        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
  .bss.bReset.5153
-                0x0000000004000f21        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
+                0x0000000004000f1d        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
  .bss.bChChange.5144
-                0x0000000004000f22        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
+                0x0000000004000f1e        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
  .bss.u8failct.5147
-                0x0000000004000f23        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
+                0x0000000004000f1f        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
  .bss.sCh_Context
-                0x0000000004000f24        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Channel_Mgr.o)
+                0x0000000004000f20        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Channel_Mgr.o)
  .bss._u32_INT_adc_comp
-                0x0000000004000f28        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x0000000004000f28                _u32_INT_adc_comp
+                0x0000000004000f24        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f24                _u32_INT_adc_comp
  .bss._u32_INT_ticktimer
-                0x0000000004000f2c        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x0000000004000f2c                _u32_INT_ticktimer
+                0x0000000004000f28        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f28                _u32_INT_ticktimer
  .bss.prAppHwCallback
-                0x0000000004000f30        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f2c        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.sHwIndBufferQueue
-                0x0000000004000f34       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f30       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.sHwIndQueue
-                0x0000000004000f44       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f40       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.sMcpsIndQueue
-                0x0000000004000f54       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f50       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.prAppMcpsCallback
-                0x0000000004000f64        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f60        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.sMcpsIndBufferQueue
-                0x0000000004000f68       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f64       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.sMlmeIndQueue
-                0x0000000004000f78       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f74       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.prAppMlmeCallback
-                0x0000000004000f88        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f84        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.sMlmeIndBufferQueue
-                0x0000000004000f8c       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f88       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.asMlmeIndBuffer
-                0x0000000004000f9c      0x370 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004000f98      0x370 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.asMcpsIndBuffer
-                0x000000000400130c      0x2a0 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004001308      0x2a0 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.asHwIndBuffer
-                0x00000000040015ac       0x50 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x00000000040015a8       0x50 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.apvMlmeIndData
-                0x00000000040015fc       0x14 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x00000000040015f8       0x14 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.apvMcpsIndData
-                0x0000000004001610       0x14 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x000000000400160c       0x14 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.apvHwIndData
-                0x0000000004001624       0x2c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004001620       0x2c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
  .bss.asEventHandler
-                0x0000000004001650       0xa0 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
- .bss.evPost    0x00000000040016f0        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
- *fill*         0x00000000040016f2        0x2 00
+                0x000000000400164c       0xa0 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+ .bss.evPost    0x00000000040016ec        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+ *fill*         0x00000000040016ee        0x2 00
  .bss.u32PostArg
-                0x00000000040016f4        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x00000000040016f0        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
  .bss.pvPostFunc
-                0x00000000040016f8        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x00000000040016f4        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
  .bss.TWENET_u8RFdevice_major
-                0x00000000040016fc        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x00000000040016f8        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
  .bss.TWENET_u8RFdevice_minor
-                0x00000000040016fd        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x00000000040016f9        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
  .bss.au8dec.5856
-                0x00000000040016fe       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
- .bss.u8m       0x000000000400170e        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x00000000040016fa       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+ .bss.u8m       0x000000000400170a        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
  .bss.u8ChPrev.5922
-                0x000000000400170f        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x000000000400170b        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
  .bss.pvMac.5930
-                0x0000000004001710        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x000000000400170c        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
  .bss.s_psMacPib.5931
-                0x0000000004001714        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x0000000004001710        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
  .bss.bRxQueue_Init
-                0x0000000004001718        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
- *fill*         0x0000000004001719        0x3 00
+                0x0000000004001714        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+ *fill*         0x0000000004001715        0x3 00
  .bss.psRxQueueList
-                0x000000000400171c       0x14 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x0000000004001718       0x14 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
  .bss.u32MyAddr
-                0x0000000004001730        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
- .bss.u32AppId  0x0000000004001734        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x000000000400172c        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+ .bss.u32AppId  0x0000000004001730        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
  .bss.u8AppId_Pkt_head
-                0x0000000004001738        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
- *fill*         0x0000000004001739        0x3 00
+                0x0000000004001734        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+ *fill*         0x0000000004001735        0x3 00
  .bss.pvMac.4633
-                0x000000000400173c        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
- .bss.sContext  0x0000000004001740       0x2c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
+                0x0000000004001738        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+ .bss.sContext  0x000000000400173c       0x2c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AES_CCM.o)
  .bss.prOriginalHandler
-                0x000000000400176c        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(no_ack_handler.o)
- .bss.sOpt      0x0000000004001770       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
- .bss.asUARTS   0x0000000004001780       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
- .bss.au8TxBuf  0x00000000040017a0       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
- .bss.au8RxBuf  0x00000000040017c0       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+                0x0000000004001768        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(no_ack_handler.o)
+ .bss.sOpt      0x000000000400176c       0x10 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+ .bss.asUARTS   0x000000000400177c       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+ .bss.au8TxBuf  0x000000000400179c       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
+ .bss.au8RxBuf  0x00000000040017bc       0x20 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(uart.o)
  .bss.sTxdatabuff_sTxQueueMid.3903
-                0x00000000040017e0      0x3f0 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
+                0x00000000040017dc      0x3f0 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
  .bss.au8Txdatabuff_idx_sTxQueueMid.3904
-                0x0000000004001bd0        0x6 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
- *fill*         0x0000000004001bd6        0x2 00
+                0x0000000004001bcc        0x6 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
+ *fill*         0x0000000004001bd2        0x2 00
  .bss.sRxdatabuff_sRxQueueMid.3906
-                0x0000000004001bd8      0x348 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
+                0x0000000004001bd4      0x348 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
  .bss.au8Rxdatabuff_idx_sRxQueueMid.3907
-                0x0000000004001f20        0x6 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
- *fill*         0x0000000004001f26        0x2 00
+                0x0000000004001f1c        0x6 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
+ *fill*         0x0000000004001f22        0x2 00
  .bss.sRxdatabuff_sRxQueueCmdMid.3909
-                0x0000000004001f28      0x1a4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
+                0x0000000004001f24      0x1a4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
  .bss.au8Rxdatabuff_idx_sRxQueueCmdMid.3910
-                0x00000000040020cc        0x3 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
- *fill*         0x00000000040020cf        0x1 00
+                0x00000000040020c8        0x3 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
+ *fill*         0x00000000040020cb        0x1 00
  .bss.TxWorker_asTxData.3912
-                0x00000000040020d0      0x1f8 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
- .bss           0x00000000040022c8       0x34 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mallocr.o)
-                0x00000000040022c8                __malloc_current_mallinfo
-                0x00000000040022f0                __malloc_max_total_mem
-                0x00000000040022f4                __malloc_max_sbrked_mem
-                0x00000000040022f8                __malloc_top_pad
- .bss           0x00000000040022fc        0x4 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-glue.o)
+                0x00000000040020cc      0x1f8 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_TxRxQueue.o)
+ .bss           0x00000000040022c4       0x34 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-mallocr.o)
+                0x00000000040022c4                __malloc_current_mallinfo
+                0x00000000040022ec                __malloc_max_total_mem
+                0x00000000040022f0                __malloc_max_sbrked_mem
+                0x00000000040022f4                __malloc_top_pad
+ .bss           0x00000000040022f8        0x4 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-glue.o)
  *(.bss.*)
  *(.scommon*)
- .scommon       0x0000000004002300       0x24 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
-                0x0000000004002300                au8Rxdatabuff_idx_sRxQueueCmd
-                0x0000000004002304                u8TxBuffSiz_sTxQueue
-                0x0000000004002308                au8Txdatabuff_idx_sTxQueue
-                0x000000000400230c                u8RxBuffSiz_sRxQueue
-                0x0000000004002310                sRxdatabuff_sRxQueueCmd
-                0x0000000004002314                sTxdatabuff_sTxQueue
-                0x0000000004002318                sRxdatabuff_sRxQueue
-                0x000000000400231c                u8RxBuffSiz_sRxQueueCmd
-                0x0000000004002320                au8Rxdatabuff_idx_sRxQueue
- .scommon       0x0000000004002324        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
-                0x0000000004002324                _TWENET_TX_POWER_MAX
-                0x0000000004002325                _TWENET_TX_POWER_VALUE
- .scommon       0x0000000004002326        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
-                0x0000000004002326                _MAC_u8TxFailReason
- *fill*         0x0000000004002327        0x1 00
- .scommon       0x0000000004002328        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
-                0x0000000004002328                _SERIAL_bmTxIntEnabled
- .scommon       0x000000000400232c        0x4 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-reent.o)
-                0x000000000400232c                errno
+ .scommon       0x00000000040022fc       0x24 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
+                0x00000000040022fc                au8Rxdatabuff_idx_sRxQueueCmd
+                0x0000000004002300                u8TxBuffSiz_sTxQueue
+                0x0000000004002304                au8Txdatabuff_idx_sTxQueue
+                0x0000000004002308                u8RxBuffSiz_sRxQueue
+                0x000000000400230c                sRxdatabuff_sRxQueueCmd
+                0x0000000004002310                sTxdatabuff_sTxQueue
+                0x0000000004002314                sRxdatabuff_sRxQueue
+                0x0000000004002318                u8RxBuffSiz_sRxQueueCmd
+                0x000000000400231c                au8Rxdatabuff_idx_sRxQueue
+ .scommon       0x0000000004002320        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(AppStart.o)
+                0x0000000004002320                _TWENET_TX_POWER_MAX
+                0x0000000004002321                _TWENET_TX_POWER_VALUE
+ .scommon       0x0000000004002322        0x1 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENEText_BLUE.a(mac.o)
+                0x0000000004002322                _MAC_u8TxFailReason
+ *fill*         0x0000000004002323        0x1 00
+ .scommon       0x0000000004002324        0x4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
+                0x0000000004002324                _SERIAL_bmTxIntEnabled
+ .scommon       0x0000000004002328        0x4 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-reent.o)
+                0x0000000004002328                errno
  *(.scommon.*)
  *(COMMON)
- COMMON         0x0000000004002330       0xf4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
-                0x0000000004002330                sToCoNet_AppContext
-                0x000000000400234c                sTxQueue
-                0x0000000004002368                sToCoNet_Modules
-                0x00000000040023c0                sRxQueue
-                0x00000000040023dc                sToCoNet_Context
- COMMON         0x0000000004002424       0x54 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
-                0x0000000004002424                apvHwIndBufferData
-                0x0000000004002450                apvMlmeIndBufferData
-                0x0000000004002464                apvMcpsIndBufferData
- COMMON         0x0000000004002478       0x1c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
-                0x0000000004002478                sEvVars
- COMMON         0x0000000004002494       0x38 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
-                0x0000000004002494                asSerialPorts
- COMMON         0x00000000040024cc      0x100 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-gdtoa-gethex.o)
-                0x00000000040024cc                __hexdig
-                0x00000000040025cc                . = ALIGN (0x4)
-                0x00000000040025cc                _bss_end = ABSOLUTE (.)
+ COMMON         0x000000000400232c       0xf4 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
+                0x000000000400232c                sToCoNet_AppContext
+                0x0000000004002348                sTxQueue
+                0x0000000004002364                sToCoNet_Modules
+                0x00000000040023bc                sRxQueue
+                0x00000000040023d8                sToCoNet_Context
+ COMMON         0x0000000004002420       0x54 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(AppQueueApi_ToCoNet.o)
+                0x0000000004002420                apvHwIndBufferData
+                0x000000000400244c                apvMlmeIndBufferData
+                0x0000000004002460                apvMcpsIndBufferData
+ COMMON         0x0000000004002474       0x1c C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_event.o)
+                0x0000000004002474                sEvVars
+ COMMON         0x0000000004002490       0x38 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENETutils_BLUE.a(serial.o)
+                0x0000000004002490                asSerialPorts
+ COMMON         0x00000000040024c8      0x100 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a(lib_a-gdtoa-gethex.o)
+                0x00000000040024c8                __hexdig
+                0x00000000040025c8                . = ALIGN (0x4)
+                0x00000000040025c8                _bss_end = ABSOLUTE (.)
 
-.bss_MULTINONE  0x00000000040025cc        0x0
-                0x00000000040025cc                _twenet_multinone_base = .
-                0x00000000040025cc                . = (. + MULTINONE_SIZE)
-                0x00000000040025cc                _twenet_multinone_end = .
-                0x00000000040025cc                end = .
+.bss_MULTINONE  0x00000000040025c8        0x0
+                0x00000000040025c8                _twenet_multinone_base = .
+                0x00000000040025c8                . = (. + MULTINONE_SIZE)
+                0x00000000040025c8                _twenet_multinone_end = .
+                0x00000000040025c8                end = .
 
-.heap           0x00000000040025cc      0xd16 load address 0x00000000000948c8
-                0x00000000040025cc                _heap_start = ABSOLUTE (.)
-                0x00000000040032e2                . = (. + _minimum_heap_size)
- *fill*         0x00000000040025cc      0xd16 00
+.heap           0x00000000040025c8      0xd16 load address 0x00000000000948c8
+                0x00000000040025c8                _heap_start = ABSOLUTE (.)
+                0x00000000040032de                . = (. + _minimum_heap_size)
+ *fill*         0x00000000040025c8      0xd16 00
 
-.stack          0x0000000004007800      0x800 load address 0x0000000000099afc
+.stack          0x0000000004007800      0x800 load address 0x0000000000099b00
                 0x0000000004007800                _heap_end = ABSOLUTE (.)
                 0x0000000004007800                _stack_low_water_mark = ABSOLUTE (.)
                 0x0000000004008000                . = (. + _stack_size)
  *fill*         0x0000000004007800      0x800 00
                 0x0000000004008000                _stack = .
 
-.test           0x0000000000092c48        0x1
-                0x0000000000092c48        0x1 BYTE 0xff
-                0x0000000000092348                _flash_data_start = LOADADDR (.data)
+.test           0x0000000000092c4c        0x1
+                0x0000000000092c4c        0x1 BYTE 0xff
+                0x000000000009234c                _flash_data_start = LOADADDR (.data)
                 0x0000000000000900                _ram_data_len = (((_ram_data_end - _ram_data_start) + 0x3) & 0xfffffffffffffffc)
-                0x0000000000001c80                _bss_len = (((_bss_end - _bss_start) + 0x3) & 0xfffffffffffffffc)
-                0x0000000000012c48                _image_len = ((((_flash_end - _flash_start) + _ram_data_len) + 0x3) & 0xfffffffffffffffc)
+                0x0000000000001c7c                _bss_len = (((_bss_end - _bss_start) + 0x3) & 0xfffffffffffffffc)
+                0x0000000000012c4c                _image_len = ((((_flash_end - _flash_start) + _ram_data_len) + 0x3) & 0xfffffffffffffffc)
                 0x0000000004008000                _ram_top = (ABSOLUTE (ORIGIN (ram)) + 0x7fb4)
                 0x0000000004008000                ram_top = (ABSOLUTE (ORIGIN (ram)) + 0x7fb4)
                 0x0000000001001580                _app_ram_start = 0x1001580
@@ -2368,33 +2362,33 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000000088903                TSV_eStartVector = TSV_eStart
                 0x0000000000087814                TSV_eStopVector = TSV_eStop
                 0x0000000000089198                pvAppApiGetMacHandle = pvAppApiDefGetMacHandle
-                0x00000000000840db                u32AppApiInit = u32AppApiDefInit
-                0x00000000000824d6                vAppApiMlmeRequest = vAppApiDefMlmeRequest
-                0x0000000000082505                vAppApiMcpsRequest = vAppApiDefMcpsRequest
-                0x0000000000082534                eAppApiPlmeSet = eAppApiDefPlmeSet
-                0x000000000008258d                eAppApiPlmeGet = eAppApiDefPlmeGet
+                0x0000000000083577                u32AppApiInit = u32AppApiDefInit
+                0x0000000000081972                vAppApiMlmeRequest = vAppApiDefMlmeRequest
+                0x00000000000819a1                vAppApiMcpsRequest = vAppApiDefMcpsRequest
+                0x00000000000819d0                eAppApiPlmeSet = eAppApiDefPlmeSet
+                0x0000000000081a29                eAppApiPlmeGet = eAppApiDefPlmeGet
                 0x000000000008918f                pvAppApiGetMacAddrLocation = pvAppApiDefGetMacAddrLocation
                 0x0000000000089132                vAppApiSaveMacSettings = vAppApiDefSaveMacSettings
-                0x00000000000841a7                vAppApiRestoreMacSettings = vAppApiDefRestoreMacSettings
+                0x0000000000083643                vAppApiRestoreMacSettings = vAppApiDefRestoreMacSettings
 OUTPUT(objs_BLUE/Serial_parser_test_BLUE_L1305_V0-1-0.elf elf32-ba)
 
 .comment        0x0000000000000000       0x11
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans0.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans1.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans2.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans3.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans4.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans5.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans6.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans7.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans8.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans9.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans10.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans11.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans12.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans13.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans14.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchLZDxc.ltrans15.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans0.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans1.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans2.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans3.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans4.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans5.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans6.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans7.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans8.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans9.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans10.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans11.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans12.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans13.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans14.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cc4b8a1e.ltrans15.ltrans.o
  .comment       0x0000000000000000       0x12 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(_umoddi3.o)
  .comment       0x0000000000000000       0x12 c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a(extendsfdf2.o)
  .comment       0x0000000000000000       0x11 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)

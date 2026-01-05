@@ -2,6 +2,7 @@
 #define CASIC_PARSER_H_
 
 #include <TWELITE>
+#include "gba_common.h"
 
 #define MAX_BUF_SIZE 120
 
@@ -57,41 +58,6 @@ typedef struct{
   uint8_t timeSrc;
   uint8_t dateValid;
 }NAV_TIMEUTC;
-
-typedef union {
-  uint8_t U1[4];
-  uint32_t U4;
-}U1_U4;
-
-typedef union {
-  uint8_t U1[2];
-  uint16_t U2;
-}U1_U2;
-
-typedef union {
-  uint8_t U1[4];
-  int32_t I4;
-}U1_I4;
-
-typedef union {
-  uint8_t U1[2];
-  int16_t I2;
-}U1_I2;
-
-typedef union {
-  uint8_t U1;
-  int8_t I1;
-}U1_I1;
-
-typedef union {
-  uint8_t U1[4];
-  float R4;
-}U1_R4;
-
-typedef union {
-  uint8_t U1[8];
-  double R8;
-}U1_R8;
 
 enum MES_STATE{
   HEADER,

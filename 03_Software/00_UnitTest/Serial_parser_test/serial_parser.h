@@ -5,10 +5,6 @@
 
 #define MAX_BUF_SIZE 20
 
-#define EEPROM_ADDR_BASE 1024
-#define EEPROM_ADDR_END 0xEF0 //0xEFF - 16byte
-#define PARAM_NUM_MAX ((uint16_t)EEPROM_ADDR_END-(uint16_t)EEPROM_ADDR_BASE)/4
-
 //https://rakko.tools/tools/74/ 
 
 const uint8_t mode_header[5] = {0x23,0x4d,0x4f,0x44,0x45}; // #MODE

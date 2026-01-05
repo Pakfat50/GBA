@@ -1,5 +1,6 @@
-#include "casic_parser.h"
 #include <TWELITE>
+#include "casic_parser.h"
+#include "gba_common.h"
 
 void sendByteMes(const uint8_t* b_data, size_t mes_len, mwx::serial_jen* ser){
   for (size_t i = 0; i < mes_len; i++)

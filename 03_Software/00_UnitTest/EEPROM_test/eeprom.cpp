@@ -1,6 +1,6 @@
 #include <TWELITE>
 #include "eeprom.h"
-
+#include "gba_common.h"
 
 bool eeprom_float_wite(uint16_t param_num, float val){
     uint16_t addr = EEPROM_ADDR_BASE + param_num*4;

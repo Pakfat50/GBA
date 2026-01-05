@@ -1,5 +1,6 @@
 #include <TWELITE>
 #include "serial_parser.h"
+#include "gba_common.h"
 
 uint8_t mode = 0;
 uint16_t param_num = 0;

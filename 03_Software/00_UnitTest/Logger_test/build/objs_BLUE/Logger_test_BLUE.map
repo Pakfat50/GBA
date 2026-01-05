@@ -319,27 +319,27 @@ EEPROM_6X_SEGMENT_SIZE
 Discarded input sections
 
  .text          0x0000000000000000        0x0 objs_BLUE/_mwx_version.o (symbol from plugin)
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans0.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans0.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans3.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans4.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans5.ltrans.o
- .rodata        0x0000000000000000        0x8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans5.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans6.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans7.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans8.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans8.ltrans.o
- .text.exit     0x0000000000000000        0x3 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans8.ltrans.o
- .text.startup  0x0000000000000000      0x101 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans8.ltrans.o
- .ctors         0x0000000000000000        0x4 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans8.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans9.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans9.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans10.ltrans.o
- .data          0x0000000000000000        0x1 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans11.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans12.ltrans.o
- .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans12.ltrans.o
- .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans13.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans0.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans0.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans3.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans4.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans5.ltrans.o
+ .rodata        0x0000000000000000        0x8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans5.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans6.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans7.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans8.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans8.ltrans.o
+ .text.exit     0x0000000000000000        0x3 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans8.ltrans.o
+ .text.startup  0x0000000000000000      0x101 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans8.ltrans.o
+ .ctors         0x0000000000000000        0x4 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans8.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans9.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans9.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans10.ltrans.o
+ .data          0x0000000000000000        0x1 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans11.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans12.ltrans.o
+ .bss           0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans12.ltrans.o
+ .data          0x0000000000000000        0x0 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans13.ltrans.o
  .text          0x0000000000000000        0x0 objs_BLUE/Logger_test.o (symbol from plugin)
  .text          0x0000000000000000        0x0 objs_BLUE/logger.o (symbol from plugin)
  .text          0x0000000000000000        0x0 AppApi.o (symbol from plugin)
@@ -829,20 +829,20 @@ ram              0x000000000400004c 0x0000000000007fb4
 Linker script and memory map
 
 LOAD objs_BLUE/_mwx_version.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans0.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans2.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans3.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans4.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans5.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans6.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans7.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans8.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans9.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans10.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans11.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans12.ltrans.o
-LOAD C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans13.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans0.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans2.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans3.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans4.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans5.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans6.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans7.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans8.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans9.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans10.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans11.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans12.ltrans.o
+LOAD C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans13.ltrans.o
 LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a
 LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/mcpu_jn51xx_sizeopt\libgcc.a
 LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc/ba-elf/4.7.4/../../../../ba-elf/lib/mcpu_jn51xx_sizeopt\libc.a
@@ -941,27 +941,27 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
 
 .rodata         0x00000000000800fc      0x430
  *(.rodata*)
- .rodata        0x00000000000800fc       0xb8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans0.ltrans.o
+ .rodata        0x00000000000800fc       0xb8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans0.ltrans.o
                 0x00000000000800fc                s_aprScanHandleEvt.7333
                 0x000000000008012c                apvActionCalls
- .rodata        0x00000000000801b4       0x54 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
+ .rodata        0x00000000000801b4       0x54 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
                 0x00000000000801b4                psTamXcvContext
                 0x00000000000801b8                aprLPBMacVectorRamTable
                 0x00000000000801cc                gu8ModuleID
                 0x00000000000801cd                gbHighPowerMode
                 0x00000000000801d0                CSWTCH.35.17320.17320
                 0x00000000000801e4                au32TimerBaseAddress
- .rodata        0x0000000000080208       0x14 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans2.ltrans.o
+ .rodata        0x0000000000080208       0x14 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans2.ltrans.o
                 0x0000000000080208                u32HeapEnd
- .rodata        0x000000000008021c       0x21 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans4.ltrans.o
- .rodata        0x000000000008023d        0x4 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans6.ltrans.o
+ .rodata        0x000000000008021c       0x21 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans4.ltrans.o
+ .rodata        0x000000000008023d        0x4 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans6.ltrans.o
  *fill*         0x0000000000080241        0x3 00
- .rodata        0x0000000000080244        0x8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans7.ltrans.o
- .rodata        0x000000000008024c        0x6 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans9.ltrans.o
+ .rodata        0x0000000000080244        0x8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans7.ltrans.o
+ .rodata        0x000000000008024c        0x6 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans9.ltrans.o
                 0x000000000008024c                aeXcvPhyEvtToScanEvt.5394.7336
  *fill*         0x0000000000080252        0x2 00
- .rodata        0x0000000000080254       0x18 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans10.ltrans.o
- .rodata        0x000000000008026c       0xcb C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans13.ltrans.o
+ .rodata        0x0000000000080254       0x18 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans10.ltrans.o
+ .rodata        0x000000000008026c       0xcb C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans13.ltrans.o
  .rodata.str1.1
                 0x0000000000080337       0x11 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_mod_Tx.o)
  .rodata.asStateFuncTbl
@@ -991,7 +991,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
 
 .text           0x000000000008052c     0xb9b8
  *(.text*)
- .text          0x000000000008052c      0xbc8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans0.ltrans.o
+ .text          0x000000000008052c      0xbc8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans0.ltrans.o
                 0x000000000008052c                eWBRTTxDone.6990
                 0x000000000008054a                vTAMCOframeTXgoingIdle
                 0x0000000000080563                vTAMCOframeTXcap
@@ -1009,7 +1009,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000000080dc3                vTAMDEframeRXsyncReq
                 0x0000000000081012                vTAMDEint1FiredTrackingCAPgts
                 0x00000000000810c3                eWONTTxDone.6987
- .text          0x00000000000810f4      0xa89 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
+ .text          0x00000000000810f4      0xa89 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
                 0x00000000000810f4                vMicroIntRestoreState
                 0x0000000000081100                vMicroIntEnableOnly
                 0x000000000008112c                vAHI_SpiRegisterCallback
@@ -1047,8 +1047,8 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x00000000000819f5                vAppApiDefRestoreMacSettings
                 0x0000000000081ac8                u32AppApiDefInit
  .text.unlikely
-                0x0000000000081b7d       0x45 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
- .text          0x0000000000081bc2      0xa3a C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans2.ltrans.o
+                0x0000000000081b7d       0x45 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
+ .text          0x0000000000081bc2      0xa3a C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans2.ltrans.o
                 0x0000000000081bc2                vACI_IntHandlerAes
                 0x0000000000081be7                vAHI_IntHandlerSpiSlave
                 0x0000000000081bf2                vAHI_IntHandlerSi
@@ -1083,7 +1083,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000000082589                _ZN3mwx2L110serial_jenC1Eh.local.71
                 0x00000000000825b9                _ZN3mwx2L115periph_analogueC1Ev.local.88
                 0x00000000000825e4                _ZN3mwx2L112appdefs_virt8on_eventEmRm.local.97
- .text          0x00000000000825fc      0xc19 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans3.ltrans.o
+ .text          0x00000000000825fc      0xc19 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans3.ltrans.o
                 0x00000000000825fc                init_warmboot()
                 0x00000000000825fc                init_coldboot()
                 0x00000000000825fc                wakeup()
@@ -1125,7 +1125,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x00000000000830a9                vTSCpostTransmitUpdate
                 0x00000000000830d9                vCopyToDataFromMacAddr.13999
                 0x000000000008310c                bTSCgetOutgoingInfo
- .text          0x0000000000083215      0xa34 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans4.ltrans.o
+ .text          0x0000000000083215      0xa34 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans4.ltrans.o
                 0x00000000000833e7                vXCV_IntHandlerPhy
                 0x0000000000083499                vScanHandleTimer.6590
                 0x000000000008349e                vXCV_IntHandlerBbc
@@ -1142,7 +1142,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000000083beb                vTAIsetCapTime
                 0x0000000000083c0c                _ZN3mwx2L114periph_twowireC1Eh.local.40
  *fill*         0x0000000000083c49        0x3 00
- .text          0x0000000000083c4c      0xb98 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans5.ltrans.o
+ .text          0x0000000000083c4c      0xb98 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans5.ltrans.o
                 0x0000000000083c4c                cbToCoNet_vHwEvent
                 0x0000000000083e80                cbToCoNet_vMain
                 0x0000000000083f2a                vAppApiDefMlmeRequest
@@ -1150,7 +1150,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000000083f88                eAppApiDefPlmeSet
                 0x0000000000083fe1                eAppApiDefPlmeGet
                 0x0000000000084031                MAC_vHandleMlmeReqRsp
- .text          0x00000000000847e4      0x965 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans6.ltrans.o
+ .text          0x00000000000847e4      0x965 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans6.ltrans.o
                 0x00000000000847e4                vTACintRXheader
                 0x0000000000084fdf                vTAMCOreqTXinCAP
                 0x0000000000085005                vTrySendFromDirectCAP.9572
@@ -1158,7 +1158,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x000000000008504d                vTAMCOreqTXnoBeacon
                 0x000000000008505e                vTrySendUnslotted.10117
                 0x0000000000085078                bProcessBeaconRX.10122
- .text          0x0000000000085149      0x913 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans7.ltrans.o
+ .text          0x0000000000085149      0x913 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans7.ltrans.o
                 0x0000000000085149                vAHI_UartSetClocksPerBit
                 0x0000000000085174                vAHI_Uart1RegisterCallback
                 0x000000000008517d                vAHI_Uart0RegisterCallback
@@ -1178,7 +1178,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x00000000000856ba                vAHI_APRegisterCallback
                 0x000000000008570e                vAHI_ApConfigure
                 0x0000000000085797                cbAppWarmStart
- .text          0x0000000000085a5c      0x4f9 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans8.ltrans.o
+ .text          0x0000000000085a5c      0x4f9 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans8.ltrans.o
                 0x0000000000085a5c                bAHI_APRegulatorEnabled
                 0x0000000000085a69                bACI_CCMstar
                 0x0000000000085b50                cbToCoNet_vRxEvent
@@ -1186,7 +1186,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000000085d61                cbToCoNet_vTxEvent
                 0x0000000000085ec7                cbToCoNet_u8HwInt
  *fill*         0x0000000000085f55        0x3 00
- .text          0x0000000000085f58      0x980 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans9.ltrans.o
+ .text          0x0000000000085f58      0x980 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans9.ltrans.o
                 0x0000000000085f58                TSV_eStop
                 0x0000000000086055                MAC_vHandleMcpsReqRsp
                 0x00000000000860e2                bMCPSframeTXcomplete.8021
@@ -1209,7 +1209,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x000000000008678a                vTAMDEint1FiredTracking
                 0x00000000000867fa                vTAMDEint1FiredSyncReq
                 0x000000000008685f                bPMICdisassocReqSent.5410
- .text          0x00000000000868d8      0x928 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans10.ltrans.o
+ .text          0x00000000000868d8      0x928 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans10.ltrans.o
                 0x00000000000868d8                vPMICassocReqTO_1.5414
                 0x0000000000086960                vTAM_MCPSdataRequest
                 0x00000000000869a3                bTACcheckPANconflict
@@ -1223,7 +1223,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x00000000000871a4                vTAMDEint2FiredPollActive
                 0x00000000000871d8                vTAMDEreqTXnullTrackingCAP
                 0x00000000000871f1                vTAM_TxRetryTimer
- .text          0x0000000000087200      0x7db C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans11.ltrans.o
+ .text          0x0000000000087200      0x7db C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans11.ltrans.o
                 0x0000000000087200                u32AHI_Init
                 0x00000000000872c2                vAHI_TickTimerInterval
                 0x00000000000872e0                vAHI_TickTimerIntEnable
@@ -1238,7 +1238,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x000000000008758b                bAHI_ReadMACID
                 0x00000000000875d1                bAHI_ReadUserData
                 0x0000000000087639                cbAppColdStart
- .text          0x00000000000879db      0x8ae C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans12.ltrans.o
+ .text          0x00000000000879db      0x8ae C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans12.ltrans.o
                 0x00000000000879db                eGenRxHdrDone.6984
                 0x00000000000879eb                TSV_eStart
                 0x0000000000087acf                eTAStransmitRequest
@@ -1258,7 +1258,7 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x000000000008821a                vAppApiDefSaveMacSettings
                 0x0000000000088277                pvAppApiDefGetMacAddrLocation
                 0x0000000000088280                pvAppApiDefGetMacHandle
- .text          0x0000000000088289      0x856 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans13.ltrans.o
+ .text          0x0000000000088289      0x856 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans13.ltrans.o
                 0x0000000000088289                mac_vLPBAdjustBeaconOffset
                 0x00000000000882e6                mac_u32LPBGetBeaconTimeout
                 0x00000000000882ef                eWEnDTmrExpiry.6974
@@ -1753,12 +1753,12 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x000000000400004c                _ram_data_start = ABSOLUTE (.)
  *(.data*)
  .data.initinboot
-                0x000000000400004c        0x8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
- .data          0x0000000004000054        0x4 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans2.ltrans.o
+                0x000000000400004c        0x8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
+ .data          0x0000000004000054        0x4 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans2.ltrans.o
                 0x0000000004000054                u32HeapStart
- .data          0x0000000004000058        0x1 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans10.ltrans.o
+ .data          0x0000000004000058        0x1 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans10.ltrans.o
  .data.initinboot
-                0x0000000004000059        0x1 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans10.ltrans.o
+                0x0000000004000059        0x1 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans10.ltrans.o
                 0x0000000004000059                gMAC_u8MaxBuffers
  .data.u16last_INT_tick.5268
                 0x000000000400005a        0x2 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
@@ -1776,8 +1776,8 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000004000060                _bss_start = ABSOLUTE (.)
  *(.bss*)
  .bss.initinboot
-                0x0000000004000060        0x4 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans0.ltrans.o
- .bss           0x0000000004000064       0xac C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
+                0x0000000004000060        0x4 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans0.ltrans.o
+ .bss           0x0000000004000064       0xac C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
                 0x0000000004000064                s_sTimerList
                 0x0000000004000074                sStoredMacData.2618
                 0x0000000004000090                g_sXcv
@@ -1787,23 +1787,23 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x00000000040000c0                g_sLP
                 0x00000000040000fc                prSpiAppCallback.17825
  .bss.initinboot
-                0x0000000004000110        0x4 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
+                0x0000000004000110        0x4 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
                 0x0000000004000110                prSysCtrlAppCallback.17163
  .bss.dontinitinboot
-                0x0000000004000114        0x8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
- .bss           0x000000000400011c       0x58 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans2.ltrans.o
+                0x0000000004000114        0x8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
+ .bss           0x000000000400011c       0x58 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans2.ltrans.o
                 0x000000000400011c                bTxEventQueued.13147
                 0x000000000400011d                u8TxEventStatus.13148
                 0x000000000400011e                gbTimeOutFlag.17159
  .bss.dontinitinboot
-                0x0000000004000174        0x4 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans2.ltrans.o
- .bss           0x0000000004000178        0x4 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans3.ltrans.o
- .bss           0x000000000400017c       0x18 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans4.ltrans.o
+                0x0000000004000174        0x4 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans2.ltrans.o
+ .bss           0x0000000004000178        0x4 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans3.ltrans.o
+ .bss           0x000000000400017c       0x18 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans4.ltrans.o
                 0x000000000400017c                sAppHousekeeping
  .bss.dontinitinboot
-                0x0000000004000194        0x1 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans4.ltrans.o
+                0x0000000004000194        0x1 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans4.ltrans.o
  *fill*         0x0000000004000195        0x3 00
- .bss           0x0000000004000198       0x24 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans5.ltrans.o
+ .bss           0x0000000004000198       0x24 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans5.ltrans.o
                 0x0000000004000198                sAssocSecurity.6031
                 0x00000000040001a4                bScanInProgress.7329
                 0x00000000040001a5                g_bJenieBackwardsCompatibilityMode
@@ -1812,19 +1812,19 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x00000000040001ac                g_pvMac
                 0x00000000040001b0                prMlmeRequest.2413
  .bss.initinboot
-                0x00000000040001bc      0x1bc C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans5.ltrans.o
+                0x00000000040001bc      0x1bc C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans5.ltrans.o
                 0x00000000040001bc                g_sMac
- .bss           0x0000000004000378        0x8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans6.ltrans.o
- .bss           0x0000000004000380       0x18 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans7.ltrans.o
+ .bss           0x0000000004000378        0x8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans6.ltrans.o
+ .bss           0x0000000004000380       0x18 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans7.ltrans.o
                 0x0000000004000380                bIntEnableFlag.22395
                 0x0000000004000384                prApAppCallback.22398
                 0x0000000004000388                prUart0AppCallback.22768
                 0x000000000400038c                prUart1AppCallback.22769
  .bss.initinboot
-                0x0000000004000398        0x8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans10.ltrans.o
+                0x0000000004000398        0x8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans10.ltrans.o
                 0x0000000004000398                g_u32MacAddrLocation
                 0x000000000400039c                prvUserTxStartedCallback
- .bss           0x00000000040003a0      0x1f8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans11.ltrans.o
+ .bss           0x00000000040003a0      0x1f8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans11.ltrans.o
                 0x00000000040003a0                the_mac
                 0x00000000040003bc                Buttons
                 0x00000000040003c4                Timer4
@@ -1854,9 +1854,9 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
                 0x0000000004000574                u8EEPROMinitialiseCount.22953
                 0x0000000004000578                prSiAppCallback.23035
  .bss.initinboot
-                0x0000000004000598        0x1 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans12.ltrans.o
+                0x0000000004000598        0x1 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans12.ltrans.o
  *fill*         0x0000000004000599        0x3 00
- .bss           0x000000000400059c        0x8 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans13.ltrans.o
+ .bss           0x000000000400059c        0x8 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans13.ltrans.o
  .bss.dontinitinboot
                 0x00000000040005a4       0x40 C:/Users/hirar/Documents/MWSTAGE/MWSDK/ChipLib/SW4063V1416/Components/Library\libBoot_JN516x.a(ExceptionHandler.o)
                 0x00000000040005a4                isr_handlers
@@ -2065,20 +2065,20 @@ LOAD c:/users/hirar/documents/mwstage/tools/ba-elf-ba2-r36379.w10/bin/../lib/gcc
 OUTPUT(objs_BLUE/Logger_test_BLUE_L1305_V0-1-0.elf elf32-ba)
 
 .comment        0x0000000000000000       0x11
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans0.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans1.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans2.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans3.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans4.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans5.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans6.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans7.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans8.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans9.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans10.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans11.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans12.ltrans.o
- .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\cchdMeRc.ltrans13.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans0.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans1.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans2.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans3.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans4.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans5.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans6.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans7.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans8.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans9.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans10.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans11.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans12.ltrans.o
+ .comment       0x0000000000000000       0x12 C:\Users\hirar\AppData\Local\Temp\ccMCSgl3.ltrans13.ltrans.o
  .comment       0x0000000000000000       0x11 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_main.o)
                                          0x12 (size before relaxing)
  .comment       0x0000000000000000       0x12 C:/Users/hirar/Documents/MWSTAGE/MWSDK/TWENET/current/lib/libTWENET_BLUE.a(ToCoNet_utils.o)

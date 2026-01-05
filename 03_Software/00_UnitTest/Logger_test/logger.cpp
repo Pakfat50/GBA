@@ -1,5 +1,6 @@
 #include <TWELITE>
 #include "logger.h"
+#include "gba_common.h"
 
 static uint32_t calc_checksum(uint8_t clsid, uint8_t sub_id, uint16_t len, uint8_t payload[]);
 
