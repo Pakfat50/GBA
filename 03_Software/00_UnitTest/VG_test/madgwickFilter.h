@@ -94,7 +94,7 @@ void imu_filter(float ax, float ay, float az, float gx, float gy, float gz);
 // void marg_filter(void); for future
 
 
-void eulerAngles(struct quaternion q, float* roll, float* pitch, float* yaw);
+void eulerAngles(float* roll, float* pitch, float* yaw);
 
 
 

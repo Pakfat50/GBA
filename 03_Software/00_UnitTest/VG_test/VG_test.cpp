@@ -7,7 +7,7 @@ void setup() {
 }
 
 void begin() {
-    
+    float roll = 0.0, pitch = 0.0, yaw = 0.0;
     char buf[100];
 
     // flat upright position to resolve the graident descent problem

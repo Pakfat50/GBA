@@ -33,8 +33,10 @@ void imu_filter(float ax, float ay, float az, float gx, float gy, float gz){
     //const struct quaternion q_g_ref = {0, 0, 0, 1};// equation (23), reference to field of gravity for gradient descent optimization (not needed because I used eq 25 instead of eq 21
     struct quaternion q_a = {0, ax, ay, az};    // equation (24) raw acceleration values, needs to be normalized
     
-    float F_g [3] = {0};                        // equation(15/21/25) objective function for gravity
-    float J_g [3][4] = {0};                     // jacobian matrix for gravity
+    float F_g [3] = {0, 0, 0};                        // equation(15/21/25) objective function for gravity
+    float J_g [3][4] = {{0,0,0,0},
+                        {0,0,0,0},
+                        {0,0,0,0}};                     // jacobian matrix for gravity
     
     struct quaternion gradient = {0};
     
