@@ -1,0 +1,2 @@
+C:/Users/hirar/Documents/Git/GBA/03_Software/01_ComponentTest/GpsPassingModeTask_test/gps_passing_mode_task.cpp: In function 'GBA_MODE gpsPassingModeTask(mwx::L1::serial_jen*, mwx::L1::serial_jen*)':
+C:/Users/hirar/Documents/Git/GBA/03_Software/01_ComponentTest/GpsPassingModeTask_test/gps_passing_mode_task.cpp:37:25: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
