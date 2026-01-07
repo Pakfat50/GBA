@@ -141,3 +141,14 @@ void eulerAngles(float* roll, float* pitch, float* yaw){
 }
 
 
+void vgAngles(float* roll, float* pitch){
+    struct quaternion q =  q_est;
+
+    *pitch = -asinf(2*q.q2*q.q4 + 2*q.q1*q.q3);                                  // equatino (8)
+    *roll  = atan2f((2*q.q3*q.q4 - 2*q.q1*q.q2), (2*q.q1*q.q1 + 2*q.q4*q.q4 -1));
+    
+    *pitch *= (180.0f / PI);
+    *roll *= (180.0f / PI);
+
+}
+

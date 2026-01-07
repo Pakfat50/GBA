@@ -1,4 +1,6 @@
 #include <TWELITE>
+#include <math.h>
+#include <stdio.h>
 #include "utility.h"
 
 void LOWPASS::init(float k, float x0){
@@ -32,4 +34,39 @@ float MOVING_AVERAGE::get(float x){
     }
 
     return _ret_val;
+}
+
+void MIN_MAX::init(float x0){
+    _x_max = x0;
+    _x_min = x0;
+}
+
+void MIN_MAX::reset(float x0){
+    init(x0);
+}
+
+void MIN_MAX::set(float x){
+    if(x > _x_max){
+        _x_max = x;
+    }
+    if(x < _x_min){
+        _x_min = x;
+    }
+}
+
+float MIN_MAX::getMin(void){
+    return _x_min;
+}
+
+float MIN_MAX::getMax(void){
+    return _x_max;
+}
+
+float MIN_MAX::getMaxNorm(void){
+    if(fabsf(_x_max) > fabsf(_x_min)){
+        return _x_max;
+    }
+    else{
+        return _x_min;
+    }
 }

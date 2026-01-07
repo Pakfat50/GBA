@@ -96,6 +96,6 @@ void imu_filter(float ax, float ay, float az, float gx, float gy, float gz);
 
 void eulerAngles(float* roll, float* pitch, float* yaw);
 
-
+void vgAngles(float* roll, float* pitch);
 
 #endif /* MADGWICK_FILTER_H */

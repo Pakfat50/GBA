@@ -24,5 +24,19 @@ class MOVING_AVERAGE {
         float _ret_val;
 };
 
+class MIN_MAX {
+    public:
+        void init(float x0);
+        void reset(float x0);
+        void set(float x);
+        float getMin(void);
+        float getMax(void);
+        float getMaxNorm(void);
+
+    private:
+        float _x_min;
+        float _x_max;
+};
+
 
 #endif
