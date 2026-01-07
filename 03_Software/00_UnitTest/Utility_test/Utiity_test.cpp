@@ -47,47 +47,47 @@ void begin(){
     MIN_MAX min_max;
     float x = 1;
     min_max.init(x);
-    Serial.print("\tx = ");
+    Serial.print("x = ");
     Serial.print(x);
     Serial.print("\tmax = ");
     Serial.print(min_max.getMax());
     Serial.print("\tmin = ");
     Serial.print(min_max.getMin());
     Serial.print("\tMaxNorm = ");
-    Serial.print(min_max.getMaxNorm());
+    Serial.println(min_max.getMaxNorm());
 
     x = 2;
     min_max.set(x);
-    Serial.print("\tx = ");
+    Serial.print("x = ");
     Serial.print(x);
     Serial.print("\tmax = ");
     Serial.print(min_max.getMax());
     Serial.print("\tmin = ");
     Serial.print(min_max.getMin());
     Serial.print("\tMaxNorm = ");
-    Serial.print(min_max.getMaxNorm());
+    Serial.println(min_max.getMaxNorm());
 
     x = -3;
     min_max.set(x);
-    Serial.print("\tx = ");
+    Serial.print("x = ");
     Serial.print(x);
     Serial.print("\tmax = ");
     Serial.print(min_max.getMax());
     Serial.print("\tmin = ");
     Serial.print(min_max.getMin());
     Serial.print("\tMaxNorm = ");
-    Serial.print(min_max.getMaxNorm());
+    Serial.println(min_max.getMaxNorm());
 
     Serial.println("reset");
     min_max.reset(x);
-    Serial.print("\tx = ");
+    Serial.print("x = ");
     Serial.print(x);
     Serial.print("\tmax = ");
     Serial.print(min_max.getMax());
     Serial.print("\tmin = ");
     Serial.print(min_max.getMin());   
     Serial.print("\tMaxNorm = ");
-    Serial.print(min_max.getMaxNorm());
+    Serial.println(min_max.getMaxNorm());
 
 }
 
