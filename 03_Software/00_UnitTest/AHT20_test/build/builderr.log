@@ -1,2 +1,0 @@
-C:/Users/hirar/Documents/MWSTAGE/MWSDK/Wks_Acts/AHT20_test/ATH20.cpp: In function 'bool aht20_startSensor()':
-C:/Users/hirar/Documents/MWSTAGE/MWSDK/Wks_Acts/AHT20_test/ATH20.cpp:29:26: warning: suggest parentheses around comparison in operand of '&' [-Wparentheses]
