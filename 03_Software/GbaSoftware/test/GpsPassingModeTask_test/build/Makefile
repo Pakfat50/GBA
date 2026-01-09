@@ -22,6 +22,7 @@ include ../Version.mk
 ### for C++ files compiled with g++ (must have .cpp suffix)
 APPSRC_CXX += gps_passing_mode_task.cpp
 APPSRC_CXX += serial_parser.cpp
+APPSRC_CXX += casic_parser.cpp
 APPSRC_CXX += gba_mode.cpp
 
 ### for C files compiled with gcc (must have .c suffix)

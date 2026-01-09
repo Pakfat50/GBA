@@ -1,11 +1,12 @@
 #include <TWELITE>
 #include "gps_passing_mode_task.h"
 #include "gba_mode.h"
+#include "casic_parser.h"
 
 GBA_MODE mode = GPS_PASSING;
 
 void setup() {
-    gpsPassingModeInit();
+    gpsSerialInit(&Serial1);
 }
 
 void loop() {

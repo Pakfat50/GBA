@@ -2,6 +2,17 @@
 #include "casic_parser.h"
 #include "gba_common.h"
 
+void gpsSerialInit(mwx::serial_jen* ser){
+    ser->setup(GPS_SERIAL_TX_BUF_SIZE, GPS_SERIAL_RX_BUF_SIZE);
+
+#ifdef USE_ALT_PIN
+    ser->begin(GPS_SERIAL_BAUDRATE, uint8_t(serial_jen::E_CONF::PORT_ALT));
+#else
+    ser->begin(GPS_SERIAL_BAUDRATE);
+#endif
+
+}
+
 void sendByteMes(const uint8_t* b_data, size_t mes_len, mwx::serial_jen* ser){
   for (size_t i = 0; i < mes_len; i++)
   {

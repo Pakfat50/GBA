@@ -1,2 +1,0 @@
-C:/Users/hirar/Documents/Git/GBA/03_Software/GbaSoftware/src/gps_passing_mode_task.cpp: In function 'GBA_MODE gpsPassingModeTask()':
-C:/Users/hirar/Documents/Git/GBA/03_Software/GbaSoftware/src/gps_passing_mode_task.cpp:37:25: warning: suggest parentheses around assignment used as truth value [-Wparentheses]
