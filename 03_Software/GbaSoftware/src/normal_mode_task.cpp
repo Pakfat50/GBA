@@ -1,4 +1,5 @@
 #include <TWELITE>
+#include <math.h>
 #include "normal_mode_task.h"
 #include "gba_mode.h"
 #include "gba_param.h"
@@ -8,7 +9,6 @@
 #include "AHT20.h"
 #include "BMP280.h"
 #include "bmi160.h"
-#include "madgwickFilter.h"
 #include "casic_parser.h"
 #include "serial_parser.h"
 #include "calc_wind_speed.h"
@@ -25,7 +25,6 @@ static void update_gps(void);
 #ifdef DEBUG_NORMAL_MODE
 static void print_debug_messeage(uint8_t mode);
 #define DEBUG_PLOT_MES
-
 #endif 
 
 GBA_DATA gba_data;
@@ -57,6 +56,12 @@ MOVING_AVERAGE windAverage0;
 MOVING_AVERAGE windAverage1;
 MIN_MAX windMax0;
 MIN_MAX windMax1;
+LOWPASS axLowp;
+LOWPASS ayLowp;
+LOWPASS azLowp;
+LOWPASS rollLowp;
+LOWPASS pitchLowp;
+
 
 uint32_t high_rate_cnt = 0;
 uint32_t mid_rate_cnt = 0;
@@ -98,22 +103,13 @@ void normalModeInit(void){
     windAverage1.init(NUM_WIND_AVERAGE, 0.0);
     windMax0.init(0.0);
     windMax1.init(0.0);
+    axLowp.init(0.1, 0);
+    ayLowp.init(0.1, 0);
+    azLowp.init(0.1, 1);
+    rollLowp.init(0.1, 0);
+    pitchLowp.init(0.1, 0);
 
     t_transmit_delay = TRANSMIT_INT*(uint32_t)sensor_id;
-
-    /*
-    imu_data.ax = 0.0;
-    imu_data.ay = 0.0;
-    imu_data.az = 1.0;
-    imu_data.gx = 0.0;
-    imu_data.gy = 0.0;
-    imu_data.gz = 0.0;
-    imu_data.roll = 0.0;
-    imu_data.pitch = 0.0;
-    imu_data.roll_raw = 0.0;
-    imu_data.pitch_raw = 0.0;
-    */
-
 }
 
 
@@ -123,6 +119,9 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
     GBA_MODE ret_mode = NORMAL;
     uint32_t t_transmit_delta = 0;
     float l_temperature, l_humidity;
+    static float l_ax = 0.0;
+    static float l_ay = 0.0;
+    static float l_az = 1.0;
 
     angle_data.systime = t_system;
     angleSensor0.getAngle(&angle_data.angle0_raw);
@@ -157,17 +156,19 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
         break;
 
     case 1:
-        imu_filter(imu_data.ax, imu_data.ay, imu_data.az, imu_data.gx, imu_data.gy, imu_data.gz);
+        l_ax = axLowp.get(imu_data.ax);
+        l_ay = ayLowp.get(imu_data.ay);
+        l_az = azLowp.get(imu_data.az);
+        imu_data.roll_raw = atan2f(l_ax, sqrt(l_ay*l_ay + l_az*l_az)) * 180 / 3.141592;
         break;    
 
     case 2:
-        vgAngles(&imu_data.roll_raw, &imu_data.pitch_raw);
+        imu_data.pitch_raw = atan2f(l_ay, sqrt(l_ax*l_ax + l_az*l_az)) * 180 / 3.141592;        
+        imu_data.roll = rollLowp.get(imu_data.roll_raw)  - gba_param.rollOffset;
+        imu_data.pitch = pitchLowp.get(imu_data.pitch_raw)  - gba_param.pitchOffset;
         break;   
 
     case 3:
-        imu_data.roll = imu_data.roll_raw - gba_param.rollOffset;
-        imu_data.pitch = imu_data.pitch_raw - gba_param.pitchOffset;
-        
         t_transmit_delta = millis() - t_pps;
 
         if(t_transmit_delta > TIME_PPS_MAX_WAIT){
@@ -308,7 +309,7 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
 
     t_now = micros();
     uint32_t delta_t = t_now - t_system;
-    delay_time = TIME_INTERVAL_US-delta_t;
+    delay_time = TIME_INTERVAL_US -delta_t -DELAY_TIME_AJUST;
 
     if( (delay_time > 0) && (delay_time < TIME_INTERVAL_US)){
         delayMicroseconds(delay_time);

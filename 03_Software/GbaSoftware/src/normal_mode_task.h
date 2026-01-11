@@ -12,8 +12,9 @@
 #define BASE_RATE 100   // [Hz]
 #define TIME_INTERVAL_MS 1000/BASE_RATE // [ms]
 #define TIME_INTERVAL_US 1000000/BASE_RATE // [us]
+#define DELAY_TIME_AJUST 2 // [us]
 
-#define TIME_WIND_AVERAGE 3000 //ms
+#define TIME_WIND_AVERAGE 3 //sec
 #define NUM_WIND_AVERAGE TIME_WIND_AVERAGE*BASE_RATE // [-]
 #define TRANSMIT_INT 50 // [ms]
 #define TRANSMIT_ADDR 0xff 

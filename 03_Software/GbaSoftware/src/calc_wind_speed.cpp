@@ -5,7 +5,7 @@
 
 float calcWindSpeed(float angle, float coff_angle){
     float rad_angle = angle * (PI/180.0f);
-    float wind_speed = sqrt(tan( fabsf(rad_angle) )/coff_angle);
+    float wind_speed = sqrt(fabsf(tan(rad_angle)/coff_angle));
 
     if(angle < 0){
         return -wind_speed;
