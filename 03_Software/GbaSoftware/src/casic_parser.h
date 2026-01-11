@@ -4,11 +4,15 @@
 #include <TWELITE>
 #include "gba_common.h"
 
-#define MAX_BUF_SIZE 120
+#define GPS_MAX_BUF_SIZE 120
 #define USE_ALT_PIN 
 #define GPS_SERIAL_BAUDRATE 9600
 #define GPS_SERIAL_TX_BUF_SIZE 64
 #define GPS_SERIAL_RX_BUF_SIZE 192
+
+#define GPS_NAV_CLSID 0x01
+#define GPS_NAVSV_ID 0x03
+#define GPS_NAVTIMEUTC_ID 0x10
 
 const uint8_t mes_disable_nema[]    = {0xBA,0xCE,0x08,0x00,0x06,0x00,0xFF,0x13,0xC0,0x08,0x80,0x25,0x00,0x00,0x87,0x39,0xC6,0x08};
 const uint8_t mes_enable_nema[]     = {0xBA,0xCE,0x08,0x00,0x06,0x00,0xFF,0x33,0xC0,0x08,0x80,0x25,0x00,0x00,0x87,0x59,0xC6,0x08};
@@ -45,6 +49,7 @@ typedef struct{
   float sAcc;
   float cAcc;
 }NAV_PV;
+#pragma pack(pop)
 
 #pragma pack(push, 1)
 typedef struct{
@@ -62,6 +67,7 @@ typedef struct{
   uint8_t timeSrc;
   uint8_t dateValid;
 }NAV_TIMEUTC;
+#pragma pack(pop)
 
 enum MES_STATE{
   HEADER,

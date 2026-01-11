@@ -29,31 +29,31 @@ void MT6701::getStatus(MAG_STRENGTH* mag_strength, PUSH_BOTTON* push_botton, TRA
     b_mag_strength = (b_data[2]>>6) & 0x03;
 
     if(b_track == 1){
-        *track = LOSS;
+        *track = MAG_LOSS;
     }
     else{
-        *track = TRACKING;
+        *track = MAG_TRACKING;
     }
 
     if(b_push_botton == 1){
-        *push_botton = DETECT;
+        *push_botton = MAG_DETECT;
     }
     else{
-        *push_botton = NOT_DETECT;
+        *push_botton = MAG_NOT_DETECT;
     }
 
     switch (b_mag_strength){
         case 0:
-            *mag_strength = NORMAL;
+            *mag_strength = MAG_NORMAL;
             break;
         case 1:
-            *mag_strength = TOO_STRONG;
+            *mag_strength = MAG_TOO_STRONG;
             break;
         case 2:
-            *mag_strength = TOO_WEAK;
+            *mag_strength = MAG_TOO_WEAK;
             break;
         default:
-            *mag_strength = NC;
+            *mag_strength = MAG_NC;
             break;
     }
 }

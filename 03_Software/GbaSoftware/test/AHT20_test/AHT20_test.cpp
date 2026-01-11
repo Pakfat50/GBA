@@ -14,11 +14,14 @@ void setup() {
 void loop() {
     float humidity, temperature;
 
-    aht20_getSensor(&humidity, &temperature);
+    aht20_startSensor();
 
-    Serial.print(humidity);
-    Serial.print("\t");
-    Serial.println(temperature);
+    if(aht20_getSensor(&humidity, &temperature)){
+
+        Serial.print(humidity);
+        Serial.print("\t");
+        Serial.println(temperature);
+    }
     delay(200);
 
 }

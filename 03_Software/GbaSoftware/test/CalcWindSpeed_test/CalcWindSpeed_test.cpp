@@ -1,5 +1,5 @@
 #include <TWELITE>
-#include "cald_wind_speed.h"
+#include "calc_wind_speed.h"
 
 
 void setup() {

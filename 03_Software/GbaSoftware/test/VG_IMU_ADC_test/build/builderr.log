@@ -1,0 +1,3 @@
+C:/Users/hirar/Documents/Git/GBA/03_Software/GbaSoftware/src/MadgwickAHRS.cpp: In static member function 'static float Madgwick::invSqrt(float)':
+C:/Users/hirar/Documents/Git/GBA/03_Software/GbaSoftware/src/MadgwickAHRS.cpp:231:20: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]
+C:/Users/hirar/Documents/Git/GBA/03_Software/GbaSoftware/src/MadgwickAHRS.cpp:233:16: warning: dereferencing type-punned pointer will break strict-aliasing rules [-Wstrict-aliasing]

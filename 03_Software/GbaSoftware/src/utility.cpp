@@ -70,3 +70,10 @@ float MIN_MAX::getMaxNorm(void){
         return _x_min;
     }
 }
+
+uint32_t micros(void){
+    uint32_t milli = millis();
+    uint32_t micro = u32AHI_TickTimerRead()/16 + milli*1000;
+    
+    return micro;
+}

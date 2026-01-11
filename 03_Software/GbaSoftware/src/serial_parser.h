@@ -3,7 +3,7 @@
 
 #include <TWELITE>
 
-#define MAX_BUF_SIZE 20
+#define SERIAL_MAX_BUF_SIZE 20
 
 //https://rakko.tools/tools/74/ 
 

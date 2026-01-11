@@ -1,7 +1,7 @@
 #include "AHT20.h"
 #include <TWELITE>
 
-static bool aht20_startSensor();
+static bool aht20_isBusy(void);
 
 void aht20_begin()
 {   
@@ -11,26 +11,31 @@ void aht20_begin()
 }
 
 bool aht20_startSensor()
-{
+{   
+    if(aht20_isBusy() == true){
+        return false;
+    }
+
     if(auto&& wrt = Wire.get_writer(0x38)){ //読み込みたいアドレスを指定
         wrt << 0xac;
         wrt << 0x33;
         wrt << 0x00;
     }
+    return true;
+    
+}
 
-    unsigned long timer_s = millis();
-    while(1)
-    {
-        if(millis()-timer_s > 200) return 0;        // time out
-        
-        if(auto&& rdr = Wire.get_reader(0x38, 1)){  //1byte分データをread
+static bool aht20_isBusy(void){
+    bool ret_val = false;
 
-            unsigned char c = rdr();
-            if(c&0x80 != 0)return 1;      // busy
-
+    if(auto&& rdr = Wire.get_reader(0x38, 1)){  //1byte分データをreads
+        unsigned char c = rdr();
+        if( (c&0x80) == 1){
+            ret_val = true;      // busy
         }
-        delay(20);
     }
+
+    return ret_val;
 }
 
 bool aht20_getSensor(float *h, float *t)
@@ -38,9 +43,6 @@ bool aht20_getSensor(float *h, float *t)
     unsigned char str[6] ={0,};
     int index = 0;
     
-    aht20_startSensor();
-
-
     if(auto&& rdr = Wire.get_reader(0x38, 6)){  //6byte分データをread
         for(uint16_t i = 0; i < 6; i++){
             str[index] = rdr();
@@ -48,8 +50,13 @@ bool aht20_getSensor(float *h, float *t)
         }
     }
 
-    if(index == 0 )return 0; 
-    if(str[0] & 0x80)return 0;
+    if(index == 0 ) {
+        return false;
+    } 
+
+    if((str[0] & 0x80) == 1){
+        return false;
+    }
 
 
     unsigned long __humi = 0;
@@ -71,7 +78,7 @@ bool aht20_getSensor(float *h, float *t)
 
     *t = (float)__temp/1048576.0*200.0-50.0;
 
-    return 1;
+    return true;
 
 }
 

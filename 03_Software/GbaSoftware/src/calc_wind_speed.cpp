@@ -1,7 +1,7 @@
 #include <TWELITE>
 #include <math.h>
 #include <stdio.h>
-#include "cald_wind_speed.h"
+#include "calc_wind_speed.h"
 
 float calcWindSpeed(float angle, float coff_angle){
     float rad_angle = angle * (PI/180.0f);

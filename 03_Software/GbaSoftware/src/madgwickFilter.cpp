@@ -26,7 +26,6 @@ struct quaternion quat_mult (struct quaternion L, struct quaternion R){
 // Gyroscope Angular Velocity components are in Radians per Second
 // Accelerometer componets will be normalized
 void imu_filter(float ax, float ay, float az, float gx, float gy, float gz){
-    
     //Variables and constants
     struct quaternion q_est_prev = q_est;
     struct quaternion q_est_dot = {0};            // used as a place holder in equations 42 and 43

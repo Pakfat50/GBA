@@ -20,7 +20,7 @@ include ../Version.mk
 ###   the default file name is dirname.
 
 ### for C++ files compiled with g++ (must have .cpp suffix)
-APPSRC_CXX += cald_wind_speed.cpp
+APPSRC_CXX += calc_wind_speed.cpp
 
 ### for C files compiled with gcc (must have .c suffix)
 #APPSRC += my_c_file.c

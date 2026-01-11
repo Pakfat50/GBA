@@ -7,20 +7,20 @@
 #define SPI_SETTING SPISettings(SPICLOCK, SPI_CONF::MSBFIRST, SPI_CONF::SPI_MODE1)
 
 typedef enum{
-    NORMAL,
-    TOO_STRONG,
-    TOO_WEAK,
-    NC
+    MAG_NORMAL,
+    MAG_TOO_STRONG,
+    MAG_TOO_WEAK,
+    MAG_NC
 }MAG_STRENGTH;
 
 typedef enum{
-    NOT_DETECT,
-    DETECT
+    MAG_NOT_DETECT,
+    MAG_DETECT
 }PUSH_BOTTON;
 
 typedef enum{
-    TRACKING,
-    LOSS
+    MAG_TRACKING,
+    MAG_LOSS
 }TRACK;
 
 

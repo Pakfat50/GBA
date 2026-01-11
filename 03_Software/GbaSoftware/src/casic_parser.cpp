@@ -36,7 +36,7 @@ bool casicParser(uint8_t b_data, uint8_t* clsid, uint8_t* sub_id, uint16_t* mes_
   static uint16_t s_mes_len = 0;
   static uint8_t s_clsid = 0;
   static uint8_t s_sub_id = 0;
-  static uint8_t s_payload[MAX_BUF_SIZE] = {0};
+  static uint8_t s_payload[GPS_MAX_BUF_SIZE] = {0};
   static uint8_t s_chksum_byte[4] = {0};
 
 
@@ -77,7 +77,7 @@ bool casicParser(uint8_t b_data, uint8_t* clsid, uint8_t* sub_id, uint16_t* mes_
         s_mes_state = PAYLOAD;
       break;
     case PAYLOAD:
-      if((s_mes_pos < s_mes_len-1)&&(s_mes_pos < MAX_BUF_SIZE-1)){
+      if((s_mes_pos < s_mes_len-1)&&(s_mes_pos < GPS_MAX_BUF_SIZE-1)){
         s_payload[s_mes_pos] = b_data;
         s_mes_pos += 1;
       }

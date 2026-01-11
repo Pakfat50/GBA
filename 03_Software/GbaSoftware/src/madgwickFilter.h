@@ -10,7 +10,7 @@
 
 // Include a hardware specific header file to redefine these predetermined values
 #ifndef DELTA_T
-    #define DELTA_T 0.01f // 100Hz sampling frequency
+    #define DELTA_T 0.05f // 20Hz sampling frequency
 #endif
 
 #ifndef PI  
@@ -23,6 +23,7 @@
 
 #ifndef BETA
     #define BETA sqrt(3.0f/4.0f) * GYRO_MEAN_ERROR    //*from paper*
+    //#define BETA 0.2
 #endif
 
 #include <math.h>

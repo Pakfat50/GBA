@@ -15,6 +15,7 @@ typedef struct{
     float angle2;
     uint8_t id;
 }ANGLE;
+#pragma pack(pop)
 
 ANGLE angle;
 uint8_t payload[sizeof(ANGLE)] = {0};

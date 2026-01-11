@@ -9,14 +9,14 @@ GBA_MODE gpsPassingModeTask(void){
     uint8_t b_mode;
     GBA_MODE ret_mode = GPS_PASSING;
 
-    while(GPS_SERIAL.available()) {
-        auto c = GPS_SERIAL.read();
-        DEBUG_SERIAL << char_t(c);
+    while(Serial1.available()) {
+        auto c = Serial1.read();
+        Serial << char_t(c);
     }
 
-    while(DEBUG_SERIAL.available()) {
-        auto c = DEBUG_SERIAL.read();
-        GPS_SERIAL << char_t(c);
+    while(Serial.available()) {
+        auto c = Serial.read();
+        Serial1 << char_t(c);
 
         if(parseMode(c, &b_mode) == GET_VALUE){
             check_mode = true;

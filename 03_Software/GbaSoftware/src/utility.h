@@ -38,5 +38,8 @@ class MIN_MAX {
         float _x_max;
 };
 
+uint32_t micros(void);
+
+
 
 #endif

@@ -68,8 +68,8 @@ SERIAL_ERR parseVal(uint8_t b_data, uint16_t *param_num, float*val){
 
     static MES_VAL s_mes_state =  VAL_HEADER;
     static uint16_t s_mes_pos = 0;
-    static char s_param_num[MAX_BUF_SIZE] = {0};
-    static char s_payload[MAX_BUF_SIZE] = {0};
+    static char s_param_num[SERIAL_MAX_BUF_SIZE] = {0};
+    static char s_payload[SERIAL_MAX_BUF_SIZE] = {0};
 
     switch (s_mes_state){
         case VAL_HEADER:
@@ -84,14 +84,14 @@ SERIAL_ERR parseVal(uint8_t b_data, uint16_t *param_num, float*val){
             }
             else{
                 s_mes_pos = 0;
-                inizializeArray(s_param_num, MAX_BUF_SIZE);
-                inizializeArray(s_payload, MAX_BUF_SIZE);
+                inizializeArray(s_param_num, SERIAL_MAX_BUF_SIZE);
+                inizializeArray(s_payload, SERIAL_MAX_BUF_SIZE);
             }
             break;
 
         case PARAM_NUM:
             // LRのみの場合を想定し、b_data != b_crlf[1]を追加
-            if((s_mes_pos < MAX_BUF_SIZE)&&(b_data != b_crlf[0])&&(b_data != b_crlf[1])){
+            if((s_mes_pos < SERIAL_MAX_BUF_SIZE)&&(b_data != b_crlf[0])&&(b_data != b_crlf[1])){
                 s_param_num[s_mes_pos] = (char)b_data;
                 s_mes_pos += 1;
             }
@@ -109,15 +109,15 @@ SERIAL_ERR parseVal(uint8_t b_data, uint16_t *param_num, float*val){
             else{
                 l_res = ERR_CRLF;
                 s_mes_pos = 0;
-                inizializeArray(s_param_num, MAX_BUF_SIZE);
-                inizializeArray(s_payload, MAX_BUF_SIZE);
+                inizializeArray(s_param_num, SERIAL_MAX_BUF_SIZE);
+                inizializeArray(s_payload, SERIAL_MAX_BUF_SIZE);
                 s_mes_state = VAL_HEADER;
             }
             break;
 
         case VAL:
             // LRのみの場合を想定し、b_data != b_crlf[1]を追加
-            if((s_mes_pos < MAX_BUF_SIZE)&&(b_data != b_crlf[0])&&(b_data != b_crlf[1])){
+            if((s_mes_pos < SERIAL_MAX_BUF_SIZE)&&(b_data != b_crlf[0])&&(b_data != b_crlf[1])){
                 s_payload[s_mes_pos] = (char)b_data;
                 s_mes_pos += 1;
             }
@@ -152,15 +152,15 @@ SERIAL_ERR parseVal(uint8_t b_data, uint16_t *param_num, float*val){
                 }
 
                 s_mes_pos = 0;
-                inizializeArray(s_param_num, MAX_BUF_SIZE);
-                inizializeArray(s_payload, MAX_BUF_SIZE);
+                inizializeArray(s_param_num, SERIAL_MAX_BUF_SIZE);
+                inizializeArray(s_payload, SERIAL_MAX_BUF_SIZE);
                 s_mes_state = VAL_HEADER;
             }
             else{
                 l_res = ERR_CRLF;
                 s_mes_pos = 0;
-                inizializeArray(s_param_num, MAX_BUF_SIZE);
-                inizializeArray(s_payload, MAX_BUF_SIZE);
+                inizializeArray(s_param_num, SERIAL_MAX_BUF_SIZE);
+                inizializeArray(s_payload, SERIAL_MAX_BUF_SIZE);
                 s_mes_state = VAL_HEADER;
             }
             break;
