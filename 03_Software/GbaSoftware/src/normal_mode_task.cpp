@@ -66,6 +66,7 @@ LOWPASS pitchLowp;
 uint32_t high_rate_cnt = 0;
 uint32_t mid_rate_cnt = 0;
 uint32_t t_system = 0;
+uint32_t t_old = 0;
 uint32_t t_now = 0;
 uint32_t t_pps = 0;
 int32_t delay_time = 0;
@@ -110,6 +111,11 @@ void normalModeInit(void){
     pitchLowp.init(0.1, 0);
 
     t_transmit_delay = TRANSMIT_INT*(uint32_t)sensor_id;
+
+    Serial.print("Channel = ");
+    Serial.print(channel);
+    Serial.print(" Sensor ID = ");
+    Serial.println(sensor_id);
 }
 
 
@@ -127,9 +133,8 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
     angleSensor0.getAngle(&angle_data.angle0_raw);
     angleSensor1.getAngle(&angle_data.angle1_raw);
 
-    // roll とpitchが逆かも
-    angle_data.angle0 = angle_data.angle0_raw - gba_param.angleOffset0 - imu_data.roll;
-    angle_data.angle1 = angle_data.angle1_raw - gba_param.angleOffset1 - imu_data.pitch;
+    angle_data.angle0 = angle_data.angle0_raw - gba_param.angleOffset0 - imu_data.pitch;
+    angle_data.angle1 = angle_data.angle1_raw - gba_param.angleOffset1 - imu_data.roll;
 
     angle_data.angle0_average = windAverage0.get(angle_data.angle0);
     angle_data.angle1_average = windAverage1.get(angle_data.angle1);
@@ -160,10 +165,10 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
         l_ay = ayLowp.get(imu_data.ay);
         l_az = azLowp.get(imu_data.az);
         imu_data.roll_raw = atan2f(l_ax, sqrt(l_ay*l_ay + l_az*l_az)) * 180 / 3.141592;
+        imu_data.pitch_raw = atan2f(l_ay, sqrt(l_ax*l_ax + l_az*l_az)) * 180 / 3.141592;           
         break;    
 
     case 2:
-        imu_data.pitch_raw = atan2f(l_ay, sqrt(l_ax*l_ax + l_az*l_az)) * 180 / 3.141592;        
         imu_data.roll = rollLowp.get(imu_data.roll_raw)  - gba_param.rollOffset;
         imu_data.pitch = pitchLowp.get(imu_data.pitch_raw)  - gba_param.pitchOffset;
         break;   
@@ -215,7 +220,7 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
         case 0:
             env_data.systime = t_system;
             if(aht20_getSensor(&l_humidity, &l_temperature)){
-                env_data.humidity = l_humidity;
+                env_data.humidity = l_humidity*100.0;
                 env_data.temperature = l_temperature;
             }
             aht20_startSensor();
@@ -223,7 +228,7 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
         
         case 1:
             env_data.temperature_bmp280 = bmp280.getTemperature();
-            env_data.pressure = bmp280.getPressure();
+            env_data.pressure = bmp280.getPressure()/100.0;
             break;            
 
         case 2:
@@ -308,13 +313,14 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
     }
 
     t_now = micros();
-    uint32_t delta_t = t_now - t_system;
+    uint32_t delta_t = t_now - t_old;
     delay_time = TIME_INTERVAL_US -delta_t -DELAY_TIME_AJUST;
 
     if( (delay_time > 0) && (delay_time < TIME_INTERVAL_US)){
         delayMicroseconds(delay_time);
     }
-    t_system = micros();
+    t_old = micros();
+    t_system = millis();
 
     while(Serial.available()) {
         auto c = Serial.read();
@@ -331,10 +337,20 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
     if((delta_t > high_rate_t_max) && (delta_t < DELTA_T_MAX)){
         high_rate_t_max = delta_t;
         high_rate_max_cnt = high_rate_cnt;
+        
+        if(high_rate_max_cnt != 0){
+            high_rate_max_cnt -= 1;
+        }
     }
     if((delta_t > mid_rate_t_max) && (delta_t < DELTA_T_MAX)){
-        mid_rate_t_max = delta_t;
-        mid_rate_max_cnt = mid_rate_cnt;
+        if (high_rate_t_max == 4){
+            mid_rate_t_max = delta_t;
+            mid_rate_max_cnt = mid_rate_cnt;
+
+            if(mid_rate_max_cnt != 0){
+                mid_rate_max_cnt -= 1;
+            }
+        }
     }
 
 #endif
@@ -463,9 +479,9 @@ static void print_debug_messeage(uint8_t mode){
         break;
 
     case 1:
-        Serial.print(angle_data.angle0_raw);
+        Serial.print(angle_data.angle0);
         Serial.print(DELIMITER);
-        Serial.print(angle_data.angle1_raw);
+        Serial.print(angle_data.angle1);
         Serial.print(DELIMITER);            
         break;   
 

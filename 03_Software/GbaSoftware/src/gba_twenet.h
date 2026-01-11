@@ -7,10 +7,10 @@
 #define APP_ID 0x23474241 // #GBA
 #define MES_LEN sizeof(GBA_DATA)
 #define REPEAT_MAX 0
-#define RETRY_NUM 0
+#define RETRY_NUM 1
 #define TX_DELAY_ST 0
-#define TX_DELAY_ED 0
-#define TX_DELAY_INT 0
+#define TX_DELAY_ED 50
+#define TX_DELAY_INT 10
 
 #pragma pack(push,1)
 typedef struct{
