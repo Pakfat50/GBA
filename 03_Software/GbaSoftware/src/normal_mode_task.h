@@ -6,7 +6,7 @@
 #include "gba_param.h"
 #include "mt6701.h"
 
-#define DEBUG_NORMAL_MODE
+//#define DEBUG_NORMAL_MODE
 
 #define MS_TO_US 1000   // [-]
 #define BASE_RATE 100   // [Hz]
