@@ -1,4 +1,5 @@
 #include <TWELITE>
+#include <math.h>
 #include "utility.h"
 
 void setup() {
@@ -88,6 +89,54 @@ void begin(){
     Serial.print(min_max.getMin());   
     Serial.print("\tMaxNorm = ");
     Serial.println(min_max.getMaxNorm());
+
+
+    Serial.println("\n\nRange Check Test");
+    x = 1;
+    bool err = false;
+    Serial.print("max = 10, min = 0, default = 5, x = ");
+    Serial.print(x);
+    err = range_check(&x, 10, 0, 5);
+    Serial.print(" err = ");
+    Serial.print(err);
+    Serial.print(" ret_x = ");
+    Serial.println(x);
+
+    x = 100;
+    Serial.print("max = 10, min = 0, default = 5, x = ");
+    Serial.print(x);
+    err = range_check(&x, 10, 0, 5);
+    Serial.print(" err = ");
+    Serial.print(err);
+    Serial.print(" ret_x = ");
+    Serial.println(x);
+
+    x = -100;
+    Serial.print("max = 10, min = 0, default = 5, x = ");
+    Serial.print(x);
+    err = range_check(&x, 10, 0, 5);
+    Serial.print(" err = ");
+    Serial.print(err);
+    Serial.print(" ret_x = ");
+    Serial.println(x);
+
+    x = sqrt(-1); //NaN
+    Serial.print("max = 10, min = 0, default = 5, x = ");
+    Serial.print(x);
+    err = range_check(&x, 10, 0, 5);
+    Serial.print(" err = ");
+    Serial.print(err);
+    Serial.print(" ret_x = ");
+    Serial.println(x);
+
+    x = 1.0/0.0; //Inf
+    Serial.print("max = 10, min = 0, default = 5, x = ");
+    Serial.print(x);
+    err = range_check(&x, 10, 0, 5);
+    Serial.print(" err = ");
+    Serial.print(err);
+    Serial.print(" ret_x = ");
+    Serial.println(x);
 
 }
 
