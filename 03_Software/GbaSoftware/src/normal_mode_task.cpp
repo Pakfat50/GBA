@@ -22,11 +22,9 @@ static int8_t imu_init(void);
 static void gps_init(void);
 static void update_gps(void);
 
-#ifdef DEBUG_NORMAL_MODE
 static void print_debug_messeage(uint8_t mode);
 //#define DEBUG_PLOT_MES
 //#define DEBUG_PLOT_TIME
-#endif 
 
 GBA_DATA gba_data;
 ANGLE_DATA angle_data;
@@ -63,7 +61,6 @@ LOWPASS azLowp;
 LOWPASS rollLowp;
 LOWPASS pitchLowp;
 
-
 uint32_t high_rate_cnt = 0;
 uint32_t mid_rate_cnt = 0;
 uint32_t t_system = 0;
@@ -73,12 +70,13 @@ uint32_t t_pps = 0;
 int32_t delay_time = 0;
 uint32_t t_transmit_delay = 0;
 
+bool is_print_ascii = false;
+
 #ifdef DEBUG_NORMAL_MODE
 uint32_t high_rate_t_max = 0;
 uint32_t mid_rate_t_max = 0;
 uint32_t high_rate_max_cnt = 0;
 uint32_t mid_rate_max_cnt = 0;
-#define DELIMITER "\t"
 #endif
 
 bool do_transmit = false;
@@ -154,186 +152,188 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
     windMax1.set(angle_data.angle1);
 
     memcpy(b_angle_data, &angle_data, sizeof(ANGLE_DATA));
-#ifndef DEBUG_NORMAL_MODE
-    send_data(GBA_CLASS_ID, ANGLE_ID, (uint16_t)sizeof(ANGLE_DATA), b_angle_data, &Serial);
-#endif //DEBUG_NORMAL_MODE
+
+    if (is_print_ascii == false){
+        send_data(GBA_CLASS_ID, ANGLE_ID, (uint16_t)sizeof(ANGLE_DATA), b_angle_data, &Serial);
+    }
+
     update_gps();
 
     switch (high_rate_cnt)
     {
-    case 0:
-        bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &accel, &gyro, &bmi160);
-        imu_data.systime = t_system;
-        imu_data.ax = accel.z/16384.0;
-        imu_data.ay = accel.y/16384.0;
-        imu_data.az = -accel.x/16384.0;
-        imu_data.gx = gyro.z /131.0 * PI / 180.0;
-        imu_data.gy = gyro.y /131.0 * PI / 180.0;
-        imu_data.gz = -gyro.x /131.0 * PI / 180.0;
-        break;
-
-    case 1:
-        imu_data.err_ax = range_check(imu_data.ax, &l_ax, ACC_MAX, ACC_MIN, ACC_DEFAULT);
-        imu_data.err_ay = range_check(imu_data.ay, &l_ay, ACC_MAX, ACC_MIN, ACC_DEFAULT);
-        imu_data.err_az = range_check(imu_data.az, &l_az, ACC_MAX, ACC_MIN, ACC_DEFAULT);
-
-        l_ax = axLowp.get(l_ax);
-        l_ay = ayLowp.get(l_ay);
-        l_az = azLowp.get(l_az);
-
-        imu_data.roll_raw = atan2f(l_ax, sqrt(l_ay*l_ay + l_az*l_az)) * 180 / 3.141592;
-        imu_data.pitch_raw = atan2f(l_ay, sqrt(l_ax*l_ax + l_az*l_az)) * 180 / 3.141592;           
-        break;    
-
-    case 2:
-        l_roll = imu_data.roll_raw - gba_param.rollOffset;
-        l_pitch = imu_data.pitch_raw - gba_param.pitchOffset;
-        imu_data.err_roll = range_check(l_roll, &l_roll, ROLL_MAX, ROLL_MIN, ROLL_DEFAULT);
-        imu_data.err_pitch = range_check(l_pitch, &l_pitch, PITCH_MAX, PITCH_MIN, PITCH_DEFAULT);
-        imu_data.roll = rollLowp.get(l_roll);
-        imu_data.pitch = pitchLowp.get(l_pitch);
-        break;   
-
-    case 3:
-        t_transmit_delta = millis() - t_pps;
-
-        if(t_transmit_delta > TIME_PPS_MAX_WAIT){
-            t_pps = millis();
-            do_transmit = true;
-        }
-
-        if((t_transmit_delta >= t_transmit_delay) && (do_transmit == true)){
-            gba_data.year = nav_timeutc.year;
-            gba_data.month = nav_timeutc.month;
-            gba_data.day = nav_timeutc.day;
-            gba_data.hour = nav_timeutc.hour;
-            gba_data.min = nav_timeutc.min;
-            gba_data.sec = nav_timeutc.sec;
-            gba_data.ms = nav_timeutc.ms;
-            gba_data.averageWindSpeedE = wind_data.average_east;
-            gba_data.averagewindSpeedN = wind_data.average_north;
-            gba_data.gustWindSpeedE = wind_data.gust_east;
-            gba_data.gustWindSpeedN = wind_data.gust_north;
-            gba_data.lon = nav_pv.lon;
-            gba_data.lat = nav_pv.lat;
-            gba_data.numSV = nav_pv.numSV;
-            gba_data.temperature = env_data.temperature;
-            gba_data.humidity = env_data.humidity;
-            gba_data.pressure = env_data.pressure;
-
-            gbaTwenetTransmit(&gba_data, TRANSMIT_ADDR, &the_twelite);
-
-            windMax0.reset(0.0);
-            windMax1.reset(0.0);
-            do_transmit = false;
-        }else{
-            memcpy(b_imu_data, &imu_data, sizeof(IMU_DATA));
-#ifndef DEBUG_NORMAL_MODE            
-            send_data(GBA_CLASS_ID, IMU_ID, (uint16_t)sizeof(IMU_DATA), b_imu_data, &Serial);
-#endif //DEBUG_NORMAL_MODE
-        }
-
-        break;   
-
-    case 4:
-        switch (mid_rate_cnt)
-        {
         case 0:
-            env_data.systime = t_system;
-            if(aht20_getSensor(&l_humidity, &l_temperature)){
-                l_humidity = l_humidity*100.0;
-                env_data.err_humidity = range_check(l_humidity, &l_humidity, HUMIDITY_MAX, HUMIDITY_MIN, HUMIDITY_DEFAULT);
-                env_data.err_temperature = range_check(l_temperature, &l_temperature, TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_DEFAULT);
-                env_data.humidity = l_humidity;
-                env_data.temperature = l_temperature;
-            }
-            aht20_startSensor();
+            bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &accel, &gyro, &bmi160);
+            imu_data.systime = t_system;
+            imu_data.ax = accel.z/16384.0;
+            imu_data.ay = accel.y/16384.0;
+            imu_data.az = -accel.x/16384.0;
+            imu_data.gx = gyro.z /131.0 * PI / 180.0;
+            imu_data.gy = gyro.y /131.0 * PI / 180.0;
+            imu_data.gz = -gyro.x /131.0 * PI / 180.0;
             break;
-        
+
         case 1:
-            l_temperature_bmp280 = bmp280.getTemperature();
-            l_pressure = bmp280.getPressure()/100.0;
-            env_data.err_temperature_bmp280 = range_check(l_temperature_bmp280, &l_temperature_bmp280, TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_DEFAULT);
-            env_data.err_pressure = range_check(l_pressure, &l_pressure, PRESSURE_MAX, PRESSURE_MIN, PRESSURE_DEFAULT);
-            env_data.temperature_bmp280 = l_temperature_bmp280;
-            env_data.pressure = l_pressure;
-            break;            
+            imu_data.err_ax = range_check(imu_data.ax, &l_ax, ACC_MAX, ACC_MIN, ACC_DEFAULT);
+            imu_data.err_ay = range_check(imu_data.ay, &l_ay, ACC_MAX, ACC_MIN, ACC_DEFAULT);
+            imu_data.err_az = range_check(imu_data.az, &l_az, ACC_MAX, ACC_MIN, ACC_DEFAULT);
+
+            l_ax = axLowp.get(l_ax);
+            l_ay = ayLowp.get(l_ay);
+            l_az = azLowp.get(l_az);
+
+            imu_data.roll_raw = atan2f(l_ax, sqrt(l_ay*l_ay + l_az*l_az)) * 180 / 3.141592;
+            imu_data.pitch_raw = atan2f(l_ay, sqrt(l_ax*l_ax + l_az*l_az)) * 180 / 3.141592;           
+            break;    
 
         case 2:
-            angleSensor0.getStatus(&status_data.mag_strength0, &status_data.push_botton0, &status_data.track0);
-            angleSensor1.getStatus(&status_data.mag_strength1, &status_data.push_botton1, &status_data.track1);
+            l_roll = imu_data.roll_raw - gba_param.rollOffset;
+            l_pitch = imu_data.pitch_raw - gba_param.pitchOffset;
+            imu_data.err_roll = range_check(l_roll, &l_roll, ROLL_MAX, ROLL_MIN, ROLL_DEFAULT);
+            imu_data.err_pitch = range_check(l_pitch, &l_pitch, PITCH_MAX, PITCH_MIN, PITCH_DEFAULT);
+            imu_data.roll = rollLowp.get(l_roll);
+            imu_data.pitch = pitchLowp.get(l_pitch);
             break;   
 
         case 3:
-            wind_data.systime = t_system;
-            wind_data.gust_east = calcWindSpeed(windMax0.getMaxNorm(), gba_param.coffAngle0);
-            wind_data.gust_north = calcWindSpeed(windMax1.getMaxNorm(), gba_param.coffAngle1);
+            t_transmit_delta = millis() - t_pps;
+
+            if(t_transmit_delta > TIME_PPS_MAX_WAIT){
+                t_pps = millis();
+                do_transmit = true;
+            }
+
+            if((t_transmit_delta >= t_transmit_delay) && (do_transmit == true)){
+                gba_data.year = nav_timeutc.year;
+                gba_data.month = nav_timeutc.month;
+                gba_data.day = nav_timeutc.day;
+                gba_data.hour = nav_timeutc.hour;
+                gba_data.min = nav_timeutc.min;
+                gba_data.sec = nav_timeutc.sec;
+                gba_data.ms = nav_timeutc.ms;
+                gba_data.averageWindSpeedE = wind_data.average_east;
+                gba_data.averagewindSpeedN = wind_data.average_north;
+                gba_data.gustWindSpeedE = wind_data.gust_east;
+                gba_data.gustWindSpeedN = wind_data.gust_north;
+                gba_data.lon = nav_pv.lon;
+                gba_data.lat = nav_pv.lat;
+                gba_data.numSV = nav_pv.numSV;
+                gba_data.temperature = env_data.temperature;
+                gba_data.humidity = env_data.humidity;
+                gba_data.pressure = env_data.pressure;
+
+                gbaTwenetTransmit(&gba_data, TRANSMIT_ADDR, &the_twelite);
+
+                windMax0.reset(0.0);
+                windMax1.reset(0.0);
+                do_transmit = false;
+            }else{
+                memcpy(b_imu_data, &imu_data, sizeof(IMU_DATA));
+                if (is_print_ascii == false){          
+                    send_data(GBA_CLASS_ID, IMU_ID, (uint16_t)sizeof(IMU_DATA), b_imu_data, &Serial);
+                }
+            }
+
             break;   
 
         case 4:
-            wind_data.average_east = calcWindSpeed(angle_data.angle0_average, gba_param.coffAngle0);
-            wind_data.average_north = calcWindSpeed(angle_data.angle1_average, gba_param.coffAngle1);            
-            break;   
+            switch (mid_rate_cnt)
+            {
+                case 0:
+                    env_data.systime = t_system;
+                    if(aht20_getSensor(&l_humidity, &l_temperature)){
+                        l_humidity = l_humidity*100.0;
+                        env_data.err_humidity = range_check(l_humidity, &l_humidity, HUMIDITY_MAX, HUMIDITY_MIN, HUMIDITY_DEFAULT);
+                        env_data.err_temperature = range_check(l_temperature, &l_temperature, TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_DEFAULT);
+                        env_data.humidity = l_humidity;
+                        env_data.temperature = l_temperature;
+                    }
+                    aht20_startSensor();
+                    break;
+                
+                case 1:
+                    l_temperature_bmp280 = bmp280.getTemperature();
+                    l_pressure = bmp280.getPressure()/100.0;
+                    env_data.err_temperature_bmp280 = range_check(l_temperature_bmp280, &l_temperature_bmp280, TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_DEFAULT);
+                    env_data.err_pressure = range_check(l_pressure, &l_pressure, PRESSURE_MAX, PRESSURE_MIN, PRESSURE_DEFAULT);
+                    env_data.temperature_bmp280 = l_temperature_bmp280;
+                    env_data.pressure = l_pressure;
+                    break;            
 
-        case 5:
-            memcpy(b_nav_pv, &nav_pv, sizeof(NAV_PV));
-#ifndef DEBUG_NORMAL_MODE
-            send_data(GPS_NAV_CLSID, GPS_NAVSV_ID, (uint16_t)sizeof(NAV_PV), b_nav_pv, &Serial);
-#else 
-            print_debug_messeage(0);
-#endif //DEBUG_NORMAL_MODE
-            break;   
+                case 2:
+                    angleSensor0.getStatus(&status_data.mag_strength0, &status_data.push_botton0, &status_data.track0);
+                    angleSensor1.getStatus(&status_data.mag_strength1, &status_data.push_botton1, &status_data.track1);
+                    break;   
 
-        case 6:
-            memcpy(b_nav_timeutc, &nav_timeutc, sizeof(NAV_TIMEUTC));
-#ifndef DEBUG_NORMAL_MODE
-            send_data(GPS_NAV_CLSID, GPS_NAVTIMEUTC_ID, (uint16_t)sizeof(NAV_TIMEUTC), b_nav_timeutc, &Serial);
-#else
-            print_debug_messeage(1);
-#endif //DEBUG_NORMAL_MODE
-            break;   
+                case 3:
+                    wind_data.systime = t_system;
+                    wind_data.gust_east = calcWindSpeed(windMax0.getMaxNorm(), gba_param.coffAngle0);
+                    wind_data.gust_north = calcWindSpeed(windMax1.getMaxNorm(), gba_param.coffAngle1);
+                    break;   
 
-        case 7:
-            memcpy(b_env_data, &env_data, sizeof(ENV_DATA));
-#ifndef DEBUG_NORMAL_MODE
-            send_data(GBA_CLASS_ID, ENV_ID, (uint16_t)sizeof(ENV_DATA), b_env_data, &Serial);
-#else
-            print_debug_messeage(2);
-#endif //DEBUG_NORMAL_MODE
-            break; 
-            
-        case 8:
-            memcpy(b_wind_data, &wind_data, sizeof(WIND_DATA));
-#ifndef DEBUG_NORMAL_MODE
-            send_data(GBA_CLASS_ID, WIND_ID, (uint16_t)sizeof(WIND_DATA), b_wind_data, &Serial); 
-#else
-            print_debug_messeage(3);            
-#endif //DEBUG_NORMAL_MODE
-            break; 
-            
-        case 9:
-            status_data.systime = t_system;
-            memcpy(b_status_data, &status_data, sizeof(STATUS_DATA));
-#ifndef DEBUG_NORMAL_MODE
-            send_data(GBA_CLASS_ID, STATUS_ID, (uint16_t)sizeof(STATUS_DATA), b_status_data, &Serial);  
-#else
-            print_debug_messeage(4);            
-#endif //DEBUG_NORMAL_MODE
-            break;     
+                case 4:
+                    wind_data.average_east = calcWindSpeed(angle_data.angle0_average, gba_param.coffAngle0);
+                    wind_data.average_north = calcWindSpeed(angle_data.angle1_average, gba_param.coffAngle1);            
+                    break;   
+
+                case 5:
+                    memcpy(b_nav_pv, &nav_pv, sizeof(NAV_PV));
+                    if (is_print_ascii == false){       
+                        send_data(GPS_NAV_CLSID, GPS_NAVSV_ID, (uint16_t)sizeof(NAV_PV), b_nav_pv, &Serial);
+                    }else{
+                        print_debug_messeage(0);
+                    }
+                    break;   
+
+                case 6:
+                    memcpy(b_nav_timeutc, &nav_timeutc, sizeof(NAV_TIMEUTC));
+                    if (is_print_ascii == false){   
+                        send_data(GPS_NAV_CLSID, GPS_NAVTIMEUTC_ID, (uint16_t)sizeof(NAV_TIMEUTC), b_nav_timeutc, &Serial);
+                    }else{
+                        print_debug_messeage(1);
+                    }
+                    break;   
+
+                case 7:
+                    memcpy(b_env_data, &env_data, sizeof(ENV_DATA));
+                    if (is_print_ascii == false){ 
+                        send_data(GBA_CLASS_ID, ENV_ID, (uint16_t)sizeof(ENV_DATA), b_env_data, &Serial);
+                    }else{
+                        print_debug_messeage(2);
+                    }
+                    break; 
+                    
+                case 8:
+                    memcpy(b_wind_data, &wind_data, sizeof(WIND_DATA));
+                    if (is_print_ascii == false){ 
+                        send_data(GBA_CLASS_ID, WIND_ID, (uint16_t)sizeof(WIND_DATA), b_wind_data, &Serial); 
+                    }else{
+                        print_debug_messeage(3);  
+                    }
+                    break; 
+                    
+                case 9:
+                    status_data.systime = t_system;
+                    memcpy(b_status_data, &status_data, sizeof(STATUS_DATA));
+                    if (is_print_ascii == false){ 
+                        send_data(GBA_CLASS_ID, STATUS_ID, (uint16_t)sizeof(STATUS_DATA), b_status_data, &Serial);  
+                    }else{
+                        print_debug_messeage(4);
+                    }
+                    break;     
+
+                default:
+                    break;
+            }
+
+            mid_rate_cnt += 1;
+            if (mid_rate_cnt >= 10){
+                mid_rate_cnt = 0;
+            }
+
+            break;   
 
         default:
             break;
-        }
-
-        mid_rate_cnt += 1;
-        if (mid_rate_cnt >= 10){
-            mid_rate_cnt = 0;
-        }
-
-        break;   
-
-    default:
-        break;
     }
 
     high_rate_cnt += 1;
@@ -359,6 +359,12 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
     }
 
     if(check_mode == true){
+        if(b_mode == ASCII_A){
+            is_print_ascii = true;
+        }
+        if(b_mode == ASCII_B){
+            is_print_ascii = false;
+        }
         ret_mode = mode_checker(b_mode, NORMAL);
     }
 
@@ -381,17 +387,6 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
             }
         }
     }
-
-#ifdef DEBUG_PLOT_TIME
-    Serial.print(t_system);
-    Serial.print("\t");
-    Serial.print(delay_time);
-    Serial.print("\t");
-    Serial.print(high_rate_cnt);
-    Serial.print("\t");
-    Serial.print(mid_rate_cnt);
-    Serial.println("\t");
-#endif //DEBUG_PLOT_TIME
 
 #endif //DEBUG_NORMAL_MODE
 
@@ -500,14 +495,13 @@ static void update_gps(void){
     }
 }
 
-#ifdef DEBUG_NORMAL_MODE
 static void print_debug_messeage(uint8_t mode){
-#ifdef DEBUG_PLOT_MES
     switch (mode)
     {
     case 0:
         Serial.print(t_system);
         Serial.print(DELIMITER);
+#ifdef DEBUG_NORMAL_MODE
         Serial.print(high_rate_t_max);
         Serial.print(DELIMITER);   
         Serial.print(high_rate_max_cnt);
@@ -515,7 +509,8 @@ static void print_debug_messeage(uint8_t mode){
         Serial.print(mid_rate_t_max);
         Serial.print(DELIMITER);   
         Serial.print(mid_rate_max_cnt);
-        Serial.print(DELIMITER);           
+        Serial.print(DELIMITER);
+#endif //DEBUG_NORMAL_MODE
         break;
 
     case 1:
@@ -526,7 +521,7 @@ static void print_debug_messeage(uint8_t mode){
         break;   
 
     case 2:
-        /*
+        
         Serial.print(imu_data.ax);
         Serial.print(DELIMITER);
         Serial.print(imu_data.ay);
@@ -539,7 +534,6 @@ static void print_debug_messeage(uint8_t mode){
         Serial.print(DELIMITER);    
         Serial.print(imu_data.gz);
         Serial.print(DELIMITER);  
-        */
         Serial.print(imu_data.roll);
         Serial.print(DELIMITER);    
         Serial.print(imu_data.pitch);
@@ -571,6 +565,4 @@ static void print_debug_messeage(uint8_t mode){
     default:
         break;
     }
-#endif
 }
-#endif

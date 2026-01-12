@@ -57,6 +57,10 @@
 #define PRESSURE_MIN 900.0 //hPa
 #define PRESSURE_DEFAULT 1013.15 //hPa
 
+#define ASCII_A 0x41
+#define ASCII_B 0x42
+
+#define DELIMITER "\t"
 
 #pragma pack(push, 1)
 typedef struct{
