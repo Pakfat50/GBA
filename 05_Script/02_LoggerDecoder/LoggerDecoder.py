@@ -321,6 +321,140 @@ class STATUS_DATA(ctypes.BigEndianStructure):
             'track1': "-"
         }
 
+
+class NAV_PV_DATA(ctypes.BigEndianStructure): 
+    _pack_ = 1
+    _fields_ = [
+        ('runTime',  ctypes.c_ulong),
+        ('posValid',  ctypes.c_ubyte),
+        ('velValid', ctypes.c_ubyte),
+        ('system',  ctypes.c_ubyte),
+        ('numSV', ctypes.c_ubyte),
+        ('numSVGPS',  ctypes.c_ubyte),
+        ('numSVBDS', ctypes.c_ubyte),
+        ('numSVGLN',  ctypes.c_ubyte),
+        ('res',  ctypes.c_ubyte),
+        ('pDop', ctypes.c_float),
+        ('lon',  ctypes.c_double),
+        ('lat', ctypes.c_double),
+        ('height',  ctypes.c_float),
+        ('sepGeoid', ctypes.c_float),
+        ('hAcc',  ctypes.c_float),
+        ('vAcc',  ctypes.c_float),
+        ('velN', ctypes.c_float),
+        ('velE',  ctypes.c_float),
+        ('velU', ctypes.c_float),
+        ('speed3D',  ctypes.c_float),
+        ('speed2D', ctypes.c_float),
+        ('heading',  ctypes.c_float),
+        ('sAcc',  ctypes.c_float),
+        ('cAcc', ctypes.c_float)  
+    ]
+    def __init__(self):
+        super(NAV_PV_DATA, self).__init__(
+            runTime = 0,
+            posValid = 0,
+            velValid = 0,
+            system = 0,
+            numSV = 0,
+            numSVGPS = 0,
+            numSVBDS = 0,
+            numSVGLN = 0,
+            res = 0,
+            pDop = 0,
+            lon = 0,
+            lat = 0,
+            height = 0,
+            sepGeoid = 0,
+            hAcc = 0,
+            vAcc = 0,
+            velN = 0,
+            velE = 0,
+            velU = 0,
+            speed3D = 0,
+            speed2D = 0,
+            heading = 0,
+            sAcc = 0,
+            cAcc = 0
+        )
+        self.unit = {
+            'runTime' : "ms",
+            'posValid': "-",
+            'velValid': "-",
+            'system': "-",
+            'numSV': "-",
+            'numSVGPS': "-",
+            'numSVBDS': "-",
+            'numSVGLN' : "ms",
+            'res': "-",
+            'pDop': "-",
+            'lon': "deg",
+            'lat': "deg",
+            'height': "m",
+            'sepGeoid': "m",
+            'hAcc' : "m^2",
+            'vAcc': "m^2",
+            'velN': "m/s",
+            'velE': "m/s",
+            'velU': "m/s",
+            'speed3D': "m/s",
+            'speed2D': "m/s",
+            'heading' : "deg",
+            'sAcc': "(m/s)^2",
+            'cAcc': "deg^2"
+        }
+
+
+class NAV_TIMEUTC_DATA(ctypes.BigEndianStructure): 
+    _pack_ = 1
+    _fields_ = [
+        ('runTime',  ctypes.c_ulong),
+        ('tAcc',  ctypes.c_float),
+        ('msErr', ctypes.c_float),
+        ('ms',  ctypes.c_ushort),
+        ('year', ctypes.c_ushort),
+        ('month',  ctypes.c_ubyte),
+        ('day', ctypes.c_ubyte),
+        ('hour',  ctypes.c_ubyte),
+        ('min',  ctypes.c_ubyte),
+        ('sec', ctypes.c_ubyte),
+        ('valid',  ctypes.c_ubyte),
+        ('timeSrc', ctypes.c_ubyte),
+        ('dateValid',  ctypes.c_ubyte)
+    ]
+    def __init__(self):
+        super(NAV_TIMEUTC_DATA, self).__init__(
+            runTime = 0,
+            tAcc = 0,
+            msErr = 0,
+            ms = 0,
+            year = 0,
+            month = 0,
+            day = 0,
+            hour = 0,
+            min = 0,
+            sec = 0,
+            valid = 0,
+            timeSrc = 0,
+            dateValid = 0
+        )
+        self.unit = {
+            'runTime' : "ms",
+            'tAcc': "s^2",
+            'msErr': "ms",
+            'ms': "ms",
+            'year': "year",
+            'month': "month",
+            'day': "day",
+            'hour' : "hour",
+            'min': "min",
+            'sec': "s",
+            'valid': "-",
+            'timeSrc': "-",
+            'dateValid': "-"
+        }
+
+
 def writeStrData(fileName, dataType, strList):
     dataName = fileName.replace(".TXT", "")
     dataName += "_"
@@ -345,6 +479,8 @@ imuData = SerialData(b'\x47', b'\x02', IMU_DATA())
 envData = SerialData(b'\x47', b'\x03', ENV_DATA())
 windData = SerialData(b'\x47', b'\x04', WIND_DATA())
 statusData = SerialData(b'\x47', b'\x05', STATUS_DATA())
+navPvData = SerialData(b'\x01', b'\x03', NAV_PV_DATA())
+navTimeutcData = SerialData(b'\x01', b'\x10', NAV_TIMEUTC_DATA())
 
 dataPackets = lines.split('##GB'.encode())
 
@@ -353,6 +489,8 @@ imuDataStrList = [imuData.getHeader()]
 envDataStrList = [envData.getHeader()]
 windDataStrList = [windData.getHeader()]
 statusDataStrList = [statusData.getHeader()]
+navPvDataStrList = [navPvData.getHeader()]
+navTimeutcDataStrList = [navTimeutcData.getHeader()]
 
 detect = False
 lostPacketNum = 0
@@ -367,12 +505,16 @@ while i < len(dataPackets):
     envData.setReceiveDataStatus = False
     windData.setReceiveDataStatus = False
     statusData.setReceiveDataStatus = False
+    navPvData.setReceiveDataStatus = False
+    navTimeutcData.setReceiveDataStatus = False
     
     anlgeData.setReceiveData(dataPackets[i])
     imuData.setReceiveData(dataPackets[i])
     envData.setReceiveData(dataPackets[i])
     windData.setReceiveData(dataPackets[i])
     statusData.setReceiveData(dataPackets[i])
+    navPvData.setReceiveData(dataPackets[i])
+    navTimeutcData.setReceiveData(dataPackets[i])    
     
     if anlgeData.setReceiveDataStatus == True:
         angleDataStrList.append(anlgeData.getStrData(True))
@@ -393,7 +535,15 @@ while i < len(dataPackets):
     if statusData.setReceiveDataStatus == True:
         statusDataStrList.append(statusData.getStrData(True))
         detect = True
+
+    if navPvData.setReceiveDataStatus == True:
+        navPvDataStrList.append(navPvData.getStrData(True))
+        detect = True
     
+    if navTimeutcData.setReceiveDataStatus == True:
+        navTimeutcDataStrList.append(navTimeutcData.getStrData(True))
+        detect = True
+        
     if detect == False:
         lostPacketNum += 1
         
@@ -408,4 +558,5 @@ writeStrData(fileName, "IMU", imuDataStrList)
 writeStrData(fileName, "ENV", envDataStrList)
 writeStrData(fileName, "WIND", windDataStrList)
 writeStrData(fileName, "STATUS", statusDataStrList)
-
+writeStrData(fileName, "GPS_NAV_PV", navPvDataStrList)
+writeStrData(fileName, "GPS_NAV_TIMEUTC", navTimeutcDataStrList)
