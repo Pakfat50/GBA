@@ -40,6 +40,6 @@ class MIN_MAX {
 
 uint32_t micros(void);
 
-bool range_check(float *val, float range_max, float range_min, float val_default);
+bool range_check(float val, float *ret_val, float range_max, float range_min, float val_default);
 
 #endif

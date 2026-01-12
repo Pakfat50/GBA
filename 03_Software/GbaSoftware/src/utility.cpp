@@ -78,12 +78,15 @@ uint32_t micros(void){
     return micro;
 }
 
-bool range_check(float *val, float range_max, float range_min, float val_default){
+bool range_check(float val, float *ret_val, float range_max, float range_min, float val_default){
     bool range_err = false;
 
-    if((std::isfinite(*val) == false) || (*val > range_max) || (*val < range_min)){
-        *val = val_default;
+    if((std::isfinite(val) == false) || (val > range_max) || (val < range_min)){
+        *ret_val = val_default;
         range_err = true;
+    }else{
+        *ret_val = val;
+        range_err = false;
     }
 
     return range_err;

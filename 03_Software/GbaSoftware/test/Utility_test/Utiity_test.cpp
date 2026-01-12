@@ -95,50 +95,51 @@ void begin(){
 
     Serial.println("\n\nRange Check Test");
     x = 1;
+    float ret_x = 0;
     bool err = false;
     Serial.print("max = 10, min = 0, default = 5, x = ");
     Serial.print(x);
-    err = range_check(&x, 10, 0, 5);
+    err = range_check(x, &ret_x, 10, 0, 5);
     Serial.print(" err = ");
     Serial.print(err);
     Serial.print(" ret_x = ");
-    Serial.println(x);
+    Serial.println(ret_x);
 
     x = 100;
     Serial.print("max = 10, min = 0, default = 5, x = ");
     Serial.print(x);
-    err = range_check(&x, 10, 0, 5);
+    err = range_check(x, &ret_x, 10, 0, 5);
     Serial.print(" err = ");
     Serial.print(err);
     Serial.print(" ret_x = ");
-    Serial.println(x);
+    Serial.println(ret_x);
 
     x = -100;
     Serial.print("max = 10, min = 0, default = 5, x = ");
     Serial.print(x);
-    err = range_check(&x, 10, 0, 5);
+    err = range_check(x, &ret_x, 10, 0, 5);
     Serial.print(" err = ");
     Serial.print(err);
     Serial.print(" ret_x = ");
-    Serial.println(x);
+    Serial.println(ret_x);
 
     x = sqrt(-1); //NaN
     Serial.print("max = 10, min = 0, default = 5, x = ");
     Serial.print(x);
-    err = range_check(&x, 10, 0, 5);
+    err = range_check(x, &ret_x, 10, 0, 5);
     Serial.print(" err = ");
     Serial.print(err);
     Serial.print(" ret_x = ");
-    Serial.println(x);
+    Serial.println(ret_x);
 
     x = 1.0/0.0; //Inf
     Serial.print("max = 10, min = 0, default = 5, x = ");
     Serial.print(x);
-    err = range_check(&x, 10, 0, 5);
+    err = range_check(x, &ret_x, 10, 0, 5);
     Serial.print(" err = ");
     Serial.print(err);
     Serial.print(" ret_x = ");
-    Serial.println(x);
+    Serial.println(ret_x);
 
     Serial.println("\n\ntan Test");
     Serial.print("tan(pi/4) = ");

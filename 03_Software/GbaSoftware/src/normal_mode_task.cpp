@@ -124,7 +124,8 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
     uint8_t b_mode;
     GBA_MODE ret_mode = NORMAL;
     uint32_t t_transmit_delta = 0;
-    float l_temperature, l_humidity;
+    float l_temperature = 0.0;
+    float l_humidity = 0.0;
     static float l_ax = 0.0;
     static float l_ay = 0.0;
     static float l_az = 1.0;
