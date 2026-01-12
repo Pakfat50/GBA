@@ -21,10 +21,7 @@ static void user_delay_ms(uint32_t period);
 static int8_t imu_init(void);
 static void gps_init(void);
 static void update_gps(void);
-
 static void print_debug_messeage(uint8_t mode);
-//#define DEBUG_PLOT_MES
-//#define DEBUG_PLOT_TIME
 
 GBA_DATA gba_data;
 ANGLE_DATA angle_data;
@@ -71,15 +68,14 @@ int32_t delay_time = 0;
 uint32_t t_transmit_delay = 0;
 
 bool is_print_ascii = false;
+bool do_transmit = false;
 
 #ifdef DEBUG_NORMAL_MODE
 uint32_t high_rate_t_max = 0;
 uint32_t mid_rate_t_max = 0;
 uint32_t high_rate_max_cnt = 0;
 uint32_t mid_rate_max_cnt = 0;
-#endif
-
-bool do_transmit = false;
+#endif //DEBUG_NORMAL_MODE
 
 
 void normalModeInit(void){
