@@ -29,6 +29,34 @@
 #define WIND_ID 0x04
 #define STATUS_ID 0x05
 
+#define ANGLE_MAX 3600.0 // 10周
+#define ANGLE_MIN -3600.0 // -10周
+#define ANGLE_DEFAULT 0.0
+
+#define ACC_MAX 2.0 // G
+#define ACC_MIN -2.0 //G
+#define ACC_DEFAULT 0.0001 //G 零割防止のため、微小値とする
+
+#define ROLL_MAX 361.0 // 演算誤差防止のため、+1deg
+#define ROLL_MIN -361.0 // 演算誤差防止のため、-1deg
+#define ROLL_DEFAULT 0.0
+
+#define PITCH_MAX 361.0 // 演算誤差防止のため、+1deg
+#define PITCH_MIN -361.0 // 演算誤差防止のため、-1deg
+#define PITCH_DEFAULT 0.0
+
+#define HUMIDITY_MAX 100.0 //%
+#define HUMIDITY_MIN  0.0 //%
+#define HUMIDITY_DEFAULT 50.0 //%
+
+#define TEMPERATURE_MAX 60.0 //degC
+#define TEMPERATURE_MIN -20.0 //degC
+#define TEMPERATURE_DEFAULT 20.0 //degC
+
+#define PRESSURE_MAX 1200.0 //hPa
+#define PRESSURE_MIN 900.0 //hPa
+#define PRESSURE_DEFAULT 1013.15 //hPa
+
 
 #pragma pack(push, 1)
 typedef struct{
@@ -39,6 +67,8 @@ typedef struct{
     float angle1_raw;
     float angle0_average;
     float angle1_average;
+    bool err_angle0;
+    bool err_angle1;
 }ANGLE_DATA;
 #pragma pack(pop)
 
@@ -55,6 +85,11 @@ typedef struct{
     float pitch;
     float roll_raw;
     float pitch_raw;
+    bool err_ax;
+    bool err_ay;
+    bool err_az;
+    bool err_roll;
+    bool err_pitch;
 }IMU_DATA;
 #pragma pack(pop)
 
@@ -65,6 +100,10 @@ typedef struct{
     float temperature_bmp280;
     float humidity;
     float pressure;
+    bool err_humidity;
+    bool err_temperature;
+    bool err_temperature_bmp280;
+    bool err_pressure;
 }ENV_DATA;
 #pragma pack(pop)
 

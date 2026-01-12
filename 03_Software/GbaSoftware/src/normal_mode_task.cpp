@@ -24,7 +24,8 @@ static void update_gps(void);
 
 #ifdef DEBUG_NORMAL_MODE
 static void print_debug_messeage(uint8_t mode);
-#define DEBUG_PLOT_MES
+//#define DEBUG_PLOT_MES
+//#define DEBUG_PLOT_TIME
 #endif 
 
 GBA_DATA gba_data;
@@ -124,18 +125,28 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
     uint8_t b_mode;
     GBA_MODE ret_mode = NORMAL;
     uint32_t t_transmit_delta = 0;
+    float l_angle0 = 0.0;
+    float l_angle1 = 0.0;
+    float l_ax = 0.0;
+    float l_ay = 0.0;
+    float l_az = 1.0;
+    float l_roll = 0.0;
+    float l_pitch = 0.0;
     float l_temperature = 0.0;
+    float l_temperature_bmp280 = 0.0;
     float l_humidity = 0.0;
-    static float l_ax = 0.0;
-    static float l_ay = 0.0;
-    static float l_az = 1.0;
+    float l_pressure = 0.0;
+
 
     angle_data.systime = t_system;
     angleSensor0.getAngle(&angle_data.angle0_raw);
     angleSensor1.getAngle(&angle_data.angle1_raw);
 
-    angle_data.angle0 = angle_data.angle0_raw - gba_param.angleOffset0 - imu_data.pitch;
-    angle_data.angle1 = angle_data.angle1_raw - gba_param.angleOffset1 - imu_data.roll;
+    l_angle0 = angle_data.angle0_raw - gba_param.angleOffset0 - imu_data.pitch;
+    l_angle1 = angle_data.angle1_raw - gba_param.angleOffset1 - imu_data.roll;
+    
+    angle_data.err_angle0 = range_check(l_angle0, &angle_data.angle0, ANGLE_MAX, ANGLE_MIN, ANGLE_DEFAULT);
+    angle_data.err_angle1 = range_check(l_angle1, &angle_data.angle1, ANGLE_MAX, ANGLE_MIN, ANGLE_DEFAULT);
 
     angle_data.angle0_average = windAverage0.get(angle_data.angle0);
     angle_data.angle1_average = windAverage1.get(angle_data.angle1);
@@ -145,7 +156,7 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
     memcpy(b_angle_data, &angle_data, sizeof(ANGLE_DATA));
 #ifndef DEBUG_NORMAL_MODE
     send_data(GBA_CLASS_ID, ANGLE_ID, (uint16_t)sizeof(ANGLE_DATA), b_angle_data, &Serial);
-#endif
+#endif //DEBUG_NORMAL_MODE
     update_gps();
 
     switch (high_rate_cnt)
@@ -162,16 +173,25 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
         break;
 
     case 1:
-        l_ax = axLowp.get(imu_data.ax);
-        l_ay = ayLowp.get(imu_data.ay);
-        l_az = azLowp.get(imu_data.az);
+        imu_data.err_ax = range_check(imu_data.ax, &l_ax, ACC_MAX, ACC_MIN, ACC_DEFAULT);
+        imu_data.err_ay = range_check(imu_data.ay, &l_ay, ACC_MAX, ACC_MIN, ACC_DEFAULT);
+        imu_data.err_az = range_check(imu_data.az, &l_az, ACC_MAX, ACC_MIN, ACC_DEFAULT);
+
+        l_ax = axLowp.get(l_ax);
+        l_ay = ayLowp.get(l_ay);
+        l_az = azLowp.get(l_az);
+
         imu_data.roll_raw = atan2f(l_ax, sqrt(l_ay*l_ay + l_az*l_az)) * 180 / 3.141592;
         imu_data.pitch_raw = atan2f(l_ay, sqrt(l_ax*l_ax + l_az*l_az)) * 180 / 3.141592;           
         break;    
 
     case 2:
-        imu_data.roll = rollLowp.get(imu_data.roll_raw)  - gba_param.rollOffset;
-        imu_data.pitch = pitchLowp.get(imu_data.pitch_raw)  - gba_param.pitchOffset;
+        l_roll = imu_data.roll_raw - gba_param.rollOffset;
+        l_pitch = imu_data.pitch_raw - gba_param.pitchOffset;
+        imu_data.err_roll = range_check(l_roll, &l_roll, ROLL_MAX, ROLL_MIN, ROLL_DEFAULT);
+        imu_data.err_pitch = range_check(l_pitch, &l_pitch, PITCH_MAX, PITCH_MIN, PITCH_DEFAULT);
+        imu_data.roll = rollLowp.get(l_roll);
+        imu_data.pitch = pitchLowp.get(l_pitch);
         break;   
 
     case 3:
@@ -210,7 +230,7 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
             memcpy(b_imu_data, &imu_data, sizeof(IMU_DATA));
 #ifndef DEBUG_NORMAL_MODE            
             send_data(GBA_CLASS_ID, IMU_ID, (uint16_t)sizeof(IMU_DATA), b_imu_data, &Serial);
-#endif
+#endif //DEBUG_NORMAL_MODE
         }
 
         break;   
@@ -221,15 +241,22 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
         case 0:
             env_data.systime = t_system;
             if(aht20_getSensor(&l_humidity, &l_temperature)){
-                env_data.humidity = l_humidity*100.0;
+                l_humidity = l_humidity*100.0;
+                env_data.err_humidity = range_check(l_humidity, &l_humidity, HUMIDITY_MAX, HUMIDITY_MIN, HUMIDITY_DEFAULT);
+                env_data.err_temperature = range_check(l_temperature, &l_temperature, TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_DEFAULT);
+                env_data.humidity = l_humidity;
                 env_data.temperature = l_temperature;
             }
             aht20_startSensor();
             break;
         
         case 1:
-            env_data.temperature_bmp280 = bmp280.getTemperature();
-            env_data.pressure = bmp280.getPressure()/100.0;
+            l_temperature_bmp280 = bmp280.getTemperature();
+            l_pressure = bmp280.getPressure()/100.0;
+            env_data.err_temperature_bmp280 = range_check(l_temperature_bmp280, &l_temperature_bmp280, TEMPERATURE_MAX, TEMPERATURE_MIN, TEMPERATURE_DEFAULT);
+            env_data.err_pressure = range_check(l_pressure, &l_pressure, PRESSURE_MAX, PRESSURE_MIN, PRESSURE_DEFAULT);
+            env_data.temperature_bmp280 = l_temperature_bmp280;
+            env_data.pressure = l_pressure;
             break;            
 
         case 2:
@@ -252,9 +279,9 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
             memcpy(b_nav_pv, &nav_pv, sizeof(NAV_PV));
 #ifndef DEBUG_NORMAL_MODE
             send_data(GPS_NAV_CLSID, GPS_NAVSV_ID, (uint16_t)sizeof(NAV_PV), b_nav_pv, &Serial);
-#else
+#else 
             print_debug_messeage(0);
-#endif 
+#endif //DEBUG_NORMAL_MODE
             break;   
 
         case 6:
@@ -263,7 +290,7 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
             send_data(GPS_NAV_CLSID, GPS_NAVTIMEUTC_ID, (uint16_t)sizeof(NAV_TIMEUTC), b_nav_timeutc, &Serial);
 #else
             print_debug_messeage(1);
-#endif
+#endif //DEBUG_NORMAL_MODE
             break;   
 
         case 7:
@@ -272,7 +299,7 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
             send_data(GBA_CLASS_ID, ENV_ID, (uint16_t)sizeof(ENV_DATA), b_env_data, &Serial);
 #else
             print_debug_messeage(2);
-#endif
+#endif //DEBUG_NORMAL_MODE
             break; 
             
         case 8:
@@ -281,16 +308,17 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
             send_data(GBA_CLASS_ID, WIND_ID, (uint16_t)sizeof(WIND_DATA), b_wind_data, &Serial); 
 #else
             print_debug_messeage(3);            
-#endif
+#endif //DEBUG_NORMAL_MODE
             break; 
             
         case 9:
+            status_data.systime = t_system;
             memcpy(b_status_data, &status_data, sizeof(STATUS_DATA));
 #ifndef DEBUG_NORMAL_MODE
             send_data(GBA_CLASS_ID, STATUS_ID, (uint16_t)sizeof(STATUS_DATA), b_status_data, &Serial);  
 #else
             print_debug_messeage(4);            
-#endif 
+#endif //DEBUG_NORMAL_MODE
             break;     
 
         default:
@@ -354,7 +382,18 @@ GBA_MODE normalModeTask(GBA_PARAM gba_param){
         }
     }
 
-#endif
+#ifdef DEBUG_PLOT_TIME
+    Serial.print(t_system);
+    Serial.print("\t");
+    Serial.print(delay_time);
+    Serial.print("\t");
+    Serial.print(high_rate_cnt);
+    Serial.print("\t");
+    Serial.print(mid_rate_cnt);
+    Serial.println("\t");
+#endif //DEBUG_PLOT_TIME
+
+#endif //DEBUG_NORMAL_MODE
 
     return ret_mode;
 }

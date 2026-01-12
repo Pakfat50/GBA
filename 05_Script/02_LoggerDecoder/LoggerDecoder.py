@@ -20,25 +20,27 @@ class SerialData:
         self.setReceiveDataStatus = False
 
     def setReceiveData(self, byte_data):
-         clsId = byte_data[0].to_bytes(1,'big')
-         subId = byte_data[1].to_bytes(1,'big')
-         length = int.from_bytes(byte_data[2:4],'big')
-         payload = byte_data[4:-4]
-         checkSum = int.from_bytes(byte_data[-4:],'big')
-         
-         if (clsId == self.clsId) and (subId == self.subId) and (length == self.length):
-            calcCheckSum = calCheckSum(clsId, subId, length, payload)
+        if len(byte_data) > 10:
+             clsId = byte_data[0].to_bytes(1,'big')
+             subId = byte_data[1].to_bytes(1,'big')
+             length = int.from_bytes(byte_data[2:4],'big')
+             payload = byte_data[4:-4]
+             checkSum = int.from_bytes(byte_data[-4:],'big')
+             
+             if (clsId == self.clsId) and (subId == self.subId) and (length == self.length):
+                calcCheckSum = calCheckSum(clsId, subId, length, payload)
+                
+                if(calcCheckSum == checkSum):
+                    self.cksumErr = False
+                    try:
+                        convertBytesToStructure(self.t, payload)
+                        self.setReceiveDataStatus = True #受信成功
+                    except:
+                        print("0x{0:02x}".format(self.clsId), "0x{0:02x}".format(self.subId))
+                else:
+                    #print('CKSum does not match at %s%s'%(self.__header_name[0],self.__header_name[1]))
+                    self.cksumErr = True
             
-            if(calcCheckSum == checkSum):
-                self.cksumErr = False
-                try:
-                    convertBytesToStructure(self.t, payload)
-                    self.setReceiveDataStatus = True #受信成功
-                except:
-                    print("0x{0:02x}".format(self.clsId), "0x{0:02x}".format(self.subId))
-            else:
-                #print('CKSum does not match at %s%s'%(self.__header_name[0],self.__header_name[1]))
-                self.cksumErr = True
 
     def getStrData(self, det, filMode = "Blank"):
         tempStr = ""
@@ -138,6 +140,8 @@ class ANGLE_DATA(ctypes.BigEndianStructure):
         ('angle1_raw', ctypes.c_float),
         ('angle0_average',  ctypes.c_float),
         ('angle1_average', ctypes.c_float),
+        ('err_angle0',  ctypes.c_ubyte),
+        ('err_angle1', ctypes.c_ubyte)
     ]
     def __init__(self):
         super(ANGLE_DATA, self).__init__(
@@ -147,7 +151,9 @@ class ANGLE_DATA(ctypes.BigEndianStructure):
             angle0_raw = 0,
             angle1_raw = 0,
             angle0_average = 0,
-            angle1_average = 0
+            angle1_average = 0,
+            err_angle0 = False,
+            err_angle1 = False
         )
         self.unit = {
             'systime' : "ms",
@@ -156,7 +162,9 @@ class ANGLE_DATA(ctypes.BigEndianStructure):
             'angle0_raw': "deg",
             'angle1_raw': "deg",
             'angle0_average': "deg",
-            'angle1_average': "deg"
+            'angle1_average': "deg",
+            'err_angle0' : "-",
+            'err_angle1' : "-"
         }
 
 class IMU_DATA(ctypes.BigEndianStructure): 
@@ -172,7 +180,12 @@ class IMU_DATA(ctypes.BigEndianStructure):
         ('roll',  ctypes.c_float),
         ('pitch', ctypes.c_float),
         ('roll_raw',  ctypes.c_float),
-        ('pitch_raw', ctypes.c_float)
+        ('pitch_raw', ctypes.c_float),
+        ('err_ax',  ctypes.c_ubyte),
+        ('err_ay', ctypes.c_ubyte),       
+        ('err_az',  ctypes.c_ubyte),
+        ('err_roll', ctypes.c_ubyte),       
+        ('err_pitch',  ctypes.c_ubyte)
     ]
     def __init__(self):
         super(IMU_DATA, self).__init__(
@@ -186,7 +199,12 @@ class IMU_DATA(ctypes.BigEndianStructure):
             roll = 0,
             pitch = 0,
             roll_raw = 0,
-            pitch_raw = 0
+            pitch_raw = 0,
+            err_ax = False,
+            err_ay = False,
+            err_az = False,
+            err_roll = False,
+            err_pitch = False
         )
         self.unit = {
             'systime' : "ms",
@@ -199,7 +217,12 @@ class IMU_DATA(ctypes.BigEndianStructure):
             'roll' : "deg",
             'pitch' : "deg",
             'roll_raw' : "deg",
-            'pitch_raw' : "deg"
+            'pitch_raw' : "deg",
+            'err_ax' : "-",
+            'err_ay' : "-",
+            'err_az' : "-",
+            'err_roll' : "-",
+            'err_pitch' : "-"
         }
 
 
@@ -210,7 +233,11 @@ class ENV_DATA(ctypes.BigEndianStructure):
         ('temperature',  ctypes.c_float),
         ('temperature_bmp280', ctypes.c_float),
         ('humidity',  ctypes.c_float),
-        ('pressure', ctypes.c_float)
+        ('pressure', ctypes.c_float),
+        ('err_humidity', ctypes.c_ubyte),       
+        ('err_temperature',  ctypes.c_ubyte),
+        ('err_temperature_bmp280', ctypes.c_ubyte),   
+        ('err_pressure', ctypes.c_ubyte)
 
     ]
     def __init__(self):
@@ -219,14 +246,22 @@ class ENV_DATA(ctypes.BigEndianStructure):
             temperature = 0,
             temperature_bmp280 = 0,
             humidity = 0,
-            pressure = 0
+            pressure = 0,
+            err_humidity = False,
+            err_temperature = False,
+            err_temperature_bmp280 = False,
+            err_pressure = False
         )
         self.unit = {
             'systime' : "ms",
             'temperature': "degC",
             'temperature_bmp280': "degC",
             'humidity': "%%",
-            'pressure': "hPa"
+            'pressure': "hPa",
+            'err_humidity' : "-",
+            'err_temperature' : "-",
+            'err_temperature_bmp280' : "-",
+            'err_pressure' : "-"
         }
 
 
@@ -299,7 +334,7 @@ def writeStrData(fileName, dataType, strList):
     f.close()
 
 
-fileName = "LOG00004.TXT"
+fileName = "LOG00008.TXT"
 
 f = open(fileName, "rb")
 lines = f.read()
