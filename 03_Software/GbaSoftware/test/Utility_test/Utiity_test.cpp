@@ -2,6 +2,8 @@
 #include <math.h>
 #include "utility.h"
 
+#define PI 3.14159265
+
 void setup() {
 
 }
@@ -137,6 +139,17 @@ void begin(){
     Serial.print(err);
     Serial.print(" ret_x = ");
     Serial.println(x);
+
+    Serial.println("\n\ntan Test");
+    Serial.print("tan(pi/4) = ");
+    Serial.println(tan(PI/4));
+    Serial.print("tan(pi/2) = ");
+    Serial.println(tan(PI/2));
+    Serial.print("tan(pi/4 + 2pi) = ");
+    Serial.println(tan(PI/4 + 2*PI));
+    Serial.print("tan(pi/4 - 3pi) = ");
+    Serial.println(tan(PI/4 - 3*PI));
+
 
 }
 
