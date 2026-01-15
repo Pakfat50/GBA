@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "serial_parser.h"
-#include "gba_common.h"
+#include "gba_param.h"
 
 static void inizializeArray(char* array, size_t array_size);
 

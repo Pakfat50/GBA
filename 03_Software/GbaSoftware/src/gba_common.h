@@ -5,7 +5,6 @@
 
 #define EEPROM_ADDR_BASE 1024
 #define EEPROM_ADDR_END 0xEF0 //0xEFF - 16byte
-#define PARAM_NUM_MAX ((uint16_t)EEPROM_ADDR_END-(uint16_t)EEPROM_ADDR_BASE)/4
 
 typedef union {
   uint8_t U1[4];
