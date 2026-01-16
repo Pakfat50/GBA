@@ -20,7 +20,12 @@ include ../Version.mk
 ###   the default file name is dirname.
 
 ### for C++ files compiled with g++ (must have .cpp suffix)
-#APPSRC_CXX += my_cpp_file.cpp
+APPSRC_CXX += view_param_mode_task.cpp
+APPSRC_CXX += serial_parser.cpp
+APPSRC_CXX += gba_param.cpp
+APPSRC_CXX += gba_mode.cpp
+APPSRC_CXX += utility.cpp
+APPSRC_CXX += eeprom.cpp
 
 ### for C files compiled with gcc (must have .c suffix)
 #APPSRC += my_c_file.c
