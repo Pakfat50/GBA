@@ -4,16 +4,18 @@
 #include "gba_mode.h"
 #include "gba_param.h"
 
-GBA_MODE setParamModeTask(void){
+GBA_MODE setParamModeTask(GBA_PARAM *gba_param){
     bool check_mode = false;
     uint8_t b_mode;
     uint8_t b_data;
     GBA_MODE ret_mode = SET_PARAM;
+    GBA_PARAM l_gba_param;
     uint16_t param_num = 0;
     float val = 0.0;
 
     while(Serial.available()) {
         b_data = Serial.read();
+        Serial.write(b_data);
 
         switch (parseVal(b_data, &param_num, &val)){
             case GET_VALUE:
@@ -24,6 +26,9 @@ GBA_MODE setParamModeTask(void){
 
                 if (set_gba_param(param_num, val) == true){
                     Serial.println("Param Write Success\n");
+                    if(get_gba_param(&l_gba_param) == true){
+                        *gba_param = l_gba_param;
+                    }
                 }else{
                     Serial.println("Param Write Error\n");
                 }

@@ -20,15 +20,31 @@ include ../Version.mk
 ###   the default file name is dirname.
 
 ### for C++ files compiled with g++ (must have .cpp suffix)
-#APPSRC_CXX += my_cpp_file.cpp
+APPSRC_CXX += normal_mode_task.cpp
+APPSRC_CXX += gps_passing_mode_task.cpp
+APPSRC_CXX += set_param_mode_task.cpp
+APPSRC_CXX += view_param_mode_task.cpp
+APPSRC_CXX += gba_mode.cpp
+APPSRC_CXX += gba_twenet.cpp
+APPSRC_CXX += gba_param.cpp
+APPSRC_CXX += din.cpp
+APPSRC_CXX += mt6701.cpp
+APPSRC_CXX += ATH20.cpp
+APPSRC_CXX += BMP280.cpp
+APPSRC_CXX += casic_parser.cpp
+APPSRC_CXX += serial_parser.cpp
+APPSRC_CXX += calc_wind_speed.cpp
+APPSRC_CXX += logger.cpp
+APPSRC_CXX += utility.cpp
+APPSRC_CXX += eeprom.cpp
 
 ### for C files compiled with gcc (must have .c suffix)
-#APPSRC += my_c_file.c
+APPSRC += bmi160.c
 
 ### Additional Src/Include Path
 # if set, find source files from given dirs.
 #
-#APP_COMMON_SRC_DIR_ADD1 = ./src_dir
+APP_COMMON_SRC_DIR_ADD1 = ../src
 #APP_COMMON_SRC_DIR_ADD2 = ../my_common_dir
 #APP_COMMON_SRC_DIR_ADD3 = 
 #APP_COMMON_SRC_DIR_ADD4 =

@@ -5,6 +5,6 @@
 #include "gba_mode.h"
 #include "gba_param.h"
 
-GBA_MODE setParamModeTask(void);
+GBA_MODE setParamModeTask(GBA_PARAM *gba_param);
 
 #endif

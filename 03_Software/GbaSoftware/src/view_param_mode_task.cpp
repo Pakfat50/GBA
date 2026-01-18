@@ -15,6 +15,7 @@ GBA_MODE viewParamModeTask(void){
 
     while(Serial.available()) {
         b_data = Serial.read();
+        Serial.write(b_data);
         
         if(parseMode(b_data, &b_mode) == GET_VALUE){
             check_mode = true;
@@ -22,7 +23,7 @@ GBA_MODE viewParamModeTask(void){
     }
 
     if(check_mode == true){
-        if (b_data == ASCII_V){
+        if (b_mode == ASCII_V){
             if(get_gba_param(&l_gba_param) == true){
                 printParam("angleOffset0", l_gba_param.angleOffset0);
                 printParam("angleOffset1", l_gba_param.angleOffset1);
