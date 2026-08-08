@@ -1,0 +1,1 @@
+runTime[ms],posValid[-],velValid[-],system[-],numSV[-],numSVGPS[-],numSVBDS[-],numSVGLN[ms],res[-],pDop[-],lon[deg],lat[deg],height[m],sepGeoid[m],hAcc[m^2],vAcc[m^2],velN[m/s],velE[m/s],velU[m/s],speed3D[m/s],speed2D[m/s],heading[deg],sAcc[(m/s)^2],cAcc[deg^2],

@@ -7,7 +7,7 @@ Created on Fri Jan  2 20:44:45 2026
 
 import ctypes
 import struct
-
+import glob
 
 class SerialData:
     def __init__(self, clsId, subId, CtypeClass, structName = ""):
@@ -467,96 +467,103 @@ def writeStrData(fileName, dataType, strList):
         f.write('\n')
     f.close()
 
+def decodeTXT(fileName):
+    f = open(fileName, "rb")
+    lines = f.read()
+    f.close()
 
-fileName = "LOG00008.TXT"
+    anlgeData = SerialData(b'\x47', b'\x01', ANGLE_DATA())
+    imuData = SerialData(b'\x47', b'\x02', IMU_DATA())
+    envData = SerialData(b'\x47', b'\x03', ENV_DATA())
+    windData = SerialData(b'\x47', b'\x04', WIND_DATA())
+    statusData = SerialData(b'\x47', b'\x05', STATUS_DATA())
+    navPvData = SerialData(b'\x01', b'\x03', NAV_PV_DATA())
+    navTimeutcData = SerialData(b'\x01', b'\x10', NAV_TIMEUTC_DATA())
 
-f = open(fileName, "rb")
-lines = f.read()
-f.close()
+    dataPackets = lines.split('##GB'.encode())
 
-anlgeData = SerialData(b'\x47', b'\x01', ANGLE_DATA())
-imuData = SerialData(b'\x47', b'\x02', IMU_DATA())
-envData = SerialData(b'\x47', b'\x03', ENV_DATA())
-windData = SerialData(b'\x47', b'\x04', WIND_DATA())
-statusData = SerialData(b'\x47', b'\x05', STATUS_DATA())
-navPvData = SerialData(b'\x01', b'\x03', NAV_PV_DATA())
-navTimeutcData = SerialData(b'\x01', b'\x10', NAV_TIMEUTC_DATA())
+    angleDataStrList = [anlgeData.getHeader()]
+    imuDataStrList = [imuData.getHeader()]
+    envDataStrList = [envData.getHeader()]
+    windDataStrList = [windData.getHeader()]
+    statusDataStrList = [statusData.getHeader()]
+    navPvDataStrList = [navPvData.getHeader()]
+    navTimeutcDataStrList = [navTimeutcData.getHeader()]
 
-dataPackets = lines.split('##GB'.encode())
-
-angleDataStrList = [anlgeData.getHeader()]
-imuDataStrList = [imuData.getHeader()]
-envDataStrList = [envData.getHeader()]
-windDataStrList = [windData.getHeader()]
-statusDataStrList = [statusData.getHeader()]
-navPvDataStrList = [navPvData.getHeader()]
-navTimeutcDataStrList = [navTimeutcData.getHeader()]
-
-detect = False
-lostPacketNum = 0
-totalDataPacketNum = len(dataPackets)
-
-i = 0
-while i < len(dataPackets):
-#while i < 20:
     detect = False
-    anlgeData.setReceiveDataStatus = False
-    imuData.setReceiveDataStatus = False
-    envData.setReceiveDataStatus = False
-    windData.setReceiveDataStatus = False
-    statusData.setReceiveDataStatus = False
-    navPvData.setReceiveDataStatus = False
-    navTimeutcData.setReceiveDataStatus = False
-    
-    anlgeData.setReceiveData(dataPackets[i])
-    imuData.setReceiveData(dataPackets[i])
-    envData.setReceiveData(dataPackets[i])
-    windData.setReceiveData(dataPackets[i])
-    statusData.setReceiveData(dataPackets[i])
-    navPvData.setReceiveData(dataPackets[i])
-    navTimeutcData.setReceiveData(dataPackets[i])    
-    
-    if anlgeData.setReceiveDataStatus == True:
-        angleDataStrList.append(anlgeData.getStrData(True))
-        detect = True
-        
-    if imuData.setReceiveDataStatus == True:
-        imuDataStrList.append(imuData.getStrData(True))
-        detect = True
-        
-    if envData.setReceiveDataStatus == True:
-        envDataStrList.append(envData.getStrData(True))
-        detect = True
-        
-    if windData.setReceiveDataStatus == True:
-        windDataStrList.append(windData.getStrData(True))
-        detect = True
-        
-    if statusData.setReceiveDataStatus == True:
-        statusDataStrList.append(statusData.getStrData(True))
-        detect = True
+    lostPacketNum = 0
+    totalDataPacketNum = len(dataPackets)
 
-    if navPvData.setReceiveDataStatus == True:
-        navPvDataStrList.append(navPvData.getStrData(True))
-        detect = True
-    
-    if navTimeutcData.setReceiveDataStatus == True:
-        navTimeutcDataStrList.append(navTimeutcData.getStrData(True))
-        detect = True
+    i = 0
+    while i < len(dataPackets):
+    #while i < 20:
+        detect = False
+        anlgeData.setReceiveDataStatus = False
+        imuData.setReceiveDataStatus = False
+        envData.setReceiveDataStatus = False
+        windData.setReceiveDataStatus = False
+        statusData.setReceiveDataStatus = False
+        navPvData.setReceiveDataStatus = False
+        navTimeutcData.setReceiveDataStatus = False
         
-    if detect == False:
-        lostPacketNum += 1
+        anlgeData.setReceiveData(dataPackets[i])
+        imuData.setReceiveData(dataPackets[i])
+        envData.setReceiveData(dataPackets[i])
+        windData.setReceiveData(dataPackets[i])
+        statusData.setReceiveData(dataPackets[i])
+        navPvData.setReceiveData(dataPackets[i])
+        navTimeutcData.setReceiveData(dataPackets[i])    
         
-    print("処理中。{:.1f}%".format(float(i*100/totalDataPacketNum)))
+        if anlgeData.setReceiveDataStatus == True:
+            angleDataStrList.append(anlgeData.getStrData(True))
+            detect = True
+            
+        if imuData.setReceiveDataStatus == True:
+            imuDataStrList.append(imuData.getStrData(True))
+            detect = True
+            
+        if envData.setReceiveDataStatus == True:
+            envDataStrList.append(envData.getStrData(True))
+            detect = True
+            
+        if windData.setReceiveDataStatus == True:
+            windDataStrList.append(windData.getStrData(True))
+            detect = True
+            
+        if statusData.setReceiveDataStatus == True:
+            statusDataStrList.append(statusData.getStrData(True))
+            detect = True
+
+        if navPvData.setReceiveDataStatus == True:
+            navPvDataStrList.append(navPvData.getStrData(True))
+            detect = True
+        
+        if navTimeutcData.setReceiveDataStatus == True:
+            navTimeutcDataStrList.append(navTimeutcData.getStrData(True))
+            detect = True
+            
+        if detect == False:
+            lostPacketNum += 1
+            
+        print("処理中。{:.1f}%".format(float(i*100/totalDataPacketNum)))
+        
+        i += 1
+
+    print("ロストパケット数： %s \n"%lostPacketNum)
+
+    writeStrData(fileName, "ANGLE", angleDataStrList)
+    writeStrData(fileName, "IMU", imuDataStrList)
+    writeStrData(fileName, "ENV", envDataStrList)
+    writeStrData(fileName, "WIND", windDataStrList)
+    writeStrData(fileName, "STATUS", statusDataStrList)
+    writeStrData(fileName, "GPS_NAV_PV", navPvDataStrList)
+    writeStrData(fileName, "GPS_NAV_TIMEUTC", navTimeutcDataStrList)
+
+
+if __name__ == "__main__":
+    fileList = glob.glob("*.TXT")
+    i = 0
+    while i < len(fileList):
+        decodeTXT(fileList[i])
+        i += 1
     
-    i += 1
-
-print("ロストパケット数： %s \n"%lostPacketNum)
-
-writeStrData(fileName, "ANGLE", angleDataStrList)
-writeStrData(fileName, "IMU", imuDataStrList)
-writeStrData(fileName, "ENV", envDataStrList)
-writeStrData(fileName, "WIND", windDataStrList)
-writeStrData(fileName, "STATUS", statusDataStrList)
-writeStrData(fileName, "GPS_NAV_PV", navPvDataStrList)
-writeStrData(fileName, "GPS_NAV_TIMEUTC", navTimeutcDataStrList)

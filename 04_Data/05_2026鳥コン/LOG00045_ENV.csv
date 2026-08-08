@@ -1,0 +1,2 @@
+systime[ms],temperature[degC],temperature_bmp280[degC],humidity[%%],pressure[hPa],err_humidity[-],err_temperature[-],err_temperature_bmp280[-],err_pressure[-],
+15540,48.82373809814453,49.54999923706055,30.56488037109375,1000.6599731445312,0,0,0,0,
