@@ -1,0 +1,6 @@
+data/processed/*.npz
+results/estimates_100hz_*.csv.gz
+results/comparison_binned_*.csv
+results/free_decay_validation/free_decay_estimates_100hz.csv
+__pycache__/
+*.py[cod]

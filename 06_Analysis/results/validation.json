@@ -1,0 +1,20 @@
+{
+  "constant_angle_max_abs_torque_error_Nm": 1.154545209436364e-14,
+  "noise_free_sinusoid_checks": [
+    {
+      "f_hz": 0.1,
+      "estimated_gain": 0.9851846304415341,
+      "continuous_target_gain": 0.9851853368415733
+    },
+    {
+      "f_hz": 0.37240075964418434,
+      "estimated_gain": 0.8230171119704415,
+      "continuous_target_gain": 0.8229929792900348
+    },
+    {
+      "f_hz": 1.0,
+      "estimated_gain": 0.35364859314879393,
+      "continuous_target_gain": 0.3535533905932738
+    }
+  ]
+}

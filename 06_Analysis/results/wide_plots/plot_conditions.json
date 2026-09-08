@@ -1,0 +1,27 @@
+{
+  "source_commit": "dbc153d89fa335aca14014e0173c587e8adc93a8",
+  "raw_source": {
+    "am": "original logged angle samples; no time resampling",
+    "pm": "original logged angle samples; no time resampling"
+  },
+  "clock": "JST seconds from midnight, with the prior +1.60 s shared device shift",
+  "display_averaging": false,
+  "pole_parameter_hz": 1,
+  "torque_filter_3db_hz": 0.5098245285,
+  "common_am_speed_multiplier": 0.784882805020668,
+  "full_ranges_jst_s": {
+    "am": [
+      34319.10065237314,
+      38858.71
+    ],
+    "pm": [
+      57299.32,
+      61833.81
+    ]
+  },
+  "previous_plot_range_jst_s": [
+    58863.375,
+    58923.375
+  ],
+  "note": "Full records include excluded windows. Gray spans show the previously fixed sensor exclusion mask, not missing reference bins. No metrics or fitted parameters are changed."
+}

@@ -1,0 +1,24 @@
+{
+  "source": "04_Data/00_Calibration/swing/LOG00014.TXT",
+  "source_commit": "dbc153d89fa335aca14014e0173c587e8adc93a8",
+  "original_rows": 58988,
+  "skipped_lines": 3,
+  "model": {
+    "K": 0.011781809999999995,
+    "I": 0.0021519449719067866,
+    "b": 0.0005967609800673365,
+    "wn2": 5.474958771627146,
+    "fn_hz": 0.37240075964418434,
+    "decay_per_s": 0.13865618960009024,
+    "period_s": 2.6852791625759957,
+    "zeta": 0.05925825174531445
+  },
+  "pole_parameter_hz": 1.0,
+  "torque_filter_3db_hz": 0.5098245285,
+  "offline_advance_s": 0.477464829275686,
+  "margin_start_s": 3.0,
+  "margin_end_s": 0.5,
+  "zero_offset_correction": false,
+  "identification_data_reused": true,
+  "interpretation": "zero residual under the free-decay model; not independently measured total aerodynamic force"
+}

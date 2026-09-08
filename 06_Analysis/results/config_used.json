@@ -1,0 +1,69 @@
+{
+  "source_commit": "dbc153d89fa335aca14014e0173c587e8adc93a8",
+  "model": {
+    "K": 0.011781809999999995,
+    "I": 0.0021519449719067866,
+    "b": 0.0005967609800673365,
+    "wn2": 5.474958771627146,
+    "fn_hz": 0.37240075964418434,
+    "decay_per_s": 0.13865618960009024,
+    "period_s": 2.6852791625759957,
+    "zeta": 0.05925825174531445
+  },
+  "cd_effective": 0.46197476640743,
+  "legacy_cd": 0.55,
+  "legacy_K": 0.014026730400000001,
+  "rho": 1.225,
+  "area": 0.017671458676442587,
+  "lever_m": 0.245,
+  "fs_hz": 100.0,
+  "choices": {
+    "Low-pass": 0.2,
+    "Observer": 0.2
+  },
+  "shared_clock_shift_s": 1.5999999999999766,
+  "threshold_deg": 36.0,
+  "padding_s": 10.0,
+  "bin_width_s": 0.25,
+  "observer_delay_compensation_s": 2.3873241463784303,
+  "force_filter_3db_hz": 0.10196490570679173,
+  "scope": "PoC, independent axes, inner-axis free-decay characteristics provisionally used on both axes; legacy wind conversion retained; not validated absolute aerodynamic force",
+  "common_am_gain": 0.784882805020668,
+  "calibrated_cd_equivalent": 0.7499091021477424,
+  "calibration": "AM low-pass with fixed pole parameter 0.2 Hz; one shared multiplier, no additive offset",
+  "settings": {
+    "pole_hz_grid": [
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.75,
+      1.0,
+      1.5,
+      2.0,
+      3.0,
+      5.0
+    ],
+    "threshold_deg": 36.0,
+    "axis_limit_deg": 37.0,
+    "saturation_padding_s": 10.0,
+    "edge_seconds": 20.0,
+    "tap_before_s": 15.0,
+    "tap_after_s": 20.0,
+    "tap_times_jst_s": {
+      "am": [
+        34500,
+        38820
+      ],
+      "pm": [
+        57600,
+        61800
+      ]
+    },
+    "manual_exclusions_jst_s": {
+      "am": [],
+      "pm": []
+    },
+    "evaluation_bin_s": 0.25
+  }
+}

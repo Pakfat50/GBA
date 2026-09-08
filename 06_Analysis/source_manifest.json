@@ -1,0 +1,63 @@
+{
+  "repository": "Pakfat50/GBA",
+  "commit": "dbc153d89fa335aca14014e0173c587e8adc93a8",
+  "files": [
+    {
+      "path": "03_Software/TestSoftware/TestBoardSoftware/TestBoardSoftware.ino",
+      "git_blob_sha": "badfedfbb335163afe2d0c252e4352e1141d2657",
+      "bytes": 3284
+    },
+    {
+      "path": "04_Data/00_Calibration/swing/LOG00014.TXT",
+      "git_blob_sha": "f372eaf56fe336b27fc9a96e10b342333ed7fa40",
+      "bytes": 1303947
+    },
+    {
+      "path": "04_Data/00_Calibration/swing/readme.txt",
+      "git_blob_sha": "754e6f474082729cc24220119e3d17bb97ce4d62",
+      "bytes": 51
+    },
+    {
+      "path": "04_Data/03_風速計ランニングデータ/20250114/memo.txt",
+      "git_blob_sha": "908da0ed234ed7ea5c86837832c04cccb2231244",
+      "bytes": 645
+    },
+    {
+      "path": "05_Script/00_Calibration/calc_eta.py",
+      "git_blob_sha": "a75766d3ec0d80042acbfa0df21d90d763c5cc8f",
+      "bytes": 9508
+    },
+    {
+      "path": "05_Script/01_Analysis/20250114/LOG00016.TXT",
+      "git_blob_sha": "eba576be3478683cb85328033998619d3b969b95",
+      "bytes": 16851755
+    },
+    {
+      "path": "05_Script/01_Analysis/20250114/LOG00017.TXT",
+      "git_blob_sha": "86af6b59a6b9445a8397a84a5b21db2d9b32aea1",
+      "bytes": 17353805
+    },
+    {
+      "path": "05_Script/01_Analysis/20250114/WS400am.txt",
+      "git_blob_sha": "7fa96b570672594180909cd16f7987faf52bf32e",
+      "bytes": 1267174
+    },
+    {
+      "path": "05_Script/01_Analysis/20250114/WS400pm.txt",
+      "git_blob_sha": "8defa5072a813a3718a8e0643658efb4e890b77a",
+      "bytes": 1267174
+    },
+    {
+      "path": "05_Script/01_Analysis/analysis.py",
+      "git_blob_sha": "ff4d5b529f84a194b06b46ab715a6671855942ee",
+      "bytes": 9469
+    }
+  ],
+  "notes": [
+    "GitHub original files are unchanged.",
+    "Text was retrieved by authenticated GitHub file/blob tools; local scratch raw copies use LF instead of CRLF and may include an extra trailing blank line. Parsing discards blank lines.",
+    "Package includes newly generated analysis code, derived cache and output files. Original raw repository files are not bundled.",
+    "Free-decay LOG00015.TXT and LOG00016.TXT were not used because their text could not be retrieved through this connector; the four inner-axis intervals of LOG00014.TXT were used.",
+    "Field angles are logged degrees. Source firmware uses GPS centiseconds."
+  ]
+}
