@@ -1,0 +1,20 @@
+test_augmented_model_is_observable (test_stage1.Stage1ModelTest.test_augmented_model_is_observable) ... ok
+test_continuous_gain_places_requested_poles (test_stage1.Stage1ModelTest.test_continuous_gain_places_requested_poles) ... ok
+test_discrete_observer_has_requested_repeated_pole (test_stage1.Stage1ModelTest.test_discrete_observer_has_requested_repeated_pole) ... ok
+test_exact_discretization_is_step_size_consistent (test_stage1.Stage1ModelTest.test_exact_discretization_is_step_size_consistent) ... ok
+test_identical_state_remains_identical (test_stage1.Stage1ModelTest.test_identical_state_remains_identical) ... ok
+test_initial_error_converges (test_stage1.Stage1ModelTest.test_initial_error_converges) ... ok
+test_unannounced_torque_step_reconverges (test_stage1.Stage1ModelTest.test_unannounced_torque_step_reconverges) ... ok
+test_design_rank_and_unique_points (test_stage2.Stage2Tests.test_design_rank_and_unique_points) ... ok
+test_discrete_frequency_response_matches_time_domain (test_stage2.Stage2Tests.test_discrete_frequency_response_matches_time_domain) ... ok
+test_known_interactions_are_recovered (test_stage2.Stage2Tests.test_known_interactions_are_recovered) ... ok
+test_mismatch_changes_estimate_not_plant (test_stage2.Stage2Tests.test_mismatch_changes_estimate_not_plant) ... ok
+test_no_current_or_future_angle_leaks (test_stage2.Stage2Tests.test_no_current_or_future_angle_leaks) ... ok
+test_nonlinear_factor_coding_endpoints (test_stage2.Stage2Tests.test_nonlinear_factor_coding_endpoints) ... ok
+test_plant_static_equilibrium (test_stage2.Stage2Tests.test_plant_static_equilibrium) ... ok
+test_transfer_filter_matches_stage1_recurrence (test_stage2.Stage2Tests.test_transfer_filter_matches_stage1_recurrence) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.258s
+
+OK

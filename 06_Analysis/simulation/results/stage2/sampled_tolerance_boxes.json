@@ -1,0 +1,282 @@
+[
+  {
+    "input": "Constant",
+    "range_scale": 0.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 99.99999657511547,
+    "max_corner_observer_nrmse": 1.7172449099024966e-11,
+    "corners_checked": 16
+  },
+  {
+    "input": "Step",
+    "range_scale": 0.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 55.85578537574276,
+    "max_corner_observer_nrmse": 0.07509607682409473,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_low",
+    "range_scale": 0.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 12.270568434577223,
+    "max_corner_observer_nrmse": 0.15269459001205668,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_resonance",
+    "range_scale": 0.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 87.75295222349968,
+    "max_corner_observer_nrmse": 0.9632741762870095,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_high",
+    "range_scale": 0.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -34.379362597855526,
+    "max_corner_observer_nrmse": 1.2868086925842648,
+    "corners_checked": 16
+  },
+  {
+    "input": "Random_bandlimited",
+    "range_scale": 0.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 55.23390479535257,
+    "max_corner_observer_nrmse": 0.35485068343029974,
+    "corners_checked": 16
+  },
+  {
+    "input": "Gust",
+    "range_scale": 0.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 20.968435528845177,
+    "max_corner_observer_nrmse": 0.22484665336689916,
+    "corners_checked": 16
+  },
+  {
+    "input": "Constant",
+    "range_scale": 0.25,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -0.05327255288738453,
+    "max_corner_observer_nrmse": 0.03797547289066741,
+    "corners_checked": 16
+  },
+  {
+    "input": "Step",
+    "range_scale": 0.25,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 49.48112091459508,
+    "max_corner_observer_nrmse": 0.08594410727090405,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_low",
+    "range_scale": 0.25,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 8.57096445312331,
+    "max_corner_observer_nrmse": 0.16204408006263368,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_resonance",
+    "range_scale": 0.25,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 80.3631397612017,
+    "max_corner_observer_nrmse": 1.5828872089789803,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_high",
+    "range_scale": 0.25,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -37.274148390077634,
+    "max_corner_observer_nrmse": 1.31476819884634,
+    "corners_checked": 16
+  },
+  {
+    "input": "Random_bandlimited",
+    "range_scale": 0.25,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 53.39212886707194,
+    "max_corner_observer_nrmse": 0.3744569811280627,
+    "corners_checked": 16
+  },
+  {
+    "input": "Gust",
+    "range_scale": 0.25,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 17.56202453621696,
+    "max_corner_observer_nrmse": 0.23681134958540562,
+    "corners_checked": 16
+  },
+  {
+    "input": "Constant",
+    "range_scale": 0.5,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -0.05151037178745543,
+    "max_corner_observer_nrmse": 0.07692467576669079,
+    "corners_checked": 16
+  },
+  {
+    "input": "Step",
+    "range_scale": 0.5,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 38.95273063273446,
+    "max_corner_observer_nrmse": 0.11169164143983978,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_low",
+    "range_scale": 0.5,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 4.246031906955727,
+    "max_corner_observer_nrmse": 0.1803232211402144,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_resonance",
+    "range_scale": 0.5,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 73.23532804178832,
+    "max_corner_observer_nrmse": 2.2229814854601053,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_high",
+    "range_scale": 0.5,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -40.268483548124536,
+    "max_corner_observer_nrmse": 1.3436297104113708,
+    "corners_checked": 16
+  },
+  {
+    "input": "Random_bandlimited",
+    "range_scale": 0.5,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 50.94119011183219,
+    "max_corner_observer_nrmse": 0.40653244746978995,
+    "corners_checked": 16
+  },
+  {
+    "input": "Gust",
+    "range_scale": 0.5,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 13.753750909590412,
+    "max_corner_observer_nrmse": 0.25584950954232755,
+    "corners_checked": 16
+  },
+  {
+    "input": "Constant",
+    "range_scale": 0.75,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -0.041972812249957414,
+    "max_corner_observer_nrmse": 0.11688554627287681,
+    "corners_checked": 16
+  },
+  {
+    "input": "Step",
+    "range_scale": 0.75,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 28.799343064577343,
+    "max_corner_observer_nrmse": 0.14548413229344914,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_low",
+    "range_scale": 0.75,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 0.4283162474021718,
+    "max_corner_observer_nrmse": 0.20578443132113095,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_resonance",
+    "range_scale": 0.75,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 66.39760697493872,
+    "max_corner_observer_nrmse": 2.8813145384009693,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_high",
+    "range_scale": 0.75,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -43.366397630824,
+    "max_corner_observer_nrmse": 1.3734233901577928,
+    "corners_checked": 16
+  },
+  {
+    "input": "Random_bandlimited",
+    "range_scale": 0.75,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 47.690819044440715,
+    "max_corner_observer_nrmse": 0.4493323552956688,
+    "corners_checked": 16
+  },
+  {
+    "input": "Gust",
+    "range_scale": 0.75,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 9.064645344219047,
+    "max_corner_observer_nrmse": 0.28105319409697604,
+    "corners_checked": 16
+  },
+  {
+    "input": "Constant",
+    "range_scale": 1.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -0.03552754644420286,
+    "max_corner_observer_nrmse": 0.15789801869345002,
+    "corners_checked": 16
+  },
+  {
+    "input": "Step",
+    "range_scale": 1.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 20.31129468348477,
+    "max_corner_observer_nrmse": 0.18368225550855252,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_low",
+    "range_scale": 1.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -2.3930191326586803,
+    "max_corner_observer_nrmse": 0.2367023240497101,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_resonance",
+    "range_scale": 1.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 59.84364645226808,
+    "max_corner_observer_nrmse": 3.5577275474866954,
+    "corners_checked": 16
+  },
+  {
+    "input": "Sine_high",
+    "range_scale": 1.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": -46.57216208465322,
+    "max_corner_observer_nrmse": 1.404181093693551,
+    "corners_checked": 16
+  },
+  {
+    "input": "Random_bandlimited",
+    "range_scale": 1.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 42.32864470109161,
+    "max_corner_observer_nrmse": 0.5010040594545754,
+    "corners_checked": 16
+  },
+  {
+    "input": "Gust",
+    "range_scale": 1.0,
+    "pole_hz": 1.0,
+    "min_corner_improvement_percent": 4.428605088885895,
+    "max_corner_observer_nrmse": 0.31144123834879317,
+    "corners_checked": 16
+  }
+]

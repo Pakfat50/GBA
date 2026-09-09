@@ -1,0 +1,213 @@
+{
+  "stage": 2,
+  "implementation_status": "COMPLETE",
+  "response_surface_gate": "NOT_MET",
+  "stage3": "AWAITING_USER_REVIEW",
+  "design_points": 43,
+  "held_out_parameter_points": 96,
+  "input_blocks": 7,
+  "regression_rank": 21,
+  "regression_columns": 21,
+  "regression_condition_number": 9.976007264397037,
+  "max_true_angle_deg": 8.042256501690858,
+  "nominal": {
+    "Constant": {
+      "Static": {
+        "rmse_N": 4.830065708210486e-07,
+        "mse_N2": 2.3329534745630866e-13,
+        "nrmse": 0.0006037582135263107,
+        "bias_N": -1.3577194875513904e-08,
+        "max_abs_error_N": 2.9737424549718247e-06
+      },
+      "Low-pass": {
+        "rmse_N": 4.0112182503142856e-07,
+        "mse_N2": 1.60898718516544e-13,
+        "nrmse": 0.0005014022812892857,
+        "bias_N": -1.2821507566623443e-08,
+        "max_abs_error_N": 2.4343435641359596e-06
+      },
+      "Observer": {
+        "rmse_N": 1.3737959279219974e-14,
+        "mse_N2": 1.8873152515750618e-28,
+        "nrmse": 1.7172449099024966e-11,
+        "bias_N": -1.3737512467800618e-14,
+        "max_abs_error_N": 1.4063945320830218e-14
+      }
+    },
+    "Step": {
+      "Static": {
+        "rmse_N": 0.00012109887248256604,
+        "mse_N2": 1.466493691654879e-08,
+        "nrmse": 0.17478752565217975,
+        "bias_N": -5.574543969473452e-07,
+        "max_abs_error_N": 0.0008
+      },
+      "Low-pass": {
+        "rmse_N": 0.00011786181364414779,
+        "mse_N2": 1.3891407115487821e-08,
+        "nrmse": 0.1701153309970305,
+        "bias_N": -5.4826200366568885e-06,
+        "max_abs_error_N": 0.0008
+      },
+      "Observer": {
+        "rmse_N": 5.20291719751147e-05,
+        "mse_N2": 2.7070347364160604e-09,
+        "nrmse": 0.07509607682409473,
+        "bias_N": -4.875586437868774e-06,
+        "max_abs_error_N": 0.0008
+      }
+    },
+    "Sine_low": {
+      "Static": {
+        "rmse_N": 1.4464985865100214e-05,
+        "mse_N2": 2.09235816077549e-10,
+        "nrmse": 0.025572322107759313,
+        "bias_N": -3.0041426938074703e-09,
+        "max_abs_error_N": 2.057856986747064e-05
+      },
+      "Low-pass": {
+        "rmse_N": 9.845237160925912e-05,
+        "mse_N2": 9.692869475487652e-09,
+        "nrmse": 0.1740517261851711,
+        "bias_N": -1.6311698062855397e-08,
+        "max_abs_error_N": 0.00013924086495066716
+      },
+      "Observer": {
+        "rmse_N": 8.63717059754807e-05,
+        "mse_N2": 7.46007159311489e-09,
+        "nrmse": 0.15269459001205668,
+        "bias_N": -1.5187944321387103e-08,
+        "max_abs_error_N": 0.00012214054977190418
+      }
+    },
+    "Sine_resonance": {
+      "Static": {
+        "rmse_N": 0.00482307165020556,
+        "mse_N2": 2.3262020143016587e-05,
+        "nrmse": 8.544986855594312,
+        "bias_N": 5.9628873661691205e-06,
+        "max_abs_error_N": 0.006806489263341829
+      },
+      "Low-pass": {
+        "rmse_N": 0.004439466880871999,
+        "mse_N2": 1.9708866186359355e-05,
+        "nrmse": 7.865358197878048,
+        "bias_N": -3.156935333626805e-05,
+        "max_abs_error_N": 0.006284260343213546
+      },
+      "Observer": {
+        "rmse_N": 0.0005437036299223025,
+        "mse_N2": 2.95613637190688e-07,
+        "nrmse": 0.9632741762870095,
+        "bias_N": -2.0930889391705684e-06,
+        "max_abs_error_N": 0.0007676630856410341
+      }
+    },
+    "Sine_high": {
+      "Static": {
+        "rmse_N": 0.0006565799566496543,
+        "mse_N2": 4.3109723947406187e-07,
+        "nrmse": 1.1607528896003718,
+        "bias_N": 4.275160335862965e-09,
+        "max_abs_error_N": 0.0009295784888437873
+      },
+      "Low-pass": {
+        "rmse_N": 0.0005416631071381882,
+        "mse_N2": 2.933989216345964e-07,
+        "nrmse": 0.9575939844536814,
+        "bias_N": 1.0391198302643867e-09,
+        "max_abs_error_N": 0.0007669541199322808
+      },
+      "Observer": {
+        "rmse_N": 0.0007278834308000366,
+        "mse_N2": 5.298142888332317e-07,
+        "nrmse": 1.2868086925842648,
+        "bias_N": -2.3352181950542416e-08,
+        "max_abs_error_N": 0.0010294242655178427
+      }
+    },
+    "Random_bandlimited": {
+      "Static": {
+        "rmse_N": 0.00023121888779036696,
+        "mse_N2": 5.3462174071014304e-08,
+        "nrmse": 0.8132309401813018,
+        "bias_N": -2.3680081416412424e-07,
+        "max_abs_error_N": 0.0006647202231352048
+      },
+      "Low-pass": {
+        "rmse_N": 0.00022537505534141934,
+        "mse_N2": 5.079391557014783e-08,
+        "nrmse": 0.7926773193152228,
+        "bias_N": 4.363320515977799e-06,
+        "max_abs_error_N": 0.0006101829789638676
+      },
+      "Observer": {
+        "rmse_N": 0.00010089161184166661,
+        "mse_N2": 1.0179117340009523e-08,
+        "nrmse": 0.35485068343029974,
+        "bias_N": 3.3393457269141425e-06,
+        "max_abs_error_N": 0.0002874100439372308
+      }
+    },
+    "Gust": {
+      "Static": {
+        "rmse_N": 1.445290728049977e-05,
+        "mse_N2": 2.0888652885872323e-10,
+        "nrmse": 0.09910698561655695,
+        "bias_N": 7.875382727001003e-11,
+        "max_abs_error_N": 9.64427113150421e-05
+      },
+      "Low-pass": {
+        "rmse_N": 4.148936598524919e-05,
+        "mse_N2": 1.7213674898579524e-09,
+        "nrmse": 0.2845023439324225,
+        "bias_N": 1.452836274242793e-11,
+        "max_abs_error_N": 0.00020889357787927832
+      },
+      "Observer": {
+        "rmse_N": 3.278969502730559e-05,
+        "mse_N2": 1.0751640999837092e-09,
+        "nrmse": 0.22484665336689916,
+        "bias_N": -6.446666188720602e-16,
+        "max_abs_error_N": 0.00015350850882451638
+      }
+    }
+  },
+  "config": {
+    "sample_rate_hz": 100.0,
+    "duration_s": 120.0,
+    "evaluation_start_s": 40.0,
+    "force_amplitude_N": 0.0008,
+    "seed": 20260909,
+    "validation_points": 96,
+    "factors": [
+      "I",
+      "b",
+      "K",
+      "lever",
+      "pole_hz"
+    ],
+    "linear_half_ranges": [
+      0.25,
+      0.5,
+      0.1,
+      0.05
+    ],
+    "pole_center_hz": 1.0,
+    "pole_log2_half_range": 1.0,
+    "prediction_relative_error_limit": 0.1,
+    "prediction_floor_fraction_of_force_rms": 0.001,
+    "nominal_parameters": {
+      "inertia_kg_m2": 0.00215194497,
+      "damping_n_m_s_per_rad": 0.00059676098,
+      "restoring_n_m_per_rad": 0.01178181,
+      "force_lever_m": 0.245
+    }
+  },
+  "versions": {
+    "python": "3.12.14",
+    "numpy": "2.3.5",
+    "scipy": "1.17.0"
+  },
+  "caution": "Sampled parameter boxes are not proven continuous-domain tolerances; no sensor noise; causal processing only."
+}

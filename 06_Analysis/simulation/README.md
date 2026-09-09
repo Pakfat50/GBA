@@ -74,3 +74,13 @@ python -m unittest discover -s 06_Analysis/simulation/tests -v
 - `results/stage1/stage1_summary.json`：係数、極、誤差、合否判定
 
 Stage 1の結果は理想条件での内部整合性検証です。実機に対する推定精度を示すものではありません。
+
+## Stage 2：実験計画法による係数誤差評価
+
+[Stage 2レポート](Stage2_Report.md)に公称比較、DOE、独立確認点、応答曲面の未達項目をまとめています。
+
+```bash
+python 06_Analysis/simulation/src/run_stage2.py
+```
+
+`config/stage2_doe.json`から43条件の面心中心複合計画と96確認点を再現します。結果は`results/stage2/`です。`summary.json`の`response_surface_gate`がStage 2の応答曲面判定を示します。計算の正常終了は合格を意味しません。Stage 3へ自動的には進みません。

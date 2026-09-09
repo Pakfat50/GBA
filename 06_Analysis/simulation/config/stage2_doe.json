@@ -1,0 +1,20 @@
+{
+  "sample_rate_hz": 100.0,
+  "duration_s": 120.0,
+  "evaluation_start_s": 40.0,
+  "force_amplitude_N": 0.0008,
+  "seed": 20260909,
+  "validation_points": 96,
+  "factors": ["I", "b", "K", "lever", "pole_hz"],
+  "linear_half_ranges": [0.25, 0.5, 0.1, 0.05],
+  "pole_center_hz": 1.0,
+  "pole_log2_half_range": 1.0,
+  "prediction_relative_error_limit": 0.10,
+  "prediction_floor_fraction_of_force_rms": 0.001,
+  "nominal_parameters": {
+    "inertia_kg_m2": 0.00215194497,
+    "damping_n_m_s_per_rad": 0.00059676098,
+    "restoring_n_m_per_rad": 0.01178181,
+    "force_lever_m": 0.245
+  }
+}

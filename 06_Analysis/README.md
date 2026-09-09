@@ -120,3 +120,5 @@ python -m unittest discover -s 06_Analysis/simulation/tests -v
 ## シミュレーションPoC
 
 [Stage 1シミュレーション](simulation/README.md)では、プラントとオブザーバーに同じ1軸線形モデルを使用し、理想角度観測下で状態一致と収束を検証します。結果と合否判定は[Stage 1検証結果](simulation/Stage1_Report.md)に記載しています。
+
+[Stage 2：DOEによる係数誤差評価](simulation/Stage2_Report.md)では、同一入力に対する静的換算・LPF・オブザーバーの比較と、5因子の主効果・交互作用・応答曲面の検証を行っています。
