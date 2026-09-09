@@ -1,0 +1,81 @@
+{
+  "stage": 1,
+  "status": "PASS",
+  "scope": "one-axis linear matched model; ideal angle measurement; constant-disturbance observer",
+  "checks": {
+    "observable_rank_is_three": true,
+    "matched_identity_error_pass": true,
+    "characteristic_coefficient_error_pass": true,
+    "initial_error_convergence_pass": true,
+    "steady_torque_error_pass": true
+  },
+  "metrics": {
+    "observability_rank": 3,
+    "identity_normalized_max_error": 0.0,
+    "characteristic_coefficient_max_error": 8.881784197001252e-16,
+    "repeated_pole_numeric_cluster_spread": 5.024668171427216e-06,
+    "final_normalized_state_error": 2.3592239273284576e-16,
+    "steady_torque_relative_error": 2.1684043449704927e-16,
+    "one_percent_settling_time_s": 1.43,
+    "step_one_percent_settling_time_after_step_s": 1.35
+  },
+  "parameters": {
+    "inertia_kg_m2": 0.00215194497,
+    "damping_n_m_s_per_rad": 0.00059676098,
+    "restoring_n_m_per_rad": 0.01178181,
+    "force_lever_m": 0.245
+  },
+  "natural_characteristics": {
+    "omega_n_rad_s": 2.339862982415504,
+    "natural_frequency_hz": 0.3724007598091721,
+    "decay_rate_per_s": 0.13865618970730464,
+    "damped_frequency_hz": 0.371746334636877,
+    "damping_ratio": 0.059258251764881587
+  },
+  "observer": {
+    "continuous_repeated_pole_rad_s": 6.283185307179586,
+    "target_discrete_repeated_pole": 0.9391013674242926,
+    "actual_discrete_poles": [
+      {
+        "real": 0.9390988550902066,
+        "imag": 4.351442371126848e-06
+      },
+      {
+        "real": 0.9390988550902066,
+        "imag": -4.351442371126848e-06
+      },
+      {
+        "real": 0.939106392092464,
+        "imag": 0.0
+      }
+    ],
+    "target_characteristic_coefficients": [
+      1.0,
+      -2.8173041022728778,
+      2.6457341348945285,
+      -0.8282041813068599
+    ],
+    "actual_characteristic_coefficients": [
+      1.0,
+      -2.8173041022728773,
+      2.6457341348945276,
+      -0.8282041813068591
+    ],
+    "continuous_gain": [
+      18.57224354212415,
+      107.80998098885986,
+      0.5337904091247959
+    ],
+    "discrete_gain": [
+      0.17937990299119203,
+      0.9935142726310072,
+      0.004867160144008057
+    ]
+  },
+  "acceptance": {
+    "identity_normalized_max_error": 1e-10,
+    "characteristic_coefficient_max_error": 1e-10,
+    "final_normalized_state_error": 0.01,
+    "steady_torque_relative_error": 0.01
+  }
+}

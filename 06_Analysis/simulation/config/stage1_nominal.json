@@ -1,0 +1,21 @@
+{
+  "stage": 1,
+  "model": "one_axis_linear_augmented_disturbance",
+  "sample_rate_hz": 100.0,
+  "duration_s": 8.0,
+  "parameters": {
+    "inertia_kg_m2": 0.00215194497,
+    "damping_n_m_s_per_rad": 0.00059676098,
+    "restoring_n_m_per_rad": 0.01178181,
+    "force_lever_m": 0.245
+  },
+  "observer": {
+    "repeated_pole_hz": 1.0
+  },
+  "acceptance": {
+    "identity_normalized_max_error": 1e-10,
+    "characteristic_coefficient_max_error": 1e-10,
+    "final_normalized_state_error": 0.01,
+    "steady_torque_relative_error": 0.01
+  }
+}

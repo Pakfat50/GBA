@@ -8,6 +8,7 @@
 - 慣性モーメント `I`、復元係数 `K`、減衰係数 `b` の感度解析
 - 約38度の機械的制限を考慮した共通除外マスク
 - 100 Hzの等価トルク・力・風速推定データの生成
+- 同一モデル条件でのStage 1シミュレーションとオブザーバー状態検証
 
 理論、データ解釈、評価結果、制約、今後の試験案は [GBA_PoC_Report.md](GBA_PoC_Report.md) に記載しています。
 
@@ -25,6 +26,13 @@
 │   ├── poc.py
 │   ├── plot_wide.py
 │   └── plot_free_decay_validation.py
+├── simulation/
+│   ├── README.md
+│   ├── Stage1_Report.md
+│   ├── config/stage1_nominal.json
+│   ├── src/                   # 線形プラント、係数導出、オブザーバー
+│   ├── tests/                 # Stage 1自動テスト
+│   └── results/stage1/        # 合否JSONと検証図
 ├── data/
 │   └── processed/              # 実行時に生成。Git管理外
 └── results/
@@ -53,6 +61,8 @@ python 06_Analysis/src/prepare_data.py
 python 06_Analysis/src/poc.py
 python 06_Analysis/src/plot_wide.py
 python 06_Analysis/src/plot_free_decay_validation.py
+python 06_Analysis/simulation/src/run_stage1.py
+python -m unittest discover -s 06_Analysis/simulation/tests -v
 ```
 
 `prepare_data.py` は中間ファイルを `06_Analysis/data/processed/` に作成します。`poc.py` は集計表・図に加え、次の100 Hzデータを `06_Analysis/results/` に生成します。
@@ -106,3 +116,7 @@ python 06_Analysis/src/plot_free_decay_validation.py
 ```
 
 100 Hzは出力間隔です。参照器は約4 Hzであり、このデータだけでは100 Hzの風変動の再現精度を検証できません。
+
+## シミュレーションPoC
+
+[Stage 1シミュレーション](simulation/README.md)では、プラントとオブザーバーに同じ1軸線形モデルを使用し、理想角度観測下で状態一致と収束を検証します。結果と合否判定は[Stage 1検証結果](simulation/Stage1_Report.md)に記載しています。
