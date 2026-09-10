@@ -1,0 +1,20 @@
+{
+  "sample_rate_hz": 100.0,
+  "duration_s": 120.0,
+  "evaluation_start_s": 40.0,
+  "evaluation_end_s": 110.0,
+  "force_amplitude_N": 0.0008,
+  "seed": 20260909,
+  "current_pole_hz": 1.0,
+  "luenberger_pole_grid_hz": [0.2, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0, 8.0],
+  "kalman_force_random_walk_grid_N_per_sample": [1e-8, 3e-8, 1e-7, 3e-7, 1e-6, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4],
+  "kalman_assumed_angle_noise_deg": 0.02,
+  "training_inputs": ["Step", "Sine_low", "Sine_resonance", "Sine_high"],
+  "validation_inputs": ["Random_bandlimited", "Gust"],
+  "nominal_parameters": {
+    "inertia_kg_m2": 0.00215194497,
+    "damping_n_m_s_per_rad": 0.00059676098,
+    "restoring_n_m_per_rad": 0.01178181,
+    "force_lever_m": 0.245
+  }
+}

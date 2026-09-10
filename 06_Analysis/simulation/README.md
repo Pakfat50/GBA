@@ -84,3 +84,14 @@ python 06_Analysis/simulation/src/run_stage2.py
 ```
 
 `config/stage2_doe.json`から43条件の面心中心複合計画と96確認点を再現します。結果は`results/stage2/`です。`summary.json`の`response_surface_gate`がStage 2の応答曲面判定を示します。計算の正常終了は合格を意味しません。Stage 3へ自動的には進みません。
+
+### Stage 2追加比較：推定器の構造と未来データ
+
+[オブザーバー実装比較レポート](Estimator_Comparison_Report.md)では、現行ESO、外力変化率を状態に加えたRamp ESO、因果Kalman filter、記録全体を使うRTS smootherを比較します。すべての外部観測は角度だけで、角速度は内部状態として推定します。
+
+```bash
+python 06_Analysis/simulation/src/run_estimator_comparison.py
+python -m unittest discover -s 06_Analysis/simulation/tests -v
+```
+
+選定用入力と未使用の検証入力を分離し、同一時刻の外力RMSE・NRMSEで比較します。RTS smootherは未来の角度を使う事後解析専用方式です。設定は`config/estimator_comparison.json`、結果は`results/stage2_estimator_comparison/`です。

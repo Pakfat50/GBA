@@ -1,0 +1,133 @@
+{
+  "scope": "nominal coefficients, ideal angle, no measured angular rate, common-time scoring",
+  "training_inputs": [
+    "Step",
+    "Sine_low",
+    "Sine_resonance",
+    "Sine_high"
+  ],
+  "validation_inputs": [
+    "Random_bandlimited",
+    "Gust"
+  ],
+  "selected_hyperparameters": {
+    "ESO constant": {
+      "family": "ESO constant",
+      "parameter": 8.0,
+      "parameter_unit": "pole_hz",
+      "training_mean_nrmse": 0.1640046466517655
+    },
+    "ESO ramp": {
+      "family": "ESO ramp",
+      "parameter": 8.0,
+      "parameter_unit": "pole_hz",
+      "training_mean_nrmse": 0.045082798962093676
+    },
+    "Kalman causal": {
+      "family": "Kalman causal",
+      "parameter": 0.0003,
+      "parameter_unit": "force_random_walk_N_per_sample",
+      "training_mean_nrmse": 0.219328036226739
+    },
+    "RTS offline": {
+      "family": "RTS offline",
+      "parameter": 0.0003,
+      "parameter_unit": "force_random_walk_N_per_sample",
+      "training_mean_nrmse": 0.004130227526153656
+    }
+  },
+  "selection_at_grid_boundary": {
+    "ESO constant": true,
+    "ESO ramp": true,
+    "Kalman causal": true,
+    "RTS offline": true
+  },
+  "validation": {
+    "Random_bandlimited": {
+      "Static": {
+        "rmse_N": 0.00022458763562698732,
+        "nrmse": 0.9273501718739996,
+        "improvement_vs_current_percent": -122.00120557083669
+      },
+      "Low-pass 1 Hz": {
+        "rmse_N": 0.00022244027584135114,
+        "nrmse": 0.9184834572807152,
+        "improvement_vs_current_percent": -119.87857553434912
+      },
+      "ESO constant 1 Hz (current)": {
+        "rmse_N": 0.00010116505225703621,
+        "nrmse": 0.4177230342013158,
+        "improvement_vs_current_percent": 0.0
+      },
+      "ESO constant tuned": {
+        "rmse_N": 2.3001704628447924e-05,
+        "nrmse": 0.09497688811334982,
+        "improvement_vs_current_percent": 77.26319107708649
+      },
+      "ESO ramp tuned": {
+        "rmse_N": 6.213704967546444e-06,
+        "nrmse": 0.02565715763266222,
+        "improvement_vs_current_percent": 93.8578542402579
+      },
+      "Kalman causal tuned": {
+        "rmse_N": 3.097503496122193e-05,
+        "nrmse": 0.12789975688065272,
+        "improvement_vs_current_percent": 69.38168441556105
+      },
+      "RTS same Kalman tuning": {
+        "rmse_N": 8.992287837036178e-08,
+        "nrmse": 0.0003713027054199029,
+        "improvement_vs_current_percent": 99.91111270506549
+      },
+      "RTS offline tuned": {
+        "rmse_N": 8.992287837036178e-08,
+        "nrmse": 0.0003713027054199029,
+        "improvement_vs_current_percent": 99.91111270506549
+      }
+    },
+    "Gust": {
+      "Static": {
+        "rmse_N": 1.54506669741725e-05,
+        "nrmse": 0.09910696709556928,
+        "improvement_vs_current_percent": 55.92241840760288
+      },
+      "Low-pass 1 Hz": {
+        "rmse_N": 4.43536011469851e-05,
+        "nrmse": 0.2845023387528992,
+        "improvement_vs_current_percent": -26.531720393745605
+      },
+      "ESO constant 1 Hz (current)": {
+        "rmse_N": 3.505334552392404e-05,
+        "nrmse": 0.22484665336689916,
+        "improvement_vs_current_percent": 0.0
+      },
+      "ESO constant tuned": {
+        "rmse_N": 5.21088475053275e-06,
+        "nrmse": 0.033424769582642046,
+        "improvement_vs_current_percent": 85.13441535280477
+      },
+      "ESO ramp tuned": {
+        "rmse_N": 4.161615278541682e-07,
+        "nrmse": 0.002669432129786348,
+        "improvement_vs_current_percent": 98.8127765791424
+      },
+      "Kalman causal tuned": {
+        "rmse_N": 6.884389082897673e-06,
+        "nrmse": 0.044159318393980074,
+        "improvement_vs_current_percent": 80.36025098317918
+      },
+      "RTS same Kalman tuning": {
+        "rmse_N": 1.2775142113043975e-11,
+        "nrmse": 8.19450442595848e-08,
+        "improvement_vs_current_percent": 99.99996355514168
+      },
+      "RTS offline tuned": {
+        "rmse_N": 1.2775142113043975e-11,
+        "nrmse": 8.19450442595848e-08,
+        "improvement_vs_current_percent": 99.99996355514168
+      }
+    }
+  },
+  "rts_definition": "full-record Rauch-Tung-Striebel fixed-interval smoother",
+  "result_status": "COMPARISON_COMPLETE_AWAITING_REVIEW"
+}
