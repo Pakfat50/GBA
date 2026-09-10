@@ -89,6 +89,8 @@ python 06_Analysis/simulation/src/run_stage2.py
 
 [オブザーバー実装比較レポート](Estimator_Comparison_Report.md)では、現行ESO、外力変化率を状態に加えたRamp ESO、因果Kalman filter、記録全体を使うRTS smootherを比較します。すべての外部観測は角度だけで、角速度は内部状態として推定します。
 
+[外力推定器3候補の理論・調整ガイド](Estimator_Candidate_Guide.md)では、帯域可変ESO、3状態RTS smoother、4状態RTS smootherの数式、初学者向け解説、チューニング方法、最終選定方法をまとめています。
+
 ```bash
 python 06_Analysis/simulation/src/run_estimator_comparison.py
 python -m unittest discover -s 06_Analysis/simulation/tests -v

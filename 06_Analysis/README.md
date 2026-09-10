@@ -124,3 +124,5 @@ python -m unittest discover -s 06_Analysis/simulation/tests -v
 [Stage 2：DOEによる係数誤差評価](simulation/Stage2_Report.md)では、同一入力に対する静的換算・LPF・オブザーバーの比較と、5因子の主効果・交互作用・応答曲面の検証を行っています。
 
 [Stage 2：オブザーバー実装比較](simulation/Estimator_Comparison_Report.md)では、角度だけを観測する現行ESO、Ramp ESO、因果Kalman filterと、未来の角度も使うRTS smootherを公称・ノイズなし条件で比較しています。
+
+[外力推定器3候補の理論・調整ガイド](simulation/Estimator_Candidate_Guide.md)では、絞り込んだ3候補の数式、調整パラメータ、チューニング手順、比較条件を説明しています。
