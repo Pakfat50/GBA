@@ -24,6 +24,6 @@ test_psd_integrates_to_requested_variance (test_wind.KaimalWindTest.test_psd_int
 test_synthesis_is_reproducible_and_bounded (test_wind.KaimalWindTest.test_synthesis_is_reproducible_and_bounded) ... ok
 
 ----------------------------------------------------------------------
-Ran 24 tests in 1.587s
+Ran 24 tests in 1.437s
 
 OK
