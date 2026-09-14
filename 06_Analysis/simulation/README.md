@@ -106,4 +106,4 @@ python -m unittest discover -s 06_Analysis/simulation/tests -v
 python 06_Analysis/simulation/src/run_real_wind_doe.py
 ```
 
-設定は`config/real_wind_doe.json`、結果は`results/real_wind_doe/`です。現行機は38度制限のため8 m/sへ対応できないので、この評価では8 m/s時の静的角度が30度となる仮想再設計Kを使用しています。
+設定は`config/real_wind_doe.json`、結果は`results/real_wind_doe/`です。次号機の係数は`02_Hardware/V1.0/01_筐体/おもり計算.xlsx`のSheet1・E列`V1.0-Light`から導出し、最大風速は6 m/s、機械可動範囲は約45度としています。DOE本体は線形モデル、補助確認はsinとcosを含む非線形モデルです。

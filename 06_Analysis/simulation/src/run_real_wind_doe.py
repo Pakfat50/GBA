@@ -18,7 +18,7 @@ from scipy.stats import qmc
 from doe import features
 from estimators import causal_luenberger, kalman_rts_force
 from model import PendulumParameters, natural_characteristics
-from stage2_system import plant
+from stage2_system import nonlinear_plant, plant
 from wind import drag_force_from_speed, kaimal_longitudinal_psd, synthesize_kaimal_wind
 
 
@@ -34,6 +34,43 @@ COLORS = {
     "RTS 3-state": "#159477",
     "RTS 4-state": "#006b4f",
 }
+
+
+def derive_hardware_parameters(config: dict) -> dict[str, float]:
+    """Derive the dynamic coefficients from Sheet1 column E inputs."""
+    source = config["hardware_parameter_source"]
+    ball_lever = abs(source["ball_lever_m"])
+    weight_lever = source["weight_lever_m"]
+    rod_center = source["rod_center_m"]
+    ball_mass = source["ball_mass_kg"]
+    weight_mass = source["weight_mass_kg"]
+    rod_mass = source["rod_mass_kg"]
+    ball_radius = source["ball_diameter_m"] / 2.0
+    rod_length = ball_lever + weight_lever
+    gravity = source["gravity_m_s2"]
+
+    inertia = (
+        ball_mass * ball_lever**2
+        + (2.0 / 5.0) * ball_mass * ball_radius**2
+        + weight_mass * weight_lever**2
+        + rod_mass * (rod_length**2 / 12.0 + rod_center**2)
+    )
+    restoring = gravity * (
+        weight_mass * weight_lever
+        + ball_mass * source["ball_lever_m"]
+        + rod_mass * rod_center
+    )
+    damping = 2.0 * source["damping_ratio_assumption"] * np.sqrt(inertia * restoring)
+    area = np.pi * source["ball_diameter_m"] ** 2 / 4.0
+    return {
+        "inertia_kg_m2": float(inertia),
+        "damping_n_m_s_per_rad": float(damping),
+        "restoring_n_m_per_rad": float(restoring),
+        "force_lever_m": float(ball_lever),
+        "projected_area_m2": float(area),
+        "rod_length_assumption_m": float(rod_length),
+        "ball_radius_used_for_inertia_m": float(ball_radius),
+    }
 
 
 def write_csv(path: Path, rows: list[dict]) -> None:
@@ -281,6 +318,9 @@ def make_plots(
     mask: np.ndarray,
     wind_metadata: dict,
     main_rows: list[dict],
+    linear_angle: np.ndarray,
+    nonlinear_angle: np.ndarray,
+    nonlinear_estimates: dict[str, np.ndarray],
 ) -> None:
     fs = config["sample_rate_hz"]
     fig, axes = plt.subplots(2, 1, figsize=(12, 7), layout="constrained")
@@ -343,10 +383,41 @@ def make_plots(
     fig.savefig(output / "doe_main_effects.png", dpi=180)
     plt.close(fig)
 
+    selected = mask & (time <= config["evaluation_start_s"] + 60.0)
+    fig, axes = plt.subplots(2, 1, figsize=(12, 7), layout="constrained")
+    axes[0].plot(time[selected], np.rad2deg(linear_angle[selected]), color="#7f7f7f", label="Linear plant")
+    axes[0].plot(time[selected], np.rad2deg(nonlinear_angle[selected]), color="#2776bc", label="Nonlinear plant")
+    limit = config["mechanical_angle_limit_deg"]
+    axes[0].axhline(limit, color="#c23b73", linestyle="--", label=f"Mechanical range {limit:g} deg")
+    axes[0].axhline(-limit, color="#c23b73", linestyle="--")
+    axes[0].set(ylabel="Angle [deg]", title="Linear and nonlinear plant check")
+    axes[0].legend(ncol=3)
+    axes[1].plot(time[selected], 1000.0 * force[selected], color="black", linewidth=2.0, label="True force")
+    for method in BASELINES + CANDIDATES:
+        axes[1].plot(
+            time[selected],
+            1000.0 * nonlinear_estimates[method][selected],
+            color=COLORS[method],
+            linewidth=1.0,
+            label=method,
+        )
+    axes[1].set(xlabel="Time [s]", ylabel="Force [mN]")
+    axes[1].legend(ncol=3, fontsize=8)
+    for ax in axes:
+        ax.grid(alpha=0.2)
+    fig.savefig(output / "nonlinear_plant_check.png", dpi=180)
+    plt.close(fig)
+
 
 def run(config_path: Path, output: Path) -> dict:
     config = json.loads(config_path.read_text(encoding="utf-8"))
     output.mkdir(parents=True, exist_ok=True)
+    derived = derive_hardware_parameters(config)
+    for key in ("inertia_kg_m2", "damping_n_m_s_per_rad", "restoring_n_m_per_rad", "force_lever_m"):
+        if not np.isclose(config["nominal_parameters"][key], derived[key], rtol=1e-10, atol=1e-14):
+            raise ValueError(f"nominal_parameters.{key} is inconsistent with Sheet1-E derivation")
+    if not np.isclose(config["projected_area_m2"], derived["projected_area_m2"], rtol=1e-10):
+        raise ValueError("projected_area_m2 is inconsistent with Sheet1-E ball diameter")
     nominal = PendulumParameters(**config["nominal_parameters"])
     dt = 1.0 / config["sample_rate_hz"]
     training_time, training_speed, training_force, training_wind = wind_case(config, config["training_seed"])
@@ -373,6 +444,27 @@ def run(config_path: Path, output: Path) -> dict:
         for method, values in nominal_estimates.items()
     ]
     write_csv(output / "nominal_metrics.csv", nominal_rows)
+
+    nonlinear_state = nonlinear_plant(evaluation_force, nominal, dt)
+    nonlinear_angle = nonlinear_state[:, 0]
+    nonlinear_candidates = four_candidates(
+        nonlinear_angle, nominal, dt, tuning, angle_noise
+    )
+    nonlinear_static = (
+        nominal.restoring_n_m_per_rad
+        / nominal.force_lever_m
+        * np.tan(nonlinear_angle)
+    )
+    nonlinear_estimates = {
+        "Raw static": nonlinear_static,
+        "Causal LPF": causal_lowpass(nonlinear_static, tuning["lpf_cutoff_hz"], dt),
+        **nonlinear_candidates,
+    }
+    nonlinear_rows = [
+        {"method": method, **force_metrics(evaluation_force, values, evaluation_mask)}
+        for method, values in nonlinear_estimates.items()
+    ]
+    write_csv(output / "nonlinear_nominal_metrics.csv", nonlinear_rows)
 
     half_ranges = np.asarray(config["factor_half_ranges"], dtype=float)
     factor_names = config["factor_names"]
@@ -432,27 +524,34 @@ def run(config_path: Path, output: Path) -> dict:
             }
         )
 
-    current = config["current_parameters_for_limit_only"]
-    current_angle_limit = np.deg2rad(current["angle_limit_deg"])
-    current_force_limit_linear = current["restoring_n_m_per_rad"] * current_angle_limit / current["force_lever_m"]
-    current_force_limit_sine = current["restoring_n_m_per_rad"] * np.sin(current_angle_limit) / current["force_lever_m"]
     aero = config["air_density_kg_m3"] * config["drag_coefficient"] * config["projected_area_m2"]
+    force_at_maximum = 0.5 * aero * config["maximum_wind_speed_m_s"] ** 2
+    angle_limit = np.deg2rad(config["mechanical_angle_limit_deg"])
+    linear_force_limit = nominal.restoring_n_m_per_rad * angle_limit / nominal.force_lever_m
+    nonlinear_force_limit = nominal.restoring_n_m_per_rad * np.tan(angle_limit) / nominal.force_lever_m
     limits = {
-        "force_at_8m_s_N": float(0.5 * aero * config["maximum_wind_speed_m_s"] ** 2),
-        "current_linear_force_limit_at_38deg_N": float(current_force_limit_linear),
-        "current_sine_force_limit_at_38deg_N": float(current_force_limit_sine),
-        "current_linear_wind_limit_m_s": float(np.sqrt(2.0 * current_force_limit_linear / aero)),
-        "current_sine_wind_limit_m_s": float(np.sqrt(2.0 * current_force_limit_sine / aero)),
-        "redesigned_K_ratio_to_current": float(nominal.restoring_n_m_per_rad / current["restoring_n_m_per_rad"]),
-        "redesigned_b_ratio_to_current": float(nominal.damping_n_m_s_per_rad / current["damping_n_m_s_per_rad"]),
+        "force_at_maximum_wind_N": float(force_at_maximum),
+        "linear_static_angle_at_maximum_wind_deg": float(
+            np.rad2deg(nominal.force_lever_m * force_at_maximum / nominal.restoring_n_m_per_rad)
+        ),
+        "nonlinear_static_angle_at_maximum_wind_deg": float(
+            np.rad2deg(np.arctan(nominal.force_lever_m * force_at_maximum / nominal.restoring_n_m_per_rad))
+        ),
+        "linear_force_limit_at_mechanical_angle_N": float(linear_force_limit),
+        "nonlinear_force_limit_at_mechanical_angle_N": float(nonlinear_force_limit),
+        "linear_wind_limit_m_s": float(np.sqrt(2.0 * linear_force_limit / aero)),
+        "nonlinear_wind_limit_m_s": float(np.sqrt(2.0 * nonlinear_force_limit / aero)),
     }
-    max_angle = float(np.max(np.abs(np.rad2deg(evaluation_angle[evaluation_mask]))))
+    max_linear_angle = float(np.max(np.abs(np.rad2deg(evaluation_angle[evaluation_mask]))))
+    max_nonlinear_angle = float(np.max(np.abs(np.rad2deg(nonlinear_angle[evaluation_mask]))))
     summary = {
         "scope": "Stage 2 extension: ideal angle, no sensor model, angle-only estimators",
         "wind_model": "one-sided IEC-style Kaimal along-wind spectrum with bounded random-phase realization",
         "training_wind": training_wind,
         "evaluation_wind": evaluation_wind,
         "tuning": tuning,
+        "hardware_parameter_source": config["hardware_parameter_source"],
+        "hardware_parameter_derivation": derived,
         "tuning_at_search_boundary": {
             "ESO 3-state": tuning["eso3_pole_hz"]
             in (min(config["eso_pole_grid_hz"]), max(config["eso_pole_grid_hz"])),
@@ -470,6 +569,7 @@ def run(config_path: Path, output: Path) -> dict:
             ),
         },
         "nominal_metrics": nominal_rows,
+        "nonlinear_nominal_metrics": nonlinear_rows,
         "doe": {
             "design": "four-factor three-level full factorial",
             "design_points": len(design),
@@ -482,9 +582,10 @@ def run(config_path: Path, output: Path) -> dict:
         "plant": {
             "parameters": config["nominal_parameters"],
             "characteristics": natural_characteristics(nominal),
-            "maximum_dynamic_angle_deg_in_evaluation": max_angle,
-            "design_target_static_angle_deg_at_8m_s": config["design_target_static_angle_deg_at_8m_s"],
-            "limits_and_redesign": limits,
+            "maximum_linear_dynamic_angle_deg_in_evaluation": max_linear_angle,
+            "maximum_nonlinear_dynamic_angle_deg_in_evaluation": max_nonlinear_angle,
+            "mechanical_angle_limit_deg": config["mechanical_angle_limit_deg"],
+            "limits": limits,
         },
         "status": "COMPLETE_AWAITING_USER_REVIEW",
     }
@@ -501,6 +602,9 @@ def run(config_path: Path, output: Path) -> dict:
         evaluation_mask,
         evaluation_wind,
         main_rows,
+        evaluation_angle,
+        nonlinear_angle,
+        nonlinear_estimates,
     )
     write_report(ROOT / "Real_Wind_DOE_Report.md", config, summary, main_rows, interaction_rows)
     return summary
@@ -514,6 +618,12 @@ def write_report(
     interaction_rows: list[dict],
 ) -> None:
     metrics = {row["method"]: row for row in summary["nominal_metrics"]}
+    nonlinear_metrics = {
+        row["method"]: row for row in summary["nonlinear_nominal_metrics"]
+    }
+    source = summary["hardware_parameter_source"]
+    derived = summary["hardware_parameter_derivation"]
+    limits = summary["plant"]["limits"]
     lines = [
         "# Stage 2追加評価：実風スペクトルと4推定器の係数感度",
         "",
@@ -529,7 +639,7 @@ def write_report(
         "S_u(f)=\\frac{4\\sigma_u^2 L_u/U}{\\left(1+6fL_u/U\\right)^{5/3}}",
         "```",
         "",
-        f"ここで、$`U`$は平均風速、$`\\sigma_u`$は風速変動の標準偏差、$`L_u`$は積分長さスケールである。今回は高さ2 mの代表値として$`L_u=8.1\\times0.7z=11.34`$ m、平均5 m/s、目標乱流強度20%、上限8 m/sとした。上限を守るため変動全体へ一つの倍率を掛け、スペクトル形状を保った。評価波形で実現した乱流強度は{100*summary['evaluation_wind']['realized_turbulence_intensity']:.2f}%である。",
+        f"ここで、$`U`$は平均風速、$`\\sigma_u`$は風速変動の標準偏差、$`L_u`$は積分長さスケールである。今回は高さ2 mの代表値として$`L_u=8.1\\times0.7z=11.34`$ m、平均{config['mean_wind_speed_m_s']:.2f} m/s、目標乱流強度20%、上限{config['maximum_wind_speed_m_s']:.1f} m/sとした。平均値は、以前の5/8という平均／上限比を保つため3.75 m/sへ変更した。上限を守るため変動全体へ一つの倍率を掛け、スペクトル形状を保った。評価波形で実現した乱流強度は{100*summary['evaluation_wind']['realized_turbulence_intensity']:.2f}%である。",
         "",
         "- [Kaimal et al. (1972), Spectral characteristics of surface-layer turbulence](https://doi.org/10.1002/qj.49709841707)",
         "- [NREL, Sensitivity Analysis of Wind Characteristics and Wind Turbine Properties](https://www.nrel.gov/docs/fy19osti/74876.pdf)",
@@ -542,9 +652,41 @@ def write_report(
         "F(t)=\\frac{1}{2}\\rho C_d A U(t)\\lvert U(t)\\rvert",
         "```",
         "",
-        "## 8 m/sと装置範囲",
+        "## V1.0-Lightの装置パラメータ",
         "",
-        f"現行Kの線形モデルでは38度相当の上限は{summary['plant']['limits_and_redesign']['current_linear_wind_limit_m_s']:.2f} m/s、sinを使う静的式では{summary['plant']['limits_and_redesign']['current_sine_wind_limit_m_s']:.2f} m/sである。したがって現行機のまま8 m/sを評価することはできない。今回の仮想プラントは8 m/sの静的角度を30度に設定し、Kを現行の{summary['plant']['limits_and_redesign']['redesigned_K_ratio_to_current']:.2f}倍とした。減衰比を現行値に保つためbも{summary['plant']['limits_and_redesign']['redesigned_b_ratio_to_current']:.2f}倍とした。評価波形での最大動的角度は{summary['plant']['maximum_dynamic_angle_deg_in_evaluation']:.2f}度だった。",
+        f"入力値は `{source['workbook']}` の `{source['sheet']}`、{source['column']}列 `{source['variant']}` から読み取った。シートの `r=0.1 m` は名称上は半径だが、面積式が $`S=\\pi r^2/4`$ なので直径として扱った。元ブック自体は変更していない。",
+        "",
+        "| 量 | 使用値 | 根拠 |",
+        "|---|---:|---|",
+        f"| 球側作用距離 $`l`$ | {derived['force_lever_m']:.6f} m | E2の絶対値 |",
+        f"| 投影面積 $`S`$ | {derived['projected_area_m2']:.9f} m² | E10を直径として$`\\pi d^2/4`$ |",
+        f"| 復元係数 $`K`$ | {derived['restoring_n_m_per_rad']:.9f} N m/rad | E列の質量・重心位置から導出 |",
+        f"| 慣性モーメント $`I`$ | {derived['inertia_kg_m2']:.9f} kg m² | 中実球＋一様棒＋錘の剛体近似 |",
+        f"| 減衰係数 $`b`$ | {derived['damping_n_m_s_per_rad']:.9f} N m s/rad | 旧機の暫定減衰比$`\\zeta={source['damping_ratio_assumption']:.4f}`$を維持 |",
+        "",
+        "導出式は次の通りである。ロッド長はE列の球側・錘側距離の和と仮定した。",
+        "",
+        "```math",
+        "K=g(m_w l_w+m_b l_b+m_l l_l)",
+        "```",
+        "",
+        "```math",
+        "I=m_b|l_b|^2+\\frac{2}{5}m_b\\left(\\frac{d}{2}\\right)^2+m_wl_w^2+m_l\\left(\\frac{(|l_b|+l_w)^2}{12}+l_l^2\\right)",
+        "```",
+        "",
+        "```math",
+        "b=2\\zeta\\sqrt{IK}",
+        "```",
+        "",
+        "このIとbはシートに直接記載された値ではない。Iは部材を剛体近似した暫定値、bは旧機の減衰比を引き継いだ暫定値である。次号機の自由減衰試験またはCAD慣性値が得られたら更新する。",
+        "",
+        "## 6 m/sと45度の範囲確認",
+        "",
+        f"6 m/sでの抗力は{1000*limits['force_at_maximum_wind_N']:.3f} mNである。シートと同じ非線形静力学では角度は{limits['nonlinear_static_angle_at_maximum_wind_deg']:.2f}度となり、約45度という設計意図と一致する。一方、小角度線形モデルでは{limits['linear_static_angle_at_maximum_wind_deg']:.2f}度となる。45度域では線形近似誤差を無視できない。45度に対応する風速は、非線形式で{limits['nonlinear_wind_limit_m_s']:.2f} m/s、線形式で{limits['linear_wind_limit_m_s']:.2f} m/sである。",
+        "",
+        f"係数感度DOEは従来との比較性を保つため、プラントと推定器が同じ線形モデルを使う条件を維持した。別途、$`I\\ddot{{\\theta}}+b\\dot{{\\theta}}+K\\sin\\theta=lF\\cos\\theta`$ の非線形プラントを計算した。評価区間の最大動的角度は線形モデルで{summary['plant']['maximum_linear_dynamic_angle_deg_in_evaluation']:.2f}度、非線形モデルで{summary['plant']['maximum_nonlinear_dynamic_angle_deg_in_evaluation']:.2f}度である。非線形モデルでも約45度を{summary['plant']['maximum_nonlinear_dynamic_angle_deg_in_evaluation']-config['mechanical_angle_limit_deg']:.2f}度上回ったため、6 m/sを静的に44度へ合わせるだけでは過渡余裕がない。実機仕様ではストッパー余裕、最大運用風速、または減衰の見直しが必要である。",
+        "",
+        "![非線形プラント確認](results/real_wind_doe/nonlinear_plant_check.png)",
         "",
         "## 4方式と調整",
         "",
@@ -557,7 +699,7 @@ def write_report(
         f"| RTS 3-state | 角度・角速度・トルク | トルクrandom walk | 非因果 | {summary['tuning']['rts3_process_noise']:.6g} N/sample |",
         f"| RTS 4-state | 上記＋トルク変化率 | 変化率random walk | 非因果 | {summary['tuning']['rts4_process_noise']:.6g} (N/s)/sample |",
         "",
-        "探索上限に達した方式は、ESO 3-stateとRTS 3-stateである。理想角度・ノイズなしでは高帯域化の罰則が現れず、特にRTS 3-stateは逆動力学に近づくほど公称誤差が小さくなる。この選択値を実機の推奨値とは扱わない。センサノイズを有効にしたStage 3で再調整する。",
+        "探索上限に達した方式がある場合、理想角度・ノイズなしでは高帯域化の罰則が十分に現れていないことを意味する。この選択値を実機の推奨値とは扱わない。センサノイズを有効にしたStage 3で再調整する。",
         "",
         "## 公称条件の結果",
         "",
@@ -574,6 +716,20 @@ def write_report(
     lines += [
         "",
         "![時系列](results/real_wind_doe/real_wind_timeseries.png)",
+        "",
+        "## 非線形プラントでの補助確認",
+        "",
+        "非線形プラントに対しては、静的換算だけ$`F=K\\tan\\theta/l`$を用いた。ESOとRTSは線形モデルのままであり、下表には45度域の構造的モデル差も含まれる。DOEの係数感度とは別の確認である。",
+        "",
+        "| 方式 | RMSE [mN] | 変動基準NRMSE | Bias [mN] | 95%絶対誤差 [mN] |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for method in BASELINES + CANDIDATES:
+        row = nonlinear_metrics[method]
+        lines.append(
+            f"| {method} | {1000*row['rmse_N']:.4f} | {row['nrmse_fluctuation']:.4f} | {1000*row['bias_N']:.4f} | {1000*row['p95_abs_error_N']:.4f} |"
+        )
+    lines += [
         "",
         "## 係数誤差DOE",
         "",
@@ -634,7 +790,7 @@ def write_report(
         "python -m unittest discover -s 06_Analysis/simulation/tests -v",
         "```",
         "",
-        "設定はsimulation/config/real_wind_doe.json、数値結果はsimulation/results/real_wind_doeに保存する。今回の再設計K・bは実機改造値の決定ではなく、8 m/sかつ非飽和という比較条件を成立させる仮定である。Stage 3では独立したセンサモデルを追加し、同じ4方式を再調整して比較する。",
+        "設定はsimulation/config/real_wind_doe.json、数値結果はsimulation/results/real_wind_doeに保存する。Iとbの暫定導出式、E列の転記値、平均・最大風速も設定ファイルに保存した。Stage 3では独立したセンサモデルを追加し、同じ4方式を再調整して比較する。",
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 

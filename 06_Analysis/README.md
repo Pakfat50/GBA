@@ -127,4 +127,4 @@ python -m unittest discover -s 06_Analysis/simulation/tests -v
 
 [外力推定器4候補の理論・調整ガイド](simulation/Estimator_Candidate_Guide.md)では、3状態・4状態のESOとRTS smootherの数式、調整パラメータ、チューニング手順、比較条件を説明しています。
 
-[実風スペクトルと4推定器の係数感度](simulation/Real_Wind_DOE_Report.md)では、Kaimalスペクトルの風速波形を使い、4方式の公称応答とI・b・K・作用距離の3水準全因子DOEを比較しています。8 m/s条件は現行機の38度範囲を超えるため、Kとbを変更した仮想再設計プラントを使用しています。
+[実風スペクトルと4推定器の係数感度](simulation/Real_Wind_DOE_Report.md)では、Kaimalスペクトルの風速波形を使い、4方式の公称応答とI・b・K・作用距離の3水準全因子DOEを比較しています。次号機の係数は`02_Hardware/V1.0/01_筐体/おもり計算.xlsx`のSheet1・E列`V1.0-Light`から導出し、最大風速6 m/s、約45度可動の条件を線形・非線形プラントで確認しています。

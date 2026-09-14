@@ -3,24 +3,48 @@
   "wind_model": "one-sided IEC-style Kaimal along-wind spectrum with bounded random-phase realization",
   "training_wind": {
     "target_turbulence_intensity": 0.2,
-    "realized_turbulence_intensity": 0.17319136988496767,
-    "fluctuation_scale_for_bounds": 0.8659568494248384,
-    "minimum_speed_m_s": 2.0456483824288245,
-    "maximum_speed_m_s": 8.0
+    "realized_turbulence_intensity": 0.17694660546388316,
+    "fluctuation_scale_for_bounds": 0.8847330273194156,
+    "minimum_speed_m_s": 1.5207218012388481,
+    "maximum_speed_m_s": 6.0
   },
   "evaluation_wind": {
     "target_turbulence_intensity": 0.2,
-    "realized_turbulence_intensity": 0.16547780685343713,
-    "fluctuation_scale_for_bounds": 0.8273890342671856,
-    "minimum_speed_m_s": 1.8275750019084667,
-    "maximum_speed_m_s": 8.0
+    "realized_turbulence_intensity": 0.16567305782262062,
+    "fluctuation_scale_for_bounds": 0.828365289113103,
+    "minimum_speed_m_s": 1.4156354522379138,
+    "maximum_speed_m_s": 6.0
   },
   "tuning": {
     "eso3_pole_hz": 45.0,
     "eso4_pole_hz": 20.0,
     "rts3_process_noise": 30.0,
-    "rts4_process_noise": 30.0,
-    "lpf_cutoff_hz": 1.0
+    "rts4_process_noise": 10.0,
+    "lpf_cutoff_hz": 0.5
+  },
+  "hardware_parameter_source": {
+    "workbook": "02_Hardware/V1.0/01_筐体/おもり計算.xlsx",
+    "sheet": "Sheet1",
+    "column": "E",
+    "variant": "V1.0-Light",
+    "ball_lever_m": -0.16999999999999998,
+    "weight_lever_m": 0.08,
+    "rod_center_m": -0.04499999999999999,
+    "ball_mass_kg": 0.0043259259259259275,
+    "weight_mass_kg": 0.035874,
+    "rod_mass_kg": 0.009542587685278998,
+    "ball_diameter_m": 0.1,
+    "gravity_m_s2": 9.81,
+    "damping_ratio_assumption": 0.05925825176488159
+  },
+  "hardware_parameter_derivation": {
+    "inertia_kg_m2": 0.00042796350277537,
+    "damping_n_m_s_per_rad": 0.00031709627284592847,
+    "restoring_n_m_per_rad": 0.016726993199666917,
+    "force_lever_m": 0.16999999999999998,
+    "projected_area_m2": 0.007853981633974483,
+    "rod_length_assumption_m": 0.25,
+    "ball_radius_used_for_inertia_m": 0.05
   },
   "tuning_at_search_boundary": {
     "ESO 3-state": true,
@@ -31,57 +55,113 @@
   "nominal_metrics": [
     {
       "method": "Raw static",
-      "rmse_N": 0.057432933309769695,
-      "nrmse_fluctuation": 1.090615147129701,
-      "bias_N": 1.4239518180300259e-05,
-      "mae_N": 0.045223714883035136,
-      "p95_abs_error_N": 0.10985805606089061,
-      "max_abs_error_N": 0.2516957421215776
+      "rmse_N": 0.012919288099532975,
+      "nrmse_fluctuation": 0.9651308525550836,
+      "bias_N": -3.143362002784967e-05,
+      "mae_N": 0.010438835568297116,
+      "p95_abs_error_N": 0.02493836941121856,
+      "max_abs_error_N": 0.04426074516108258
     },
     {
       "method": "Causal LPF",
-      "rmse_N": 0.0386039426096855,
-      "nrmse_fluctuation": 0.7330645001530309,
-      "bias_N": 0.00014898877502701562,
-      "mae_N": 0.030537994244032994,
-      "p95_abs_error_N": 0.07490031327997426,
-      "max_abs_error_N": 0.1500531393551935
+      "rmse_N": 0.010010464983550588,
+      "nrmse_fluctuation": 0.747828249483518,
+      "bias_N": 0.0001282424636209308,
+      "mae_N": 0.007923670550850392,
+      "p95_abs_error_N": 0.019399386476294214,
+      "max_abs_error_N": 0.036881765277758806
     },
     {
       "method": "ESO 3-state",
-      "rmse_N": 0.01624073663129661,
-      "nrmse_fluctuation": 0.30840133613066373,
-      "bias_N": 4.536540717988889e-06,
-      "mae_N": 0.012749854523441389,
-      "p95_abs_error_N": 0.032155690897821054,
-      "max_abs_error_N": 0.09311150705739521
+      "rmse_N": 0.003720837040164337,
+      "nrmse_fluctuation": 0.27796381635936707,
+      "bias_N": 1.2771678545948872e-06,
+      "mae_N": 0.0029207616494861316,
+      "p95_abs_error_N": 0.0073770520555608565,
+      "max_abs_error_N": 0.020984349598883817
     },
     {
       "method": "ESO 4-state",
-      "rmse_N": 0.019343176013814127,
-      "nrmse_fluctuation": 0.36731470148805795,
-      "bias_N": 2.4610072014601354e-06,
-      "mae_N": 0.015213578474244259,
-      "p95_abs_error_N": 0.03870498009304968,
-      "max_abs_error_N": 0.09239339361416465
+      "rmse_N": 0.004426308253099625,
+      "nrmse_fluctuation": 0.3306657940494471,
+      "bias_N": 5.882709337128143e-07,
+      "mae_N": 0.003481180324706145,
+      "p95_abs_error_N": 0.008862382297824531,
+      "max_abs_error_N": 0.02077433251792509
     },
     {
       "method": "RTS 3-state",
-      "rmse_N": 0.0002677944475319209,
-      "nrmse_fluctuation": 0.005085247504603105,
-      "bias_N": -6.391915423498312e-09,
-      "mae_N": 0.00020668965408321093,
-      "p95_abs_error_N": 0.000541454772823774,
-      "max_abs_error_N": 0.0008435271016886958
+      "rmse_N": 2.2969214247649884e-05,
+      "nrmse_fluctuation": 0.0017159070343942618,
+      "bias_N": 5.047509924670779e-10,
+      "mae_N": 1.8848757902149788e-05,
+      "p95_abs_error_N": 4.38772073940788e-05,
+      "max_abs_error_N": 6.492734527936694e-05
     },
     {
       "method": "RTS 4-state",
-      "rmse_N": 0.005687830258894787,
-      "nrmse_fluctuation": 0.10800830598701278,
-      "bias_N": 8.193784065588635e-07,
-      "mae_N": 0.004466460553949563,
-      "p95_abs_error_N": 0.011180310995843663,
-      "max_abs_error_N": 0.02725600241548276
+      "rmse_N": 0.001299285229827471,
+      "nrmse_fluctuation": 0.09706264400288012,
+      "bias_N": 2.3042011025245126e-07,
+      "mae_N": 0.0010194867729131816,
+      "p95_abs_error_N": 0.002555258300595699,
+      "max_abs_error_N": 0.006358978441705326
+    }
+  ],
+  "nonlinear_nominal_metrics": [
+    {
+      "method": "Raw static",
+      "rmse_N": 0.013217827644561602,
+      "nrmse_fluctuation": 0.987433143780039,
+      "bias_N": 0.0004798512363743187,
+      "mae_N": 0.010512891313121822,
+      "p95_abs_error_N": 0.02629123801149154,
+      "max_abs_error_N": 0.056403894870587855
+    },
+    {
+      "method": "Causal LPF",
+      "rmse_N": 0.010030828927049094,
+      "nrmse_fluctuation": 0.7493495306871476,
+      "bias_N": 0.0006485948228814266,
+      "mae_N": 0.007951845801570108,
+      "p95_abs_error_N": 0.01965347580779371,
+      "max_abs_error_N": 0.03667433870570902
+    },
+    {
+      "method": "ESO 3-state",
+      "rmse_N": 0.004867721738760607,
+      "nrmse_fluctuation": 0.36364143252605136,
+      "bias_N": -0.002347040038731459,
+      "mae_N": 0.0036665730435577084,
+      "p95_abs_error_N": 0.010016129573717593,
+      "max_abs_error_N": 0.025640364838103023
+    },
+    {
+      "method": "ESO 4-state",
+      "rmse_N": 0.00530643329164406,
+      "nrmse_fluctuation": 0.3964152240692152,
+      "bias_N": -0.0023476455996605883,
+      "mae_N": 0.004066130639404165,
+      "p95_abs_error_N": 0.010772262307380279,
+      "max_abs_error_N": 0.025128974240655404
+    },
+    {
+      "method": "RTS 3-state",
+      "rmse_N": 0.003368360193171992,
+      "nrmse_fluctuation": 0.2516321580494988,
+      "bias_N": -0.00234812699334405,
+      "mae_N": 0.0023484582166894818,
+      "p95_abs_error_N": 0.007289992168218684,
+      "max_abs_error_N": 0.018521933572049218
+    },
+    {
+      "method": "RTS 4-state",
+      "rmse_N": 0.003586211687298575,
+      "nrmse_fluctuation": 0.26790667694225334,
+      "bias_N": -0.002347927380995497,
+      "mae_N": 0.0025434663318883023,
+      "p95_abs_error_N": 0.00764862977089481,
+      "max_abs_error_N": 0.020258024832325
     }
   ],
   "doe": {
@@ -103,9 +183,9 @@
     "method_summary": [
       {
         "method": "ESO 3-state",
-        "minimum_nrmse": 0.30840133613066373,
-        "median_nrmse": 0.4576629189531696,
-        "maximum_nrmse": 0.7048064983100202,
+        "minimum_nrmse": 0.27796381635936707,
+        "median_nrmse": 0.42472895214583045,
+        "maximum_nrmse": 0.6556648627383012,
         "worst_parameter_ratios": {
           "I": 0.75,
           "b": 1.5,
@@ -115,21 +195,21 @@
       },
       {
         "method": "ESO 4-state",
-        "minimum_nrmse": 0.36731470148805795,
-        "median_nrmse": 0.500691232239061,
-        "maximum_nrmse": 0.717517089540492,
+        "minimum_nrmse": 0.3306657940494471,
+        "median_nrmse": 0.46463751670641934,
+        "maximum_nrmse": 0.6649824077210305,
         "worst_parameter_ratios": {
           "I": 1.25,
           "b": 1.5,
-          "K": 0.9,
-          "l": 1.05
+          "K": 1.1,
+          "l": 0.95
         }
       },
       {
         "method": "RTS 3-state",
-        "minimum_nrmse": 0.005085247504603105,
-        "median_nrmse": 0.33274742110124267,
-        "maximum_nrmse": 0.62851187069761,
+        "minimum_nrmse": 0.0017159070343942618,
+        "median_nrmse": 0.31939335514214523,
+        "maximum_nrmse": 0.5942030551463123,
         "worst_parameter_ratios": {
           "I": 0.75,
           "b": 1.5,
@@ -139,9 +219,9 @@
       },
       {
         "method": "RTS 4-state",
-        "minimum_nrmse": 0.10800830598701278,
-        "median_nrmse": 0.34956680848367044,
-        "maximum_nrmse": 0.6403397336516764,
+        "minimum_nrmse": 0.09706264400288012,
+        "median_nrmse": 0.3347607811625756,
+        "maximum_nrmse": 0.6032609423090746,
         "worst_parameter_ratios": {
           "I": 0.75,
           "b": 1.5,
@@ -153,58 +233,59 @@
     "response_surface_validation": [
       {
         "method": "ESO 3-state",
-        "train_log_rmse_r2": 0.972217151226855,
-        "validation_median_relative_error": 0.036332215102838676,
-        "validation_max_relative_error": 0.08428974190725622,
+        "train_log_rmse_r2": 0.9715665931076851,
+        "validation_median_relative_error": 0.04132425627498845,
+        "validation_max_relative_error": 0.09979055927704288,
         "gate_10_percent": true
       },
       {
         "method": "ESO 4-state",
-        "train_log_rmse_r2": 0.9741307674249873,
-        "validation_median_relative_error": 0.030333598065364682,
-        "validation_max_relative_error": 0.091085120514916,
-        "gate_10_percent": true
+        "train_log_rmse_r2": 0.9727974365729177,
+        "validation_median_relative_error": 0.0358857450637592,
+        "validation_max_relative_error": 0.10287878833700322,
+        "gate_10_percent": false
       },
       {
         "method": "RTS 3-state",
-        "train_log_rmse_r2": 0.5937279478182251,
-        "validation_median_relative_error": 0.24962176620441184,
-        "validation_max_relative_error": 2.802471008307017,
+        "train_log_rmse_r2": 0.5172150154568631,
+        "validation_median_relative_error": 0.2916355608470743,
+        "validation_max_relative_error": 2.5509455126647755,
         "gate_10_percent": false
       },
       {
         "method": "RTS 4-state",
-        "train_log_rmse_r2": 0.8850382696063231,
-        "validation_median_relative_error": 0.11511434644706825,
-        "validation_max_relative_error": 0.6250568601764573,
+        "train_log_rmse_r2": 0.8830304848216116,
+        "validation_median_relative_error": 0.13036909399530583,
+        "validation_max_relative_error": 0.6774713845877652,
         "gate_10_percent": false
       }
     ]
   },
   "plant": {
     "parameters": {
-      "inertia_kg_m2": 0.00215194497,
-      "damping_n_m_s_per_rad": 0.002321339813618186,
-      "restoring_n_m_per_rad": 0.17827425,
-      "force_lever_m": 0.245
+      "inertia_kg_m2": 0.00042796350277537,
+      "damping_n_m_s_per_rad": 0.00031709627284592847,
+      "restoring_n_m_per_rad": 0.016726993199666917,
+      "force_lever_m": 0.16999999999999998
     },
     "characteristics": {
-      "omega_n_rad_s": 9.101830182483612,
-      "natural_frequency_hz": 1.4486012647252746,
-      "decay_rate_per_s": 0.539358544474812,
-      "damped_frequency_hz": 1.4460556170398606,
+      "omega_n_rad_s": 6.251807158748518,
+      "natural_frequency_hz": 0.9950060125721243,
+      "decay_rate_per_s": 0.37047116259860874,
+      "damped_frequency_hz": 0.993257474299684,
       "damping_ratio": 0.05925825176488159
     },
-    "maximum_dynamic_angle_deg_in_evaluation": 35.61236273471508,
-    "design_target_static_angle_deg_at_8m_s": 30.0,
-    "limits_and_redesign": {
-      "force_at_8m_s_N": 0.3809966490641022,
-      "current_linear_force_limit_at_38deg_N": 0.031893846126885464,
-      "current_sine_force_limit_at_38deg_N": 0.029606557251455487,
-      "current_linear_wind_limit_m_s": 2.314636814368483,
-      "current_sine_wind_limit_m_s": 2.23009499778945,
-      "redesigned_K_ratio_to_current": 15.1313125911893,
-      "redesigned_b_ratio_to_current": 3.8898987893246404
+    "maximum_linear_dynamic_angle_deg_in_evaluation": 56.778728674880085,
+    "maximum_nonlinear_dynamic_angle_deg_in_evaluation": 47.111133664855544,
+    "mechanical_angle_limit_deg": 45.0,
+    "limits": {
+      "force_at_maximum_wind_N": 0.09524916226602556,
+      "linear_static_angle_at_maximum_wind_deg": 55.46446626273957,
+      "nonlinear_static_angle_at_maximum_wind_deg": 44.069554205761406,
+      "linear_force_limit_at_mechanical_angle_N": 0.07727852787164709,
+      "nonlinear_force_limit_at_mechanical_angle_N": 0.0983940776450995,
+      "linear_wind_limit_m_s": 5.404432390911469,
+      "nonlinear_wind_limit_m_s": 6.098248919880693
     }
   },
   "status": "COMPLETE_AWAITING_USER_REVIEW"

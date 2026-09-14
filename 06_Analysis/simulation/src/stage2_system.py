@@ -26,6 +26,36 @@ def plant(force, p, dt):
     return states
 
 
+def nonlinear_plant(force, p, dt):
+    """Nonlinear pendulum with horizontal force, integrated by RK4.
+
+    I*theta_ddot + b*theta_dot + K*sin(theta) = l*F*cos(theta).
+    The force is held constant over each sample.  This model is used only as
+    a physical-range check; the Stage 2 DOE remains the matched linear model.
+    """
+    force = np.asarray(force, dtype=float)
+    states = np.zeros((len(force), 2), dtype=float)
+
+    def derivative(state, applied_force):
+        theta, omega = state
+        acceleration = (
+            p.force_lever_m * applied_force * np.cos(theta)
+            - p.damping_n_m_s_per_rad * omega
+            - p.restoring_n_m_per_rad * np.sin(theta)
+        ) / p.inertia_kg_m2
+        return np.array([omega, acceleration])
+
+    for index in range(len(force) - 1):
+        current = states[index]
+        applied_force = force[index]
+        k1 = derivative(current, applied_force)
+        k2 = derivative(current + 0.5 * dt * k1, applied_force)
+        k3 = derivative(current + 0.5 * dt * k2, applied_force)
+        k4 = derivative(current + dt * k3, applied_force)
+        states[index + 1] = current + dt * (k1 + 2*k2 + 2*k3 + k4) / 6.0
+    return states
+
+
 def observer_system(p, pole_hz, dt):
     a, c = continuous_matrices(p)
     ad = exact_discretization(a, dt)

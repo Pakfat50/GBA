@@ -1,0 +1,29 @@
+test_causal_estimators_do_not_use_future_angle (test_estimators.EstimatorComparisonTest.test_causal_estimators_do_not_use_future_angle) ... ok
+test_constant_force_converges_for_all_estimators (test_estimators.EstimatorComparisonTest.test_constant_force_converges_for_all_estimators) ... ok
+test_four_state_rts_tracks_linear_force_ramp (test_estimators.EstimatorComparisonTest.test_four_state_rts_tracks_linear_force_ramp) ... ok
+test_ramp_observer_tracks_matching_four_state_model (test_estimators.EstimatorComparisonTest.test_ramp_observer_tracks_matching_four_state_model) ... ok
+test_rts_smoother_uses_future_angle (test_estimators.EstimatorComparisonTest.test_rts_smoother_uses_future_angle) ... ok
+test_augmented_model_is_observable (test_stage1.Stage1ModelTest.test_augmented_model_is_observable) ... ok
+test_continuous_gain_places_requested_poles (test_stage1.Stage1ModelTest.test_continuous_gain_places_requested_poles) ... ok
+test_discrete_observer_has_requested_repeated_pole (test_stage1.Stage1ModelTest.test_discrete_observer_has_requested_repeated_pole) ... ok
+test_exact_discretization_is_step_size_consistent (test_stage1.Stage1ModelTest.test_exact_discretization_is_step_size_consistent) ... ok
+test_identical_state_remains_identical (test_stage1.Stage1ModelTest.test_identical_state_remains_identical) ... ok
+test_initial_error_converges (test_stage1.Stage1ModelTest.test_initial_error_converges) ... ok
+test_unannounced_torque_step_reconverges (test_stage1.Stage1ModelTest.test_unannounced_torque_step_reconverges) ... ok
+test_design_rank_and_unique_points (test_stage2.Stage2Tests.test_design_rank_and_unique_points) ... ok
+test_discrete_frequency_response_matches_time_domain (test_stage2.Stage2Tests.test_discrete_frequency_response_matches_time_domain) ... ok
+test_known_interactions_are_recovered (test_stage2.Stage2Tests.test_known_interactions_are_recovered) ... ok
+test_mismatch_changes_estimate_not_plant (test_stage2.Stage2Tests.test_mismatch_changes_estimate_not_plant) ... ok
+test_no_current_or_future_angle_leaks (test_stage2.Stage2Tests.test_no_current_or_future_angle_leaks) ... ok
+test_nonlinear_factor_coding_endpoints (test_stage2.Stage2Tests.test_nonlinear_factor_coding_endpoints) ... ok
+test_nonlinear_plant_static_equilibrium (test_stage2.Stage2Tests.test_nonlinear_plant_static_equilibrium) ... ok
+test_plant_static_equilibrium (test_stage2.Stage2Tests.test_plant_static_equilibrium) ... ok
+test_transfer_filter_matches_stage1_recurrence (test_stage2.Stage2Tests.test_transfer_filter_matches_stage1_recurrence) ... ok
+test_drag_is_signed_and_quadratic (test_wind.KaimalWindTest.test_drag_is_signed_and_quadratic) ... ok
+test_psd_integrates_to_requested_variance (test_wind.KaimalWindTest.test_psd_integrates_to_requested_variance) ... ok
+test_synthesis_is_reproducible_and_bounded (test_wind.KaimalWindTest.test_synthesis_is_reproducible_and_bounded) ... ok
+
+----------------------------------------------------------------------
+Ran 24 tests in 1.085s
+
+OK

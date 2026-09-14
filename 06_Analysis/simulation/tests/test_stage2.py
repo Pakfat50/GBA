@@ -9,7 +9,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
 from doe import factorial, face_centered, features, contrasts, decode
 from model import PendulumParameters, continuous_matrices, exact_discretization
 from observer import simulate_matched_model, ackermann_observer_gain
-from stage2_system import plant, estimate, observer_system, force_frequency_response
+from stage2_system import plant, nonlinear_plant, estimate, observer_system, force_frequency_response
 
 
 class Stage2Tests(unittest.TestCase):
@@ -41,6 +41,12 @@ class Stage2Tests(unittest.TestCase):
         f=np.full(15001,.0008)
         x=plant(f,self.p,self.dt)
         self.assertAlmostEqual(x[-1,0],self.p.force_lever_m*f[0]/self.p.restoring_n_m_per_rad,places=8)
+
+    def test_nonlinear_plant_static_equilibrium(self):
+        f=np.full(30001,.0008)
+        x=nonlinear_plant(f,self.p,self.dt)
+        expected=np.arctan(self.p.force_lever_m*f[0]/self.p.restoring_n_m_per_rad)
+        self.assertAlmostEqual(x[-1,0],expected,places=6)
 
     def test_mismatch_changes_estimate_not_plant(self):
         f=np.full(15001,.0008);x=plant(f,self.p,self.dt)
