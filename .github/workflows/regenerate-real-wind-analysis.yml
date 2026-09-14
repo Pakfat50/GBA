@@ -52,10 +52,14 @@ jobs:
             06_Analysis/simulation/results/real_wind_doe/summary.json \
             06_Analysis/simulation/results/real_wind_doe/tests.txt \
             06_Analysis/simulation/results/real_wind_doe/worst_case_timeseries.png \
-            06_Analysis/simulation/results/real_wind_doe/worst_case_windspeed_timeseries.png
+            06_Analysis/simulation/results/real_wind_doe/worst_case_windspeed_timeseries.png \
+            06_Analysis/simulation/results/real_wind_doe/wind_rmse_factor_characteristics.png \
+            06_Analysis/simulation/results/real_wind_doe/wind_rmse_factor_characteristics.csv \
+            06_Analysis/simulation/results/real_wind_doe/doe_results.csv \
+            06_Analysis/simulation/results/real_wind_doe/doe_validation_points.csv
           if git diff --cached --quiet; then
             echo 'No generated changes.'
           else
-            git commit -m 'analysis: regenerate wind-speed error plots [skip ci]'
+            git commit -m 'analysis: regenerate wind-speed sensitivity results [skip ci]'
             git push origin HEAD:feature/stage2-real-wind-doe
           fi

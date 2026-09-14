@@ -322,6 +322,43 @@ def sensitivity_tables(
     return main_rows, interaction_rows
 
 
+def wind_factor_characteristics(
+    rows: list[dict], factor_names: list[str]
+) -> list[dict]:
+    """Aggregate direct wind-speed RMSE at each factor level."""
+    output: list[dict] = []
+    for method in CANDIDATES:
+        selected = [row for row in rows if row["method"] == method]
+        for factor in factor_names:
+            means = []
+            factor_rows = []
+            for level in (-1, 0, 1):
+                matching = [
+                    row for row in selected
+                    if int(row[f"coded_{factor}"]) == level
+                ]
+                values = np.asarray([row["wind_rmse_m_s"] for row in matching])
+                mean_value = float(np.mean(values))
+                means.append(mean_value)
+                factor_rows.append(
+                    {
+                        "method": method,
+                        "factor": factor,
+                        "coded_level": level,
+                        "ratio": float(matching[0][f"ratio_{factor}"]),
+                        "mean_wind_rmse_m_s": mean_value,
+                        "median_wind_rmse_m_s": float(np.median(values)),
+                        "p10_wind_rmse_m_s": float(np.quantile(values, 0.10)),
+                        "p90_wind_rmse_m_s": float(np.quantile(values, 0.90)),
+                    }
+                )
+            effect_range = float(max(means) - min(means))
+            for row in factor_rows:
+                row["main_effect_range_m_s"] = effect_range
+            output.extend(factor_rows)
+    return output
+
+
 def response_surface_validation(
     design: np.ndarray,
     design_rows: list[dict],
@@ -364,6 +401,7 @@ def make_plots(
     mask: np.ndarray,
     wind_metadata: dict,
     main_rows: list[dict],
+    wind_factor_rows: list[dict],
     linear_angle: np.ndarray,
     nonlinear_angle: np.ndarray,
     nonlinear_estimates: dict[str, np.ndarray],
@@ -429,6 +467,34 @@ def make_plots(
     fig.savefig(output / "doe_main_effects.png", dpi=180)
     plt.close(fig)
 
+    fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharey=True, layout="constrained")
+    for axis, factor in zip(axes.flat, factor_names):
+        for method in CANDIDATES:
+            selected_rows = sorted(
+                (row for row in wind_factor_rows if row["method"] == method and row["factor"] == factor),
+                key=lambda row: row["ratio"],
+            )
+            ratio = np.asarray([row["ratio"] for row in selected_rows])
+            mean = np.asarray([row["mean_wind_rmse_m_s"] for row in selected_rows])
+            p10 = np.asarray([row["p10_wind_rmse_m_s"] for row in selected_rows])
+            p90 = np.asarray([row["p90_wind_rmse_m_s"] for row in selected_rows])
+            axis.fill_between(ratio, p10, p90, color=COLORS[method], alpha=0.08)
+            axis.plot(
+                ratio, mean, color=COLORS[method], marker="o", linewidth=1.8,
+                markersize=4.5, label=method
+            )
+        axis.axvline(1.0, color="black", linestyle=":", linewidth=0.8, alpha=0.5)
+        axis.set(
+            xlabel=f"{factor} coefficient ratio",
+            ylabel="Wind-speed RMSE [m/s]",
+            title=f"{factor}: mean and 10-90% conditional range",
+        )
+        axis.set_xticks(sorted({row["ratio"] for row in wind_factor_rows if row["factor"] == factor}))
+        axis.grid(alpha=0.2)
+    axes[0, 0].legend(fontsize=8, ncol=2)
+    fig.suptitle("DOE factor characteristics based on direct wind-speed RMSE")
+    fig.savefig(output / "wind_rmse_factor_characteristics.png", dpi=180)
+    plt.close(fig)
     selected = mask & (time <= config["evaluation_start_s"] + 60.0)
     fig, axes = plt.subplots(2, 1, figsize=(12, 7), layout="constrained")
     axes[0].plot(time[selected], np.rad2deg(linear_angle[selected]), color="#7f7f7f", label="Linear plant")
@@ -675,6 +741,10 @@ def run(config_path: Path, output: Path) -> dict:
                         **coded_columns,
                         **ratio_columns,
                         **force_metrics(evaluation_force, values, evaluation_mask),
+                        "wind_rmse_m_s": wind_speed_metrics(
+                            evaluation_time, evaluation_speed, values,
+                            evaluation_mask, config
+                        )[1]["rmse_m_s"],
                     }
                 )
             if kind == "design" and (run_index + 1) % 10 == 0:
@@ -688,6 +758,8 @@ def run(config_path: Path, output: Path) -> dict:
     main_rows, interaction_rows = sensitivity_tables(design_rows, factor_names)
     write_csv(output / "doe_main_effects.csv", main_rows)
     write_csv(output / "doe_interactions.csv", interaction_rows)
+    wind_factor_rows = wind_factor_characteristics(design_rows, factor_names)
+    write_csv(output / "wind_rmse_factor_characteristics.csv", wind_factor_rows)
     surface_rows = response_surface_validation(design, design_rows, latin, validation_rows)
     write_csv(output / "response_surface_validation.csv", surface_rows)
     method_summary = []
@@ -798,6 +870,12 @@ def run(config_path: Path, output: Path) -> dict:
             "factor_half_ranges": config["factor_half_ranges"],
             "method_summary": method_summary,
             "response_surface_validation": surface_rows,
+            "wind_speed_factor_characteristics": {
+                "response": "direct time-domain wind-speed RMSE",
+                "aggregation": "mean with 10th-90th percentile conditional range",
+                "figure": "results/real_wind_doe/wind_rmse_factor_characteristics.png",
+                "table": "results/real_wind_doe/wind_rmse_factor_characteristics.csv",
+            },
             "worst_case_timeseries": {
                 "evaluation_start_s": config["evaluation_start_s"],
                 "evaluation_end_s": config["evaluation_end_s"],
@@ -829,6 +907,7 @@ def run(config_path: Path, output: Path) -> dict:
         evaluation_mask,
         evaluation_wind,
         main_rows,
+        wind_factor_rows,
         evaluation_angle,
         nonlinear_angle,
         nonlinear_estimates,
@@ -849,7 +928,10 @@ def run(config_path: Path, output: Path) -> dict:
         evaluation_mask,
         method_summary,
     )
-    write_report(ROOT / "Real_Wind_DOE_Report.md", config, summary, main_rows, interaction_rows)
+    write_report(
+        ROOT / "Real_Wind_DOE_Report.md", config, summary,
+        main_rows, interaction_rows, wind_factor_rows
+    )
     return summary
 
 
@@ -859,6 +941,7 @@ def write_report(
     summary: dict,
     main_rows: list[dict],
     interaction_rows: list[dict],
+    wind_factor_rows: list[dict],
 ) -> None:
     metrics = {row["method"]: row for row in summary["nominal_metrics"]}
     nonlinear_metrics = {
@@ -1048,6 +1131,30 @@ def write_report(
     lines += [
         "",
         "![主効果](results/real_wind_doe/doe_main_effects.png)",
+        "",
+        "## 風速RMSEの要因特性図",
+        "",
+        "各DOE条件で推定外力を風速へ直接換算し、風速RMSEを応答値としてI、b、K、lの要因特性図を作成した。各点は、その水準における他の3要因27条件の平均である。半透明帯は同じ27条件の10～90%範囲であり、統計的な信頼区間ではなく、他要因と交互作用による条件付きの広がりを表す。",
+        "",
+        "| 方式 | I（低→中→高） | b（低→中→高） | K（低→中→高） | l（低→中→高） |",
+        "|---|---|---|---|---|",
+    ]
+    for method in CANDIDATES:
+        cells = []
+        for factor in config["factor_names"]:
+            selected_rows = sorted(
+                (row for row in wind_factor_rows if row["method"] == method and row["factor"] == factor),
+                key=lambda row: row["coded_level"],
+            )
+            values = " → ".join(f"{row['mean_wind_rmse_m_s']:.3f}" for row in selected_rows)
+            effect = selected_rows[0]["main_effect_range_m_s"]
+            cells.append(f"{values} (Δ={effect:.3f})")
+        lines.append(f"| {method} | " + " | ".join(cells) + " |")
+    lines += [
+        "",
+        "![風速RMSEの要因特性図](results/real_wind_doe/wind_rmse_factor_characteristics.png)",
+        "",
+        "数値データは `wind_rmse_factor_characteristics.csv` に保存した。平均線の傾きが主効果、帯の広さが他要因の影響を含む条件依存性を示す。",
         "",
         "交互作用は、2因子の各3×3セル平均から加法的な主効果を引いた残差で評価した。値はdoe_interactions.csvに保存した。二次応答曲面は独立Latin Hypercube点で確認し、10%最大相対誤差ゲートを満たした場合だけ補間用に使える。直接計算した81条件の感度順位は、このゲートに依存しない。",
         "",
