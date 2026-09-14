@@ -106,4 +106,4 @@ python -m unittest discover -s 06_Analysis/simulation/tests -v
 python 06_Analysis/simulation/src/run_real_wind_doe.py
 ```
 
-設定は`config/real_wind_doe.json`、結果は`results/real_wind_doe/`です。次号機の係数は`02_Hardware/V1.0/01_筐体/おもり計算.xlsx`のSheet1・E列`V1.0-Light`から導出し、最大風速は6 m/s、機械可動範囲は約45度としています。DOE本体は線形モデル、補助確認はsinとcosを含む非線形モデルです。
+設定は`config/real_wind_doe.json`、結果は`results/real_wind_doe/`です。次号機の係数は`02_Hardware/V1.0/01_筐体/おもり計算.xlsx`のSheet1・E列`V1.0-Light`から導出し、最大風速は6 m/s、機械可動範囲は約45度としています。DOE本体は線形モデル、補助確認はsinとcosを含む非線形モデルです。`worst_case_timeseries.png`には4推定器それぞれの最大NRMSE条件を実時間波形で示します。

@@ -409,6 +409,62 @@ def make_plots(
     plt.close(fig)
 
 
+def make_worst_case_plot(
+    output: Path,
+    time: np.ndarray,
+    force: np.ndarray,
+    estimates: dict[str, np.ndarray],
+    mask: np.ndarray,
+    method_summary: list[dict],
+) -> None:
+    """Plot each estimator at its own worst DOE parameter combination."""
+    selected_time = time[mask]
+    truth_mn = 1000.0 * force[mask]
+    fig, axes = plt.subplots(
+        len(CANDIDATES), 1, figsize=(14, 12), sharex=True, sharey=True,
+        layout="constrained"
+    )
+    summaries = {row["method"]: row for row in method_summary}
+    all_values = [truth_mn]
+    all_values.extend(1000.0 * estimates[method][mask] for method in CANDIDATES)
+    y_min = min(float(np.min(values)) for values in all_values)
+    y_max = max(float(np.max(values)) for values in all_values)
+    padding = 0.05 * (y_max - y_min)
+
+    for index, (axis, method) in enumerate(zip(axes, CANDIDATES)):
+        estimate_mn = 1000.0 * estimates[method][mask]
+        row = summaries[method]
+        ratios = row["worst_parameter_ratios"]
+        axis.fill_between(
+            selected_time, truth_mn, estimate_mn, color=COLORS[method], alpha=0.12
+        )
+        axis.plot(selected_time, truth_mn, color="black", linewidth=1.6, label="True force")
+        axis.plot(
+            selected_time, estimate_mn, color=COLORS[method], linewidth=0.9,
+            label="Worst-case estimate"
+        )
+        axis.set_ylabel("Force [mN]")
+        axis.set_ylim(y_min - padding, y_max + padding)
+        axis.set_title(
+            f"{method}: worst DOE case, NRMSE={row['maximum_nrmse']:.3f}",
+            loc="left"
+        )
+        axis.text(
+            0.995, 0.92,
+            f"I={ratios['I']:.2f}, b={ratios['b']:.2f}, "
+            f"K={ratios['K']:.2f}, l={ratios['l']:.2f}",
+            transform=axis.transAxes, ha="right", va="top", fontsize=9,
+            bbox={"facecolor": "white", "edgecolor": "#cccccc", "alpha": 0.9},
+        )
+        axis.grid(alpha=0.2)
+        if index == 0:
+            axis.legend(ncol=2, loc="upper left")
+    axes[-1].set_xlabel("Evaluation time [s]")
+    fig.suptitle("Time histories at each estimator's worst DOE parameter case")
+    fig.savefig(output / "worst_case_timeseries.png", dpi=100)
+    plt.close(fig)
+
+
 def run(config_path: Path, output: Path) -> dict:
     config = json.loads(config_path.read_text(encoding="utf-8"))
     output.mkdir(parents=True, exist_ok=True)
@@ -521,8 +577,35 @@ def run(config_path: Path, output: Path) -> dict:
                 "worst_parameter_ratios": {
                     name: worst[f"ratio_{name}"] for name in factor_names
                 },
+                "worst_case_metrics": {
+                    key: worst[key]
+                    for key in (
+                        "rmse_N", "nrmse_fluctuation", "bias_N", "mae_N",
+                        "p95_abs_error_N", "max_abs_error_N"
+                    )
+                },
             }
         )
+
+    worst_case_estimates: dict[str, np.ndarray] = {}
+    for row in method_summary:
+        ratios = row["worst_parameter_ratios"]
+        parameters = PendulumParameters(
+            nominal.inertia_kg_m2 * ratios["I"],
+            nominal.damping_n_m_s_per_rad * ratios["b"],
+            nominal.restoring_n_m_per_rad * ratios["K"],
+            nominal.force_lever_m * ratios["l"],
+        )
+        worst_case_estimates[row["method"]] = four_candidates(
+            evaluation_angle, parameters, dt, tuning, angle_noise
+        )[row["method"]]
+        reproduced = force_metrics(
+            evaluation_force, worst_case_estimates[row["method"]], evaluation_mask
+        )
+        if not np.isclose(
+            reproduced["nrmse_fluctuation"], row["maximum_nrmse"], rtol=1e-12
+        ):
+            raise RuntimeError(f"Failed to reproduce worst DOE case for {row['method']}")
 
     aero = config["air_density_kg_m3"] * config["drag_coefficient"] * config["projected_area_m2"]
     force_at_maximum = 0.5 * aero * config["maximum_wind_speed_m_s"] ** 2
@@ -578,6 +661,12 @@ def run(config_path: Path, output: Path) -> dict:
             "factor_half_ranges": config["factor_half_ranges"],
             "method_summary": method_summary,
             "response_surface_validation": surface_rows,
+            "worst_case_timeseries": {
+                "evaluation_start_s": config["evaluation_start_s"],
+                "evaluation_end_s": config["evaluation_end_s"],
+                "figure": "results/real_wind_doe/worst_case_timeseries.png",
+                "note": "Each estimator uses its own maximum-NRMSE DOE case.",
+            },
         },
         "plant": {
             "parameters": config["nominal_parameters"],
@@ -605,6 +694,14 @@ def run(config_path: Path, output: Path) -> dict:
         evaluation_angle,
         nonlinear_angle,
         nonlinear_estimates,
+    )
+    make_worst_case_plot(
+        output,
+        evaluation_time,
+        evaluation_force,
+        worst_case_estimates,
+        evaluation_mask,
+        method_summary,
     )
     write_report(ROOT / "Real_Wind_DOE_Report.md", config, summary, main_rows, interaction_rows)
     return summary
@@ -744,6 +841,27 @@ def write_report(
             f"| {row['method']} | {row['minimum_nrmse']:.4f} | {row['median_nrmse']:.4f} | {row['maximum_nrmse']:.4f} | {ratios['I']:.2f} / {ratios['b']:.2f} / {ratios['K']:.2f} / {ratios['l']:.2f} |"
         )
     lines += [
+        "",
+        "## ワースト係数条件の時系列",
+        "",
+        f"各推定器について、81条件のうちNRMSEが最大となった係数組合せを個別に再現した。横軸は評価に使った{config['evaluation_start_s']:.0f}～{config['evaluation_end_s']:.0f}秒であり、黒線が真の外力、色線が推定外力、塗りつぶしが両者の差である。各方式はそれぞれ異なるワースト係数条件なので、単一の共通ハードウェア条件を表す図ではない。",
+        "",
+        "| 方式 | I / b / K / l倍率 | RMSE [mN] | NRMSE | 最大絶対誤差 [mN] |",
+        "|---|---|---:|---:|---:|",
+    ]
+    for row in summary["doe"]["method_summary"]:
+        ratios = row["worst_parameter_ratios"]
+        metrics_worst = row["worst_case_metrics"]
+        lines.append(
+            f"| {row['method']} | {ratios['I']:.2f} / {ratios['b']:.2f} / {ratios['K']:.2f} / {ratios['l']:.2f} | "
+            f"{1000*metrics_worst['rmse_N']:.4f} | {metrics_worst['nrmse_fluctuation']:.4f} | "
+            f"{1000*metrics_worst['max_abs_error_N']:.4f} |"
+        )
+    lines += [
+        "",
+        "![ワースト係数条件の時系列](results/real_wind_doe/worst_case_timeseries.png)",
+        "",
+        "## 主効果感度順位",
         "",
         "| 方式 | 1位 | 2位 | 3位 | 4位 |",
         "|---|---|---|---|---|",

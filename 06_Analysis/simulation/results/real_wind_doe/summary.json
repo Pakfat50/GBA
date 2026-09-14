@@ -191,6 +191,14 @@
           "b": 1.5,
           "K": 1.1,
           "l": 0.95
+        },
+        "worst_case_metrics": {
+          "rmse_N": 0.008776761447457095,
+          "nrmse_fluctuation": 0.6556648627383012,
+          "bias_N": 0.006149897931012179,
+          "mae_N": 0.007160530887984556,
+          "p95_abs_error_N": 0.01675074973745442,
+          "max_abs_error_N": 0.033525751417971116
         }
       },
       {
@@ -203,6 +211,14 @@
           "b": 1.5,
           "K": 1.1,
           "l": 0.95
+        },
+        "worst_case_metrics": {
+          "rmse_N": 0.008901486553584989,
+          "nrmse_fluctuation": 0.6649824077210305,
+          "bias_N": 0.006166520752076912,
+          "mae_N": 0.007118808534958194,
+          "p95_abs_error_N": 0.0173285119224263,
+          "max_abs_error_N": 0.03634097051111748
         }
       },
       {
@@ -215,6 +231,14 @@
           "b": 1.5,
           "K": 1.1,
           "l": 0.95
+        },
+        "worst_case_metrics": {
+          "rmse_N": 0.007954030729340665,
+          "nrmse_fluctuation": 0.5942030551463123,
+          "bias_N": 0.006149985672424859,
+          "mae_N": 0.006625446652934337,
+          "p95_abs_error_N": 0.014991005478494919,
+          "max_abs_error_N": 0.024277839127381858
         }
       },
       {
@@ -227,6 +251,14 @@
           "b": 1.5,
           "K": 1.1,
           "l": 0.95
+        },
+        "worst_case_metrics": {
+          "rmse_N": 0.008075280043378222,
+          "nrmse_fluctuation": 0.6032609423090746,
+          "bias_N": 0.006149937644260561,
+          "mae_N": 0.006698515243195542,
+          "p95_abs_error_N": 0.015194630282471748,
+          "max_abs_error_N": 0.02588214296271321
         }
       }
     ],
@@ -259,7 +291,13 @@
         "validation_max_relative_error": 0.6774713845877652,
         "gate_10_percent": false
       }
-    ]
+    ],
+    "worst_case_timeseries": {
+      "evaluation_start_s": 30.0,
+      "evaluation_end_s": 150.0,
+      "figure": "results/real_wind_doe/worst_case_timeseries.png",
+      "note": "Each estimator uses its own maximum-NRMSE DOE case."
+    }
   },
   "plant": {
     "parameters": {
