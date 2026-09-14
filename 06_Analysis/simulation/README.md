@@ -89,7 +89,7 @@ python 06_Analysis/simulation/src/run_stage2.py
 
 [オブザーバー実装比較レポート](Estimator_Comparison_Report.md)では、現行ESO、外力変化率を状態に加えたRamp ESO、因果Kalman filter、記録全体を使うRTS smootherを比較します。すべての外部観測は角度だけで、角速度は内部状態として推定します。
 
-[外力推定器3候補の理論・調整ガイド](Estimator_Candidate_Guide.md)では、帯域可変ESO、3状態RTS smoother、4状態RTS smootherの数式、初学者向け解説、チューニング方法、最終選定方法をまとめています。
+[外力推定器4候補の理論・調整ガイド](Estimator_Candidate_Guide.md)では、3状態・4状態の帯域可変ESOと、3状態・4状態RTS smootherの数式、初学者向け解説、チューニング方法、最終選定方法をまとめています。
 
 ```bash
 python 06_Analysis/simulation/src/run_estimator_comparison.py
@@ -97,3 +97,13 @@ python -m unittest discover -s 06_Analysis/simulation/tests -v
 ```
 
 選定用入力と未使用の検証入力を分離し、同一時刻の外力RMSE・NRMSEで比較します。RTS smootherは未来の角度を使う事後解析専用方式です。設定は`config/estimator_comparison.json`、結果は`results/stage2_estimator_comparison/`です。
+
+### Stage 2追加評価：Kaimal風と4方式の係数感度
+
+[実風スペクトルと4推定器の係数感度](Real_Wind_DOE_Report.md)では、文献に基づくKaimal風を準定常抗力へ変換し、3状態・4状態のESOとRTS smootherを比較します。I、b、K、作用距離の3水準全因子計画81条件と、独立Latin Hypercube 24条件を実行します。
+
+```bash
+python 06_Analysis/simulation/src/run_real_wind_doe.py
+```
+
+設定は`config/real_wind_doe.json`、結果は`results/real_wind_doe/`です。現行機は38度制限のため8 m/sへ対応できないので、この評価では8 m/s時の静的角度が30度となる仮想再設計Kを使用しています。

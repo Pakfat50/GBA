@@ -119,3 +119,69 @@ def kalman_filter_and_rts_smoother(
 
     scale = parameters.force_lever_m
     return filtered[:, 2] / scale, smoothed[:, 2] / scale
+
+
+def kalman_rts_force(
+    angle_rad: np.ndarray,
+    parameters: PendulumParameters,
+    sample_period_s: float,
+    assumed_angle_noise_rad: float,
+    disturbance_noise_std: float,
+    disturbance_order: int = 0,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return angle-only Kalman and RTS force estimates for 3 or 4 states.
+
+    ``disturbance_order=0`` uses ``[theta, omega, torque]`` and interprets
+    ``disturbance_noise_std`` as force random-walk standard deviation in
+    N/sample.  ``disturbance_order=1`` adds torque rate and interprets the
+    value as force-rate random-walk standard deviation in (N/s)/sample.
+    Process noise is injected into the last disturbance state after each exact
+    discrete prediction.  The RTS output is a full-interval offline estimate.
+    """
+
+    if assumed_angle_noise_rad <= 0.0 or disturbance_noise_std <= 0.0:
+        raise ValueError("Noise assumptions must be positive")
+    a, c = augmented_matrices(parameters, disturbance_order)
+    ad = expm(a * sample_period_s)
+    n_state = len(a)
+    n_samples = len(angle_rad)
+    disturbance_scale = parameters.force_lever_m * disturbance_noise_std
+    q = np.eye(n_state) * 1e-24
+    q[-1, -1] = disturbance_scale**2
+    r = assumed_angle_noise_rad**2
+    covariance = np.eye(n_state)
+    covariance[0, 0] = np.deg2rad(5.0) ** 2
+    covariance[1, 1] = 1.0
+    covariance[2, 2] = (parameters.force_lever_m * 0.5) ** 2
+    if disturbance_order == 1:
+        covariance[3, 3] = (parameters.force_lever_m * 0.5) ** 2
+    identity = np.eye(n_state)
+    filtered = np.zeros((n_samples, n_state))
+    predicted = np.zeros_like(filtered)
+    filtered_covariance = np.zeros((n_samples, n_state, n_state))
+    predicted_covariance = np.zeros_like(filtered_covariance)
+    state = np.zeros(n_state)
+
+    for k, measurement in enumerate(np.asarray(angle_rad, dtype=float)):
+        if k:
+            state = ad @ filtered[k - 1]
+            covariance = ad @ filtered_covariance[k - 1] @ ad.T + q
+        predicted[k] = state
+        predicted_covariance[k] = covariance
+        innovation_variance = (c @ covariance @ c.T).item() + r
+        gain = covariance @ c.T / innovation_variance
+        state = state + gain[:, 0] * (measurement - (c @ state).item())
+        correction = identity - gain @ c
+        covariance = correction @ covariance @ correction.T + gain * r @ gain.T
+        covariance = 0.5 * (covariance + covariance.T)
+        filtered[k] = state
+        filtered_covariance[k] = covariance
+
+    smoothed = filtered.copy()
+    for k in range(n_samples - 2, -1, -1):
+        cross = filtered_covariance[k] @ ad.T
+        smoother_gain = np.linalg.solve(predicted_covariance[k + 1].T, cross.T).T
+        smoothed[k] += smoother_gain @ (smoothed[k + 1] - predicted[k + 1])
+
+    scale = parameters.force_lever_m
+    return filtered[:, 2] / scale, smoothed[:, 2] / scale

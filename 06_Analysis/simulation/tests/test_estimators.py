@@ -11,7 +11,12 @@ from scipy.linalg import expm
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from estimators import augmented_matrices, causal_luenberger, kalman_filter_and_rts_smoother
+from estimators import (
+    augmented_matrices,
+    causal_luenberger,
+    kalman_filter_and_rts_smoother,
+    kalman_rts_force,
+)
 from model import PendulumParameters
 
 
@@ -63,6 +68,28 @@ class EstimatorComparisonTest(unittest.TestCase):
         estimates.extend(kalman_filter_and_rts_smoother(angle, self.p, self.dt, np.deg2rad(0.02), 1e-5))
         for estimate in estimates:
             self.assertLess(abs(estimate[2000] / force - 1.0), 1e-4)
+
+    def test_four_state_rts_tracks_linear_force_ramp(self) -> None:
+        time = np.arange(4001) * self.dt
+        force = 0.002 + 0.00005 * time
+        a, c = augmented_matrices(self.p, 1)
+        ad = expm(a * self.dt)
+        state = np.array(
+            [0.0, 0.0, self.p.force_lever_m * force[0], self.p.force_lever_m * 0.00005]
+        )
+        angle = np.zeros_like(time)
+        for k in range(len(time)):
+            angle[k] = (c @ state).item()
+            state = ad @ state
+        _, smoothed = kalman_rts_force(
+            angle,
+            self.p,
+            self.dt,
+            np.deg2rad(0.02),
+            1e-5,
+            disturbance_order=1,
+        )
+        self.assertLess(np.sqrt(np.mean((smoothed[500:-500] - force[500:-500]) ** 2)), 2e-5)
 
 
 if __name__ == "__main__":
