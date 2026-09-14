@@ -3,9 +3,9 @@
   "wind_model": "one-sided IEC-style Kaimal along-wind spectrum with bounded random-phase realization",
   "training_wind": {
     "target_turbulence_intensity": 0.2,
-    "realized_turbulence_intensity": 0.17694660546388316,
-    "fluctuation_scale_for_bounds": 0.8847330273194156,
-    "minimum_speed_m_s": 1.5207218012388481,
+    "realized_turbulence_intensity": 0.1769466054638831,
+    "fluctuation_scale_for_bounds": 0.8847330273194155,
+    "minimum_speed_m_s": 1.520721801238849,
     "maximum_speed_m_s": 6.0
   },
   "evaluation_wind": {
@@ -55,113 +55,113 @@
   "nominal_metrics": [
     {
       "method": "Raw static",
-      "rmse_N": 0.012919288099532975,
+      "rmse_N": 0.012919288099532977,
       "nrmse_fluctuation": 0.9651308525550836,
-      "bias_N": -3.143362002784967e-05,
-      "mae_N": 0.010438835568297116,
-      "p95_abs_error_N": 0.02493836941121856,
-      "max_abs_error_N": 0.04426074516108258
+      "bias_N": -3.14336200278498e-05,
+      "mae_N": 0.01043883556829712,
+      "p95_abs_error_N": 0.024938369411218592,
+      "max_abs_error_N": 0.04426074516108261
     },
     {
       "method": "Causal LPF",
-      "rmse_N": 0.010010464983550588,
+      "rmse_N": 0.01001046498355059,
       "nrmse_fluctuation": 0.747828249483518,
-      "bias_N": 0.0001282424636209308,
+      "bias_N": 0.00012824246362093004,
       "mae_N": 0.007923670550850392,
       "p95_abs_error_N": 0.019399386476294214,
-      "max_abs_error_N": 0.036881765277758806
+      "max_abs_error_N": 0.03688176527775881
     },
     {
       "method": "ESO 3-state",
-      "rmse_N": 0.003720837040164337,
-      "nrmse_fluctuation": 0.27796381635936707,
-      "bias_N": 1.2771678545948872e-06,
-      "mae_N": 0.0029207616494861316,
-      "p95_abs_error_N": 0.0073770520555608565,
+      "rmse_N": 0.003720837040164342,
+      "nrmse_fluctuation": 0.27796381635936745,
+      "bias_N": 1.2771678545751679e-06,
+      "mae_N": 0.0029207616494861203,
+      "p95_abs_error_N": 0.0073770520555660815,
       "max_abs_error_N": 0.020984349598883817
     },
     {
       "method": "ESO 4-state",
-      "rmse_N": 0.004426308253099625,
-      "nrmse_fluctuation": 0.3306657940494471,
-      "bias_N": 5.882709337128143e-07,
-      "mae_N": 0.003481180324706145,
-      "p95_abs_error_N": 0.008862382297824531,
+      "rmse_N": 0.0044263082530996796,
+      "nrmse_fluctuation": 0.3306657940494512,
+      "bias_N": 5.882709337176266e-07,
+      "mae_N": 0.003481180324706175,
+      "p95_abs_error_N": 0.008862382297818001,
       "max_abs_error_N": 0.02077433251792509
     },
     {
       "method": "RTS 3-state",
-      "rmse_N": 2.2969214247649884e-05,
-      "nrmse_fluctuation": 0.0017159070343942618,
-      "bias_N": 5.047509924670779e-10,
-      "mae_N": 1.8848757902149788e-05,
-      "p95_abs_error_N": 4.38772073940788e-05,
-      "max_abs_error_N": 6.492734527936694e-05
+      "rmse_N": 2.29692142491321e-05,
+      "nrmse_fluctuation": 0.00171590703450499,
+      "bias_N": 5.047509923426219e-10,
+      "mae_N": 1.8848757902211635e-05,
+      "p95_abs_error_N": 4.387720734777556e-05,
+      "max_abs_error_N": 6.492734531082789e-05
     },
     {
       "method": "RTS 4-state",
-      "rmse_N": 0.001299285229827471,
-      "nrmse_fluctuation": 0.09706264400288012,
-      "bias_N": 2.3042011025245126e-07,
-      "mae_N": 0.0010194867729131816,
-      "p95_abs_error_N": 0.002555258300595699,
-      "max_abs_error_N": 0.006358978441705326
+      "rmse_N": 0.0012992852298275013,
+      "nrmse_fluctuation": 0.09706264400288236,
+      "bias_N": 2.304201102515e-07,
+      "mae_N": 0.0010194867729132063,
+      "p95_abs_error_N": 0.0025552583005956434,
+      "max_abs_error_N": 0.006358978441699331
     }
   ],
   "nonlinear_nominal_metrics": [
     {
       "method": "Raw static",
-      "rmse_N": 0.013217827644561602,
-      "nrmse_fluctuation": 0.987433143780039,
-      "bias_N": 0.0004798512363743187,
-      "mae_N": 0.010512891313121822,
-      "p95_abs_error_N": 0.02629123801149154,
-      "max_abs_error_N": 0.056403894870587855
+      "rmse_N": 0.0132178276445616,
+      "nrmse_fluctuation": 0.9874331437800388,
+      "bias_N": 0.00047985123637431844,
+      "mae_N": 0.010512891313121818,
+      "p95_abs_error_N": 0.026291238011491552,
+      "max_abs_error_N": 0.05640389487058787
     },
     {
       "method": "Causal LPF",
       "rmse_N": 0.010030828927049094,
       "nrmse_fluctuation": 0.7493495306871476,
-      "bias_N": 0.0006485948228814266,
+      "bias_N": 0.0006485948228814264,
       "mae_N": 0.007951845801570108,
       "p95_abs_error_N": 0.01965347580779371,
       "max_abs_error_N": 0.03667433870570902
     },
     {
       "method": "ESO 3-state",
-      "rmse_N": 0.004867721738760607,
-      "nrmse_fluctuation": 0.36364143252605136,
-      "bias_N": -0.002347040038731459,
-      "mae_N": 0.0036665730435577084,
+      "rmse_N": 0.004867721738760586,
+      "nrmse_fluctuation": 0.36364143252604975,
+      "bias_N": -0.002347040038731426,
+      "mae_N": 0.0036665730435576703,
       "p95_abs_error_N": 0.010016129573717593,
-      "max_abs_error_N": 0.025640364838103023
+      "max_abs_error_N": 0.025640364838103037
     },
     {
       "method": "ESO 4-state",
-      "rmse_N": 0.00530643329164406,
-      "nrmse_fluctuation": 0.3964152240692152,
-      "bias_N": -0.0023476455996605883,
-      "mae_N": 0.004066130639404165,
-      "p95_abs_error_N": 0.010772262307380279,
-      "max_abs_error_N": 0.025128974240655404
+      "rmse_N": 0.005306433291644056,
+      "nrmse_fluctuation": 0.3964152240692149,
+      "bias_N": -0.002347645599660587,
+      "mae_N": 0.00406613063940415,
+      "p95_abs_error_N": 0.010772262307385497,
+      "max_abs_error_N": 0.0251289742406319
     },
     {
       "method": "RTS 3-state",
-      "rmse_N": 0.003368360193171992,
-      "nrmse_fluctuation": 0.2516321580494988,
-      "bias_N": -0.00234812699334405,
-      "mae_N": 0.0023484582166894818,
-      "p95_abs_error_N": 0.007289992168218684,
-      "max_abs_error_N": 0.018521933572049218
+      "rmse_N": 0.0033683601931719835,
+      "nrmse_fluctuation": 0.2516321580494981,
+      "bias_N": -0.002348126993344049,
+      "mae_N": 0.002348458216689473,
+      "p95_abs_error_N": 0.007289992168184739,
+      "max_abs_error_N": 0.01852193357202582
     },
     {
       "method": "RTS 4-state",
-      "rmse_N": 0.003586211687298575,
-      "nrmse_fluctuation": 0.26790667694225334,
-      "bias_N": -0.002347927380995497,
-      "mae_N": 0.0025434663318883023,
-      "p95_abs_error_N": 0.00764862977089481,
-      "max_abs_error_N": 0.020258024832325
+      "rmse_N": 0.003586211687298571,
+      "nrmse_fluctuation": 0.267906676942253,
+      "bias_N": -0.0023479273809954974,
+      "mae_N": 0.0025434663318883014,
+      "p95_abs_error_N": 0.007648629770894831,
+      "max_abs_error_N": 0.020258024832327068
     }
   ],
   "doe": {
@@ -183,9 +183,9 @@
     "method_summary": [
       {
         "method": "ESO 3-state",
-        "minimum_nrmse": 0.27796381635936707,
-        "median_nrmse": 0.42472895214583045,
-        "maximum_nrmse": 0.6556648627383012,
+        "minimum_nrmse": 0.27796381635936745,
+        "median_nrmse": 0.42472895214583073,
+        "maximum_nrmse": 0.6556648627383028,
         "worst_parameter_ratios": {
           "I": 0.75,
           "b": 1.5,
@@ -193,30 +193,30 @@
           "l": 0.95
         },
         "worst_case_metrics": {
-          "rmse_N": 0.008776761447457095,
-          "nrmse_fluctuation": 0.6556648627383012,
-          "bias_N": 0.006149897931012179,
-          "mae_N": 0.007160530887984556,
+          "rmse_N": 0.00877676144745712,
+          "nrmse_fluctuation": 0.6556648627383028,
+          "bias_N": 0.006149897931012192,
+          "mae_N": 0.007160530887984575,
           "p95_abs_error_N": 0.01675074973745442,
-          "max_abs_error_N": 0.033525751417971116
+          "max_abs_error_N": 0.03352575141796837
         },
         "worst_case_wind_metrics": {
-          "rmse_m_s": 0.4129906274573585,
+          "rmse_m_s": 0.41299062745736126,
           "bias_m_s": 0.2823455969602943,
-          "mae_m_s": 0.34179359293746536,
-          "p95_abs_error_m_s": 0.7582321026563554,
-          "max_abs_error_m_s": 2.546085414265751,
-          "signed_error_at_max_abs_m_s": -2.546085414265751,
+          "mae_m_s": 0.3417935929374665,
+          "p95_abs_error_m_s": 0.7582321026562275,
+          "max_abs_error_m_s": 2.546085414265394,
+          "signed_error_at_max_abs_m_s": -2.546085414265394,
           "true_speed_at_max_abs_m_s": 1.818136937454157,
-          "estimated_speed_at_max_abs_m_s": -0.7279484768115944,
+          "estimated_speed_at_max_abs_m_s": -0.7279484768112374,
           "time_at_max_abs_s": 148.62
         }
       },
       {
         "method": "ESO 4-state",
-        "minimum_nrmse": 0.3306657940494471,
-        "median_nrmse": 0.46463751670641934,
-        "maximum_nrmse": 0.6649824077210305,
+        "minimum_nrmse": 0.3306657940494512,
+        "median_nrmse": 0.4646375167064224,
+        "maximum_nrmse": 0.6649824077210398,
         "worst_parameter_ratios": {
           "I": 1.25,
           "b": 1.5,
@@ -224,30 +224,30 @@
           "l": 0.95
         },
         "worst_case_metrics": {
-          "rmse_N": 0.008901486553584989,
-          "nrmse_fluctuation": 0.6649824077210305,
-          "bias_N": 0.006166520752076912,
-          "mae_N": 0.007118808534958194,
-          "p95_abs_error_N": 0.0173285119224263,
+          "rmse_N": 0.008901486553585115,
+          "nrmse_fluctuation": 0.6649824077210398,
+          "bias_N": 0.006166520752076895,
+          "mae_N": 0.007118808534958186,
+          "p95_abs_error_N": 0.017328511922440053,
           "max_abs_error_N": 0.03634097051111748
         },
         "worst_case_wind_metrics": {
-          "rmse_m_s": 0.3997252132851194,
-          "bias_m_s": 0.2783890824932558,
-          "mae_m_s": 0.3315242159125967,
-          "p95_abs_error_m_s": 0.7416819131963583,
-          "max_abs_error_m_s": 1.3649374688828,
-          "signed_error_at_max_abs_m_s": 1.3649374688828,
+          "rmse_m_s": 0.39972521328512167,
+          "bias_m_s": 0.2783890824932539,
+          "mae_m_s": 0.3315242159125948,
+          "p95_abs_error_m_s": 0.741681913196492,
+          "max_abs_error_m_s": 1.364937468882554,
+          "signed_error_at_max_abs_m_s": 1.364937468882554,
           "true_speed_at_max_abs_m_s": 2.8524062023299126,
-          "estimated_speed_at_max_abs_m_s": 4.217343671212713,
+          "estimated_speed_at_max_abs_m_s": 4.217343671212467,
           "time_at_max_abs_s": 100.23
         }
       },
       {
         "method": "RTS 3-state",
-        "minimum_nrmse": 0.0017159070343942618,
-        "median_nrmse": 0.31939335514214523,
-        "maximum_nrmse": 0.5942030551463123,
+        "minimum_nrmse": 0.00171590703450499,
+        "median_nrmse": 0.3193933551421441,
+        "maximum_nrmse": 0.594203055146309,
         "worst_parameter_ratios": {
           "I": 0.75,
           "b": 1.5,
@@ -255,30 +255,30 @@
           "l": 0.95
         },
         "worst_case_metrics": {
-          "rmse_N": 0.007954030729340665,
-          "nrmse_fluctuation": 0.5942030551463123,
-          "bias_N": 0.006149985672424859,
-          "mae_N": 0.006625446652934337,
-          "p95_abs_error_N": 0.014991005478494919,
-          "max_abs_error_N": 0.024277839127381858
+          "rmse_N": 0.007954030729340622,
+          "nrmse_fluctuation": 0.594203055146309,
+          "bias_N": 0.006149985672424858,
+          "mae_N": 0.006625446652934361,
+          "p95_abs_error_N": 0.01499100547850999,
+          "max_abs_error_N": 0.024277839127302796
         },
         "worst_case_wind_metrics": {
-          "rmse_m_s": 0.37206132300651107,
+          "rmse_m_s": 0.37206132300650674,
           "bias_m_s": 0.28196953521252405,
-          "mae_m_s": 0.31396985405428096,
-          "p95_abs_error_m_s": 0.6577773908133953,
-          "max_abs_error_m_s": 2.3712826900650996,
-          "signed_error_at_max_abs_m_s": -2.3712826900650996,
+          "mae_m_s": 0.31396985405428074,
+          "p95_abs_error_m_s": 0.6577773908134104,
+          "max_abs_error_m_s": 2.371282690064236,
+          "signed_error_at_max_abs_m_s": -2.371282690064236,
           "true_speed_at_max_abs_m_s": 1.6243490171457928,
-          "estimated_speed_at_max_abs_m_s": -0.7469336729193068,
+          "estimated_speed_at_max_abs_m_s": -0.7469336729184428,
           "time_at_max_abs_s": 148.6
         }
       },
       {
         "method": "RTS 4-state",
-        "minimum_nrmse": 0.09706264400288012,
-        "median_nrmse": 0.3347607811625756,
-        "maximum_nrmse": 0.6032609423090746,
+        "minimum_nrmse": 0.09706264400288236,
+        "median_nrmse": 0.3347607811625763,
+        "maximum_nrmse": 0.6032609423090748,
         "worst_parameter_ratios": {
           "I": 0.75,
           "b": 1.5,
@@ -286,22 +286,22 @@
           "l": 0.95
         },
         "worst_case_metrics": {
-          "rmse_N": 0.008075280043378222,
-          "nrmse_fluctuation": 0.6032609423090746,
-          "bias_N": 0.006149937644260561,
-          "mae_N": 0.006698515243195542,
-          "p95_abs_error_N": 0.015194630282471748,
-          "max_abs_error_N": 0.02588214296271321
+          "rmse_N": 0.008075280043378225,
+          "nrmse_fluctuation": 0.6032609423090748,
+          "bias_N": 0.006149937644260565,
+          "mae_N": 0.006698515243195541,
+          "p95_abs_error_N": 0.01519463028246626,
+          "max_abs_error_N": 0.0258821429627165
         },
         "worst_case_wind_metrics": {
-          "rmse_m_s": 0.3781355965264694,
+          "rmse_m_s": 0.3781355965264702,
           "bias_m_s": 0.28208507649918496,
-          "mae_m_s": 0.3178775675248595,
-          "p95_abs_error_m_s": 0.6730707016075401,
-          "max_abs_error_m_s": 2.3846555351643097,
-          "signed_error_at_max_abs_m_s": -2.3846555351643097,
+          "mae_m_s": 0.3178775675248596,
+          "p95_abs_error_m_s": 0.6730707016074833,
+          "max_abs_error_m_s": 2.384655535164322,
+          "signed_error_at_max_abs_m_s": -2.384655535164322,
           "true_speed_at_max_abs_m_s": 1.6376856302823208,
-          "estimated_speed_at_max_abs_m_s": -0.7469699048819891,
+          "estimated_speed_at_max_abs_m_s": -0.7469699048820012,
           "time_at_max_abs_s": 148.59
         }
       }
@@ -310,32 +310,38 @@
       {
         "method": "ESO 3-state",
         "train_log_rmse_r2": 0.9715665931076851,
-        "validation_median_relative_error": 0.04132425627498845,
-        "validation_max_relative_error": 0.09979055927704288,
+        "validation_median_relative_error": 0.04132425627498937,
+        "validation_max_relative_error": 0.09979055927704207,
         "gate_10_percent": true
       },
       {
         "method": "ESO 4-state",
-        "train_log_rmse_r2": 0.9727974365729177,
-        "validation_median_relative_error": 0.0358857450637592,
-        "validation_max_relative_error": 0.10287878833700322,
+        "train_log_rmse_r2": 0.9727974365729176,
+        "validation_median_relative_error": 0.03588574506375165,
+        "validation_max_relative_error": 0.10287878833699536,
         "gate_10_percent": false
       },
       {
         "method": "RTS 3-state",
-        "train_log_rmse_r2": 0.5172150154568631,
-        "validation_median_relative_error": 0.2916355608470743,
-        "validation_max_relative_error": 2.5509455126647755,
+        "train_log_rmse_r2": 0.5172150154613506,
+        "validation_median_relative_error": 0.2916355608445306,
+        "validation_max_relative_error": 2.550945512683887,
         "gate_10_percent": false
       },
       {
         "method": "RTS 4-state",
-        "train_log_rmse_r2": 0.8830304848216116,
-        "validation_median_relative_error": 0.13036909399530583,
-        "validation_max_relative_error": 0.6774713845877652,
+        "train_log_rmse_r2": 0.8830304848216128,
+        "validation_median_relative_error": 0.130369093995306,
+        "validation_max_relative_error": 0.6774713845877542,
         "gate_10_percent": false
       }
     ],
+    "wind_speed_factor_characteristics": {
+      "response": "direct time-domain wind-speed RMSE",
+      "aggregation": "mean with 10th-90th percentile conditional range",
+      "figure": "results/real_wind_doe/wind_rmse_factor_characteristics.png",
+      "table": "results/real_wind_doe/wind_rmse_factor_characteristics.csv"
+    },
     "worst_case_timeseries": {
       "evaluation_start_s": 30.0,
       "evaluation_end_s": 150.0,
@@ -358,7 +364,7 @@
       "damped_frequency_hz": 0.993257474299684,
       "damping_ratio": 0.05925825176488159
     },
-    "maximum_linear_dynamic_angle_deg_in_evaluation": 56.778728674880085,
+    "maximum_linear_dynamic_angle_deg_in_evaluation": 56.7787286748801,
     "maximum_nonlinear_dynamic_angle_deg_in_evaluation": 47.111133664855544,
     "mechanical_angle_limit_deg": 45.0,
     "limits": {
