@@ -105,6 +105,52 @@ def force_metrics(truth: np.ndarray, estimate: np.ndarray, mask: np.ndarray) -> 
     }
 
 
+def wind_speed_from_force(
+    force: np.ndarray,
+    air_density_kg_m3: float,
+    drag_coefficient: float,
+    projected_area_m2: float,
+) -> np.ndarray:
+    """Convert signed quasi-steady drag to signed wind speed."""
+    aero = air_density_kg_m3 * drag_coefficient * projected_area_m2
+    if aero <= 0.0:
+        raise ValueError("Aerodynamic parameters must be positive")
+    force = np.asarray(force, dtype=float)
+    return np.sign(force) * np.sqrt(2.0 * np.abs(force) / aero)
+
+
+def wind_speed_metrics(
+    time: np.ndarray,
+    truth_speed: np.ndarray,
+    estimate_force: np.ndarray,
+    mask: np.ndarray,
+    config: dict,
+) -> tuple[np.ndarray, dict[str, float]]:
+    """Return estimated wind and direct time-domain wind-speed metrics."""
+    estimate_speed = wind_speed_from_force(
+        estimate_force,
+        config["air_density_kg_m3"],
+        config["drag_coefficient"],
+        config["projected_area_m2"],
+    )
+    selected_indices = np.flatnonzero(mask)
+    selected_error = estimate_speed[mask] - truth_speed[mask]
+    maximum_local_index = int(np.argmax(np.abs(selected_error)))
+    maximum_index = int(selected_indices[maximum_local_index])
+    metrics = {
+        "rmse_m_s": float(np.sqrt(np.mean(selected_error**2))),
+        "bias_m_s": float(np.mean(selected_error)),
+        "mae_m_s": float(np.mean(np.abs(selected_error))),
+        "p95_abs_error_m_s": float(np.quantile(np.abs(selected_error), 0.95)),
+        "max_abs_error_m_s": float(np.abs(selected_error[maximum_local_index])),
+        "signed_error_at_max_abs_m_s": float(selected_error[maximum_local_index]),
+        "true_speed_at_max_abs_m_s": float(truth_speed[maximum_index]),
+        "estimated_speed_at_max_abs_m_s": float(estimate_speed[maximum_index]),
+        "time_at_max_abs_s": float(time[maximum_index]),
+    }
+    return estimate_speed, metrics
+
+
 def causal_lowpass(values: np.ndarray, cutoff_hz: float, dt: float) -> np.ndarray:
     pole = np.exp(-2.0 * np.pi * cutoff_hz * dt)
     result = np.asarray(values, dtype=float)
@@ -436,12 +482,15 @@ def make_worst_case_plot(
         row = summaries[method]
         ratios = row["worst_parameter_ratios"]
         axis.fill_between(
-            selected_time, truth_mn, estimate_mn, color=COLORS[method], alpha=0.12
+            selected_time, truth_mn, estimate_mn, color=COLORS[method], alpha=0.20
         )
-        axis.plot(selected_time, truth_mn, color="black", linewidth=1.6, label="True force")
         axis.plot(
-            selected_time, estimate_mn, color=COLORS[method], linewidth=0.9,
-            label="Worst-case estimate"
+            selected_time, truth_mn, color="black", linewidth=1.5, alpha=0.45,
+            label="True force"
+        )
+        axis.plot(
+            selected_time, estimate_mn, color=COLORS[method], linewidth=1.1,
+            alpha=0.95, label="Worst-case estimate"
         )
         axis.set_ylabel("Force [mN]")
         axis.set_ylim(y_min - padding, y_max + padding)
@@ -462,6 +511,84 @@ def make_worst_case_plot(
     axes[-1].set_xlabel("Evaluation time [s]")
     fig.suptitle("Time histories at each estimator's worst DOE parameter case")
     fig.savefig(output / "worst_case_timeseries.png", dpi=100)
+    plt.close(fig)
+
+
+def make_worst_case_wind_plot(
+    output: Path,
+    time: np.ndarray,
+    truth_speed: np.ndarray,
+    estimate_speeds: dict[str, np.ndarray],
+    mask: np.ndarray,
+    method_summary: list[dict],
+) -> None:
+    """Plot wind-speed estimates and their errors at each worst DOE case."""
+    selected_time = time[mask]
+    selected_truth = truth_speed[mask]
+    summaries = {row["method"]: row for row in method_summary}
+    fig, axes = plt.subplots(
+        len(CANDIDATES), 2, figsize=(16, 13), sharex=True,
+        gridspec_kw={"width_ratios": [1.65, 1.0]}, layout="constrained"
+    )
+    all_speeds = [selected_truth]
+    all_speeds.extend(estimate_speeds[method][mask] for method in CANDIDATES)
+    speed_min = min(float(np.min(values)) for values in all_speeds)
+    speed_max = max(float(np.max(values)) for values in all_speeds)
+    speed_padding = 0.05 * max(speed_max - speed_min, 1.0)
+
+    for row_index, method in enumerate(CANDIDATES):
+        estimate = estimate_speeds[method][mask]
+        error = estimate - selected_truth
+        summary_row = summaries[method]
+        wind_metrics = summary_row["worst_case_wind_metrics"]
+        speed_axis, error_axis = axes[row_index]
+        speed_axis.fill_between(
+            selected_time, selected_truth, estimate,
+            color=COLORS[method], alpha=0.22, label="Difference"
+        )
+        speed_axis.plot(
+            selected_time, selected_truth, color="black", linewidth=1.5,
+            alpha=0.42, label="True wind"
+        )
+        speed_axis.plot(
+            selected_time, estimate, color=COLORS[method], linewidth=1.15,
+            alpha=0.98, label="Estimated wind"
+        )
+        speed_axis.set_ylabel("Wind speed [m/s]")
+        speed_axis.set_ylim(speed_min - speed_padding, speed_max + speed_padding)
+        speed_axis.set_title(
+            f"{method}: worst DOE case", loc="left"
+        )
+        error_axis.axhline(0.0, color="black", linewidth=0.8, alpha=0.45)
+        error_axis.fill_between(
+            selected_time, 0.0, error, color=COLORS[method], alpha=0.22
+        )
+        error_axis.plot(
+            selected_time, error, color=COLORS[method], linewidth=1.0
+        )
+        error_axis.set_ylabel("Error [m/s]")
+        error_axis.set_title("Estimate - true", loc="left")
+        annotation = (
+            f"max |error|={wind_metrics['max_abs_error_m_s']:.3f} m/s\n"
+            f"{wind_metrics['signed_error_at_max_abs_m_s']:+.3f} m/s "
+            f"@ true {wind_metrics['true_speed_at_max_abs_m_s']:.3f} m/s\n"
+            f"estimate={wind_metrics['estimated_speed_at_max_abs_m_s']:.3f} m/s, "
+            f"t={wind_metrics['time_at_max_abs_s']:.2f} s"
+        )
+        error_axis.text(
+            0.99, 0.96, annotation, transform=error_axis.transAxes,
+            ha="right", va="top", fontsize=8.5,
+            bbox={"facecolor": "white", "edgecolor": "#cccccc", "alpha": 0.90},
+        )
+        speed_axis.grid(alpha=0.2)
+        error_axis.grid(alpha=0.2)
+        if row_index == 0:
+            speed_axis.legend(ncol=3, loc="upper left", fontsize=8)
+
+    axes[-1, 0].set_xlabel("Evaluation time [s]")
+    axes[-1, 1].set_xlabel("Evaluation time [s]")
+    fig.suptitle("Wind-speed histories and errors at each estimator worst DOE case")
+    fig.savefig(output / "worst_case_windspeed_timeseries.png", dpi=110)
     plt.close(fig)
 
 
@@ -587,7 +714,9 @@ def run(config_path: Path, output: Path) -> dict:
             }
         )
 
+    aero = config["air_density_kg_m3"] * config["drag_coefficient"] * config["projected_area_m2"]
     worst_case_estimates: dict[str, np.ndarray] = {}
+    worst_case_wind_estimates: dict[str, np.ndarray] = {}
     for row in method_summary:
         ratios = row["worst_parameter_ratios"]
         parameters = PendulumParameters(
@@ -606,8 +735,16 @@ def run(config_path: Path, output: Path) -> dict:
             reproduced["nrmse_fluctuation"], row["maximum_nrmse"], rtol=1e-12
         ):
             raise RuntimeError(f"Failed to reproduce worst DOE case for {row['method']}")
+        wind_estimate, wind_metrics = wind_speed_metrics(
+            evaluation_time,
+            evaluation_speed,
+            worst_case_estimates[row["method"]],
+            evaluation_mask,
+            config,
+        )
+        worst_case_wind_estimates[row["method"]] = wind_estimate
+        row["worst_case_wind_metrics"] = wind_metrics
 
-    aero = config["air_density_kg_m3"] * config["drag_coefficient"] * config["projected_area_m2"]
     force_at_maximum = 0.5 * aero * config["maximum_wind_speed_m_s"] ** 2
     angle_limit = np.deg2rad(config["mechanical_angle_limit_deg"])
     linear_force_limit = nominal.restoring_n_m_per_rad * angle_limit / nominal.force_lever_m
@@ -665,6 +802,7 @@ def run(config_path: Path, output: Path) -> dict:
                 "evaluation_start_s": config["evaluation_start_s"],
                 "evaluation_end_s": config["evaluation_end_s"],
                 "figure": "results/real_wind_doe/worst_case_timeseries.png",
+                "wind_figure": "results/real_wind_doe/worst_case_windspeed_timeseries.png",
                 "note": "Each estimator uses its own maximum-NRMSE DOE case.",
             },
         },
@@ -703,6 +841,14 @@ def run(config_path: Path, output: Path) -> dict:
         evaluation_mask,
         method_summary,
     )
+    make_worst_case_wind_plot(
+        output,
+        evaluation_time,
+        evaluation_speed,
+        worst_case_wind_estimates,
+        evaluation_mask,
+        method_summary,
+    )
     write_report(ROOT / "Real_Wind_DOE_Report.md", config, summary, main_rows, interaction_rows)
     return summary
 
@@ -721,12 +867,6 @@ def write_report(
     source = summary["hardware_parameter_source"]
     derived = summary["hardware_parameter_derivation"]
     limits = summary["plant"]["limits"]
-    aero = (
-        config["air_density_kg_m3"]
-        * config["drag_coefficient"]
-        * config["projected_area_m2"]
-    )
-    reference_speed_m_s = 3.0
     lines = [
         "# Stage 2追加評価：実風スペクトルと4推定器の係数感度",
         "",
@@ -852,43 +992,45 @@ def write_report(
         "",
         f"各推定器について、81条件のうちNRMSEが最大となった係数組合せを個別に再現した。横軸は評価に使った{config['evaluation_start_s']:.0f}～{config['evaluation_end_s']:.0f}秒であり、黒線が真の外力、色線が推定外力、塗りつぶしが両者の差である。各方式はそれぞれ異なるワースト係数条件なので、単一の共通ハードウェア条件を表す図ではない。",
         "",
-        "風速誤差のオーダーを把握できるよう、外力誤差を真風速3.0 m/sでの正方向の等価風速誤差へ換算して併記する。",
-        "",
-        "```math",
-        "\\Delta U_{\\mathrm{eq},+}(U_0,\\Delta F)=\\sqrt{U_0^2+\\frac{2\\Delta F}{\\rho C_d A}}-U_0",
-        "```",
-        "",
-        "これは各時刻の推定外力を風速へ戻して求めた時系列RMSEではなく、外力誤差の大きさを風速へ読み替えるための参考値である。抗力と風速は二乗関係なので、同じ外力誤差でも真風速が低いほど等価風速誤差は大きい。Cd、空気密度、投影面積の不確かさは含まない。",
-        "",
-        "| 方式 | I / b / K / l倍率 | RMSE [mN] | RMSE等価 [m/s] @ true 3.0 m/s | NRMSE | 最大絶対誤差 [mN] | 最大誤差等価 [m/s] @ true 3.0 m/s |",
-        "|---|---|---:|---:|---:|---:|---:|",
+        "| 方式 | I / b / K / l倍率 | RMSE [mN] | NRMSE | 最大絶対誤差 [mN] |",
+        "|---|---|---:|---:|---:|",
     ]
     for row in summary["doe"]["method_summary"]:
         ratios = row["worst_parameter_ratios"]
         metrics_worst = row["worst_case_metrics"]
-        rmse_speed_equivalent = (
-            np.sqrt(
-                reference_speed_m_s**2
-                + 2.0 * metrics_worst["rmse_N"] / aero
-            )
-            - reference_speed_m_s
-        )
-        max_speed_equivalent = (
-            np.sqrt(
-                reference_speed_m_s**2
-                + 2.0 * metrics_worst["max_abs_error_N"] / aero
-            )
-            - reference_speed_m_s
-        )
         lines.append(
             f"| {row['method']} | {ratios['I']:.2f} / {ratios['b']:.2f} / {ratios['K']:.2f} / {ratios['l']:.2f} | "
-            f"{1000*metrics_worst['rmse_N']:.4f} | +{rmse_speed_equivalent:.3f} @ {reference_speed_m_s:.1f} | "
-            f"{metrics_worst['nrmse_fluctuation']:.4f} | "
-            f"{1000*metrics_worst['max_abs_error_N']:.4f} | +{max_speed_equivalent:.3f} @ {reference_speed_m_s:.1f} |"
+            f"{1000*metrics_worst['rmse_N']:.4f} | {metrics_worst['nrmse_fluctuation']:.4f} | "
+            f"{1000*metrics_worst['max_abs_error_N']:.4f} |"
         )
     lines += [
         "",
-        "![ワースト係数条件の時系列](results/real_wind_doe/worst_case_timeseries.png)",
+        "![ワースト係数条件の外力時系列](results/real_wind_doe/worst_case_timeseries.png)",
+        "",
+        "### 風速換算した時系列と誤差",
+        "",
+        "3.0 m/sなど一つの基準風速へ固定換算せず、各時刻の推定外力を次式で符号付き風速へ戻し、真の風速時系列と直接比較した。",
+        "",
+        "```math",
+        "\\hat U_k=\\mathrm{sgn}(\\hat F_k)\\sqrt{\\frac{2|\\hat F_k|}{\\rho C_d A}}",
+        "```",
+        "",
+        "左列は真値と推定値であり、真値を半透明、推定値を不透明にして差分を塗りつぶした。右列は推定値－真値だけを独立表示する。風速RMSEはこの風速時系列から直接計算した値であり、外力RMSEを代表風速で換算した値ではない。",
+        "",
+        "| 方式 | 風速RMSE [m/s] | Bias [m/s] | 95%絶対誤差 [m/s] | 最大絶対誤差 [m/s] | 最大時の符号付き誤差 / 真値 / 推定値 / 時刻 |",
+        "|---|---:|---:|---:|---:|---|",
+    ]
+    for row in summary["doe"]["method_summary"]:
+        wind = row["worst_case_wind_metrics"]
+        lines.append(
+            f"| {row['method']} | {wind['rmse_m_s']:.4f} | {wind['bias_m_s']:+.4f} | "
+            f"{wind['p95_abs_error_m_s']:.4f} | {wind['max_abs_error_m_s']:.4f} | "
+            f"{wind['signed_error_at_max_abs_m_s']:+.3f} @ true {wind['true_speed_at_max_abs_m_s']:.3f}; "
+            f"estimate {wind['estimated_speed_at_max_abs_m_s']:.3f}; t={wind['time_at_max_abs_s']:.2f} s |"
+        )
+    lines += [
+        "",
+        "![ワースト係数条件の風速時系列と誤差](results/real_wind_doe/worst_case_windspeed_timeseries.png)",
         "",
         "## 主効果感度順位",
         "",

@@ -1,0 +1,61 @@
+name: Regenerate real-wind analysis
+
+on:
+  push:
+    branches:
+      - feature/stage2-real-wind-doe
+    paths:
+      - 06_Analysis/simulation/src/run_real_wind_doe.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: real-wind-analysis-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/stage2-real-wind-doe
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install analysis dependencies
+        run: python -m pip install numpy scipy matplotlib
+
+      - name: Run simulation tests
+        shell: bash
+        run: |
+          set -o pipefail
+          python -m unittest discover -s 06_Analysis/simulation/tests -v 2>&1 | tee 06_Analysis/simulation/results/real_wind_doe/tests.txt
+
+      - name: Regenerate analysis
+        run: python 06_Analysis/simulation/src/run_real_wind_doe.py
+
+      - name: Commit generated report and figures
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            06_Analysis/simulation/Real_Wind_DOE_Report.md \
+            06_Analysis/simulation/results/real_wind_doe/summary.json \
+            06_Analysis/simulation/results/real_wind_doe/tests.txt \
+            06_Analysis/simulation/results/real_wind_doe/worst_case_timeseries.png \
+            06_Analysis/simulation/results/real_wind_doe/worst_case_windspeed_timeseries.png
+          if git diff --cached --quiet; then
+            echo 'No generated changes.'
+          else
+            git commit -m 'analysis: regenerate wind-speed error plots [skip ci]'
+            git push origin HEAD:feature/stage2-real-wind-doe
+          fi
