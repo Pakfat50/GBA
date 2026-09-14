@@ -721,6 +721,12 @@ def write_report(
     source = summary["hardware_parameter_source"]
     derived = summary["hardware_parameter_derivation"]
     limits = summary["plant"]["limits"]
+    aero = (
+        config["air_density_kg_m3"]
+        * config["drag_coefficient"]
+        * config["projected_area_m2"]
+    )
+    reference_speed_m_s = 3.0
     lines = [
         "# Stage 2追加評価：実風スペクトルと4推定器の係数感度",
         "",
@@ -846,16 +852,39 @@ def write_report(
         "",
         f"各推定器について、81条件のうちNRMSEが最大となった係数組合せを個別に再現した。横軸は評価に使った{config['evaluation_start_s']:.0f}～{config['evaluation_end_s']:.0f}秒であり、黒線が真の外力、色線が推定外力、塗りつぶしが両者の差である。各方式はそれぞれ異なるワースト係数条件なので、単一の共通ハードウェア条件を表す図ではない。",
         "",
-        "| 方式 | I / b / K / l倍率 | RMSE [mN] | NRMSE | 最大絶対誤差 [mN] |",
-        "|---|---|---:|---:|---:|",
+        "風速誤差のオーダーを把握できるよう、外力誤差を真風速3.0 m/sでの正方向の等価風速誤差へ換算して併記する。",
+        "",
+        "```math",
+        "\\Delta U_{\\mathrm{eq},+}(U_0,\\Delta F)=\\sqrt{U_0^2+\\frac{2\\Delta F}{\\rho C_d A}}-U_0",
+        "```",
+        "",
+        "これは各時刻の推定外力を風速へ戻して求めた時系列RMSEではなく、外力誤差の大きさを風速へ読み替えるための参考値である。抗力と風速は二乗関係なので、同じ外力誤差でも真風速が低いほど等価風速誤差は大きい。Cd、空気密度、投影面積の不確かさは含まない。",
+        "",
+        "| 方式 | I / b / K / l倍率 | RMSE [mN] | RMSE等価 [m/s] @ true 3.0 m/s | NRMSE | 最大絶対誤差 [mN] | 最大誤差等価 [m/s] @ true 3.0 m/s |",
+        "|---|---|---:|---:|---:|---:|---:|",
     ]
     for row in summary["doe"]["method_summary"]:
         ratios = row["worst_parameter_ratios"]
         metrics_worst = row["worst_case_metrics"]
+        rmse_speed_equivalent = (
+            np.sqrt(
+                reference_speed_m_s**2
+                + 2.0 * metrics_worst["rmse_N"] / aero
+            )
+            - reference_speed_m_s
+        )
+        max_speed_equivalent = (
+            np.sqrt(
+                reference_speed_m_s**2
+                + 2.0 * metrics_worst["max_abs_error_N"] / aero
+            )
+            - reference_speed_m_s
+        )
         lines.append(
             f"| {row['method']} | {ratios['I']:.2f} / {ratios['b']:.2f} / {ratios['K']:.2f} / {ratios['l']:.2f} | "
-            f"{1000*metrics_worst['rmse_N']:.4f} | {metrics_worst['nrmse_fluctuation']:.4f} | "
-            f"{1000*metrics_worst['max_abs_error_N']:.4f} |"
+            f"{1000*metrics_worst['rmse_N']:.4f} | +{rmse_speed_equivalent:.3f} @ {reference_speed_m_s:.1f} | "
+            f"{metrics_worst['nrmse_fluctuation']:.4f} | "
+            f"{1000*metrics_worst['max_abs_error_N']:.4f} | +{max_speed_equivalent:.3f} @ {reference_speed_m_s:.1f} |"
         )
     lines += [
         "",
