@@ -1,0 +1,41 @@
+{
+  "input": "gba_poc/raw/04_Data/00_Calibration/swing/LOG00014.TXT",
+  "sha256": "edd5669d424fda93252aaebe73b201eb5faaded887ff41cd8d5188058a92a6dd",
+  "windows": [
+    [
+      20.4,
+      32
+    ],
+    [
+      47.05,
+      59.05
+    ],
+    [
+      70.2,
+      82
+    ],
+    [
+      93.25,
+      105.25
+    ]
+  ],
+  "models": {
+    "V": [
+      false,
+      false
+    ],
+    "VQ": [
+      true,
+      false
+    ],
+    "VC": [
+      false,
+      true
+    ],
+    "VQC": [
+      true,
+      true
+    ]
+  },
+  "notes": "Old hardware; inner-axis ADC; normalized coefficients; fit every fourth original sample, score all original samples; no static friction identification"
+}
