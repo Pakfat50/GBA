@@ -67,17 +67,37 @@ for name in models:
 pd.DataFrame(cv).to_csv(out/'validation.csv',index=False)
 data=pd.concat(predictions);data.to_csv(out/'waveforms.csv',index=False)
 colors={'V':'#ea8800','VQ':'#377eb8','VC':'#d62728','VQC':'#009e73'}
-fig,axs=plt.subplots(4,2,figsize=(14,12),sharex='row')
-for j in range(4):
- t,y=segments[j];axs[j,0].plot(t+starts[j],np.rad2deg(y),color='black',alpha=.4,lw=1,label='Measured')
- for name in models:
+model_names=list(models)
+# Separate each model so nearly identical curves cannot hide one another.
+# Rows are trials 1--4 and columns are V / VQ / VC / VQC.
+fig,axs=plt.subplots(4,4,figsize=(18,12),sharex='row',sharey='row')
+for j,(t,y) in enumerate(segments):
+ for k,name in enumerate(model_names):
+  ax=axs[j,k]
   d=data[(data.model==name)&(data.segment==j+1)]
-  axs[j,0].plot(d.time_s,d.fit_deg,color=colors[name],lw=1,label=name,alpha=.8)
-  axs[j,1].plot(d.time_s,d.fit_deg-d.angle_deg,color=colors[name],lw=.8,label=name)
- axs[j,0].set_ylabel('Angle (deg)');axs[j,1].set_ylabel('Fit minus measured (deg)')
- for ax in axs[j]:ax.grid(alpha=.25);ax.set_xlabel('Device elapsed time (s)')
-axs[0,0].legend(ncol=5);axs[0,0].set_title('In-trial fits');axs[0,1].set_title('Residuals')
+  ax.plot(t+starts[j],np.rad2deg(y),color='black',alpha=.55,lw=1,label='Measured')
+  ax.plot(d.time_s,d.fit_deg,color=colors[name],lw=1.25,label='Fit')
+  if j==0:ax.set_title(name)
+  if k==0:ax.set_ylabel(f'Trial {j+1}\nAngle (deg)')
+  ax.set_xlabel('Device elapsed time (s)')
+  ax.grid(alpha=.25)
+  ax.legend(loc='upper right',fontsize=8)
+fig.suptitle('Measured free-decay waveform and in-trial fit',y=.995)
 fig.tight_layout();fig.savefig(out/'fits.png',dpi=160);plt.close(fig)
+
+fig,axs=plt.subplots(4,4,figsize=(18,12),sharex='row',sharey='row')
+for j in range(4):
+ for k,name in enumerate(model_names):
+  ax=axs[j,k]
+  d=data[(data.model==name)&(data.segment==j+1)]
+  ax.plot(d.time_s,d.fit_deg-d.angle_deg,color=colors[name],lw=1)
+  ax.axhline(0,color='black',lw=.6,alpha=.5)
+  if j==0:ax.set_title(name)
+  if k==0:ax.set_ylabel(f'Trial {j+1}\nFit - measured (deg)')
+  ax.set_xlabel('Device elapsed time (s)')
+  ax.grid(alpha=.25)
+fig.suptitle('In-trial fit residuals',y=.995)
+fig.tight_layout();fig.savefig(out/'residuals.png',dpi=160);plt.close(fig)
 fig,axs=plt.subplots(1,2,figsize=(12,4))
 for ax,df,title in [(axs[0],pd.DataFrame(metrics),'In-trial RMSE'),(axs[1],pd.DataFrame(cv),'Held-out dynamics: RMSE after 1 s')]:
  for n,name in enumerate(models):ax.bar(np.arange(4)+n*.2,df[df.model==name].rmse_deg,width=.19,label=name,color=colors[name])
