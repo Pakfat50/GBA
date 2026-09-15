@@ -1,0 +1,252 @@
+{
+  "scope": "V1.0-Light friction compensation and five-factor DOE",
+  "status": "COMPLETE_AWAITING_USER_REVIEW",
+  "friction_assumption": {
+    "old_hardware_median_tau_over_I_rad_s2": 0.11666211406061394,
+    "new_hardware_nominal_torque_n_m": 4.992712697456009e-05,
+    "epsilon_deg_s": 0.5,
+    "observer_uncertainty_range_ratio": [
+      0.0,
+      2.0
+    ]
+  },
+  "wind": {
+    "target_turbulence_intensity": 0.2,
+    "realized_turbulence_intensity": 0.16567305782262062,
+    "fluctuation_scale_for_bounds": 0.828365289113103,
+    "minimum_speed_m_s": 1.4156354522379138,
+    "maximum_speed_m_s": 6.0
+  },
+  "fixed_tuning": {
+    "eso3_pole_hz": 45.0,
+    "eso4_pole_hz": 20.0,
+    "rts3_process_noise": 30.0,
+    "rts4_process_noise": 10.0
+  },
+  "nominal_comparison": [
+    {
+      "observer_model": "without friction",
+      "method": "ESO 3-state",
+      "rmse_N": 0.0037190152604127656,
+      "nrmse_fluctuation": 0.2778277209467363,
+      "bias_N": -2.7571594685946086e-06,
+      "mae_N": 0.002920793188644529,
+      "p95_abs_error_N": 0.007410195433456293,
+      "max_abs_error_N": 0.021278037693648874,
+      "rmse_m_s": 0.18272606785391238,
+      "bias_m_s": 0.0008066516656050401,
+      "mae_m_s": 0.14585194423590386,
+      "p95_abs_error_m_s": 0.3582787368542739,
+      "max_abs_error_m_s": 0.9066909036270738,
+      "signed_error_at_max_abs_m_s": -0.9066909036270738,
+      "true_speed_at_max_abs_m_s": 4.888243654772074,
+      "estimated_speed_at_max_abs_m_s": 3.981552751145,
+      "time_at_max_abs_s": 113.76
+    },
+    {
+      "observer_model": "without friction",
+      "method": "ESO 4-state",
+      "rmse_N": 0.0044294789638005296,
+      "nrmse_fluctuation": 0.33090266087201453,
+      "bias_N": -3.5306199732297014e-06,
+      "mae_N": 0.0034842415940171626,
+      "p95_abs_error_N": 0.008869190989722255,
+      "max_abs_error_N": 0.02048064145658795,
+      "rmse_m_s": 0.21854538878876711,
+      "bias_m_s": -0.0040073170405090465,
+      "mae_m_s": 0.17436296854410482,
+      "p95_abs_error_m_s": 0.43067763386377456,
+      "max_abs_error_m_s": 0.9284032731117668,
+      "signed_error_at_max_abs_m_s": 0.9284032731117668,
+      "true_speed_at_max_abs_m_s": 2.8524062023299126,
+      "estimated_speed_at_max_abs_m_s": 3.7808094754416794,
+      "time_at_max_abs_s": 100.23
+    },
+    {
+      "observer_model": "without friction",
+      "method": "RTS 3-state",
+      "rmse_N": 0.00033871725107563163,
+      "nrmse_fluctuation": 0.02530375255874634,
+      "bias_N": -4.1683789871021885e-06,
+      "mae_N": 0.0002969055484443079,
+      "p95_abs_error_N": 0.0005756573322984772,
+      "max_abs_error_N": 0.0007581216998996734,
+      "rmse_m_s": 0.017941431845228544,
+      "bias_m_s": 4.395459537912981e-06,
+      "mae_m_s": 0.015335497030236204,
+      "p95_abs_error_m_s": 0.030706215174979512,
+      "max_abs_error_m_s": 0.07773237510201003,
+      "signed_error_at_max_abs_m_s": -0.07773237510201003,
+      "true_speed_at_max_abs_m_s": 1.6769701609280272,
+      "estimated_speed_at_max_abs_m_s": 1.5992377858260172,
+      "time_at_max_abs_s": 148.97
+    },
+    {
+      "observer_model": "without friction",
+      "method": "RTS 4-state",
+      "rmse_N": 0.0013238731181680734,
+      "nrmse_fluctuation": 0.09889947351344368,
+      "bias_N": -3.910941200887715e-06,
+      "mae_N": 0.0010406154959392991,
+      "p95_abs_error_N": 0.0026005572328109336,
+      "max_abs_error_N": 0.006065294872085694,
+      "rmse_m_s": 0.06526218238742033,
+      "bias_m_s": 0.00027649061941769303,
+      "mae_m_s": 0.05204524668861892,
+      "p95_abs_error_m_s": 0.12810484287119372,
+      "max_abs_error_m_s": 0.2603916697659896,
+      "signed_error_at_max_abs_m_s": -0.2603916697659896,
+      "true_speed_at_max_abs_m_s": 3.4947464502930763,
+      "estimated_speed_at_max_abs_m_s": 3.2343547805270867,
+      "time_at_max_abs_s": 39.18
+    },
+    {
+      "observer_model": "with friction",
+      "method": "ESO 3-state",
+      "rmse_N": 0.0037197021012608605,
+      "nrmse_fluctuation": 0.2778790311496039,
+      "bias_N": 1.0706337880640434e-06,
+      "mae_N": 0.00292005493638519,
+      "p95_abs_error_N": 0.007381323217751701,
+      "max_abs_error_N": 0.020984348711447283,
+      "rmse_m_s": 0.18268864693984962,
+      "bias_m_s": 0.0007870768750259792,
+      "mae_m_s": 0.14578559873862315,
+      "p95_abs_error_m_s": 0.3592045891277076,
+      "max_abs_error_m_s": 0.8927757414203819,
+      "signed_error_at_max_abs_m_s": -0.8927757414203819,
+      "true_speed_at_max_abs_m_s": 4.888243654772074,
+      "estimated_speed_at_max_abs_m_s": 3.995467913351692,
+      "time_at_max_abs_s": 113.76
+    },
+    {
+      "observer_model": "with friction",
+      "method": "ESO 4-state",
+      "rmse_N": 0.004422629158892534,
+      "nrmse_fluctuation": 0.330390948616683,
+      "bias_N": 2.926017715478823e-07,
+      "mae_N": 0.003478139815720621,
+      "p95_abs_error_N": 0.008851823339701428,
+      "max_abs_error_N": 0.02077433043879346,
+      "rmse_m_s": 0.21807720306929868,
+      "bias_m_s": -0.004019474660580534,
+      "mae_m_s": 0.17401723941015038,
+      "p95_abs_error_m_s": 0.4296658118128964,
+      "max_abs_error_m_s": 0.9136950646459869,
+      "signed_error_at_max_abs_m_s": 0.9136950646459869,
+      "true_speed_at_max_abs_m_s": 2.8524062023299126,
+      "estimated_speed_at_max_abs_m_s": 3.7661012669758995,
+      "time_at_max_abs_s": 100.23
+    },
+    {
+      "observer_model": "with friction",
+      "method": "RTS 3-state",
+      "rmse_N": 0.00017477793210908792,
+      "nrmse_fluctuation": 0.013056723661914186,
+      "bias_N": -1.6049173735492335e-07,
+      "mae_N": 0.0001426107282504628,
+      "p95_abs_error_N": 0.00033241664499164547,
+      "max_abs_error_N": 0.000700905837372652,
+      "rmse_m_s": 0.009449752511822502,
+      "bias_m_s": -1.3407057128111812e-05,
+      "mae_m_s": 0.007431368850608488,
+      "p95_abs_error_m_s": 0.01740152109327342,
+      "max_abs_error_m_s": 0.052829067958176434,
+      "signed_error_at_max_abs_m_s": 0.052829067958176434,
+      "true_speed_at_max_abs_m_s": 2.251928386342591,
+      "estimated_speed_at_max_abs_m_s": 2.3047574543007676,
+      "time_at_max_abs_s": 149.14000000000001
+    },
+    {
+      "observer_model": "with friction",
+      "method": "RTS 4-state",
+      "rmse_N": 0.001299369737915233,
+      "nrmse_fluctuation": 0.09706895714971615,
+      "bias_N": 1.0300136731030558e-07,
+      "mae_N": 0.0010195417830047091,
+      "p95_abs_error_N": 0.0025552590990815457,
+      "max_abs_error_N": 0.0063589838451985625,
+      "rmse_m_s": 0.06382863393139847,
+      "bias_m_s": 0.0002590238987878289,
+      "mae_m_s": 0.05089987166042238,
+      "p95_abs_error_m_s": 0.12483804473433002,
+      "max_abs_error_m_s": 0.24750608988893985,
+      "signed_error_at_max_abs_m_s": 0.24750608988893985,
+      "true_speed_at_max_abs_m_s": 3.627054107540352,
+      "estimated_speed_at_max_abs_m_s": 3.874560197429292,
+      "time_at_max_abs_s": 136.08
+    }
+  ],
+  "doe": {
+    "design": "five-factor three-level full factorial",
+    "points": 243,
+    "factors": [
+      "I",
+      "b",
+      "K",
+      "l",
+      "tau_f"
+    ],
+    "half_ranges": [
+      0.25,
+      0.5,
+      0.1,
+      0.05,
+      1.0
+    ],
+    "method_summary": [
+      {
+        "method": "ESO 3-state",
+        "minimum_nrmse": 0.2778277209467363,
+        "median_nrmse": 0.4188109811205185,
+        "maximum_nrmse": 0.6455245062745774,
+        "worst_parameter_ratios": {
+          "I": 0.75,
+          "b": 1.5,
+          "K": 1.1,
+          "l": 0.95,
+          "tau_f": 2.0
+        }
+      },
+      {
+        "method": "ESO 4-state",
+        "minimum_nrmse": 0.330390948616683,
+        "median_nrmse": 0.4591570034928357,
+        "maximum_nrmse": 0.6638595519207922,
+        "worst_parameter_ratios": {
+          "I": 1.25,
+          "b": 1.5,
+          "K": 1.1,
+          "l": 0.95,
+          "tau_f": 2.0
+        }
+      },
+      {
+        "method": "RTS 3-state",
+        "minimum_nrmse": 0.013056723661914186,
+        "median_nrmse": 0.3185828581129872,
+        "maximum_nrmse": 0.5826082820216897,
+        "worst_parameter_ratios": {
+          "I": 0.75,
+          "b": 1.5,
+          "K": 1.1,
+          "l": 0.95,
+          "tau_f": 2.0
+        }
+      },
+      {
+        "method": "RTS 4-state",
+        "minimum_nrmse": 0.09706895714971615,
+        "median_nrmse": 0.3329969931044299,
+        "maximum_nrmse": 0.5918308529304955,
+        "worst_parameter_ratios": {
+          "I": 0.75,
+          "b": 1.5,
+          "K": 1.1,
+          "l": 0.95,
+          "tau_f": 2.0
+        }
+      }
+    ]
+  }
+}

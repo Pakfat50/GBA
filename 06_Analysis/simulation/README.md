@@ -107,3 +107,13 @@ python 06_Analysis/simulation/src/run_real_wind_doe.py
 ```
 
 設定は`config/real_wind_doe.json`、結果は`results/real_wind_doe/`です。次号機の係数は`02_Hardware/V1.0/01_筐体/おもり計算.xlsx`のSheet1・E列`V1.0-Light`から導出し、最大風速は6 m/s、機械可動範囲は約45度としています。DOE本体は線形モデル、補助確認はsinとcosを含む非線形モデルです。`worst_case_timeseries.png`には4推定器それぞれの最大NRMSE条件を実時間波形で示します。
+
+### Stage 2追加評価：摩擦補償と5因子感度
+
+[摩擦補償を含むオブザーバーの係数感度](Friction_Observer_DOE_Report.md)では、新ハードの暫定摩擦を仮定し、摩擦補償なし／ありの比較と、I、b、K、作用距離、摩擦トルクの3水準全因子計画243条件を実行します。
+
+```bash
+python 06_Analysis/simulation/src/run_friction_observer_doe.py
+```
+
+設定は`config/friction_observer_doe.json`、結果は`results/friction_observer_doe/`です。結論として、摩擦項は無効化可能かつ軸別に設定可能な形で追加し、同定は引き続きKとIを最優先とします。

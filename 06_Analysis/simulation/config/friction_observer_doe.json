@@ -1,0 +1,55 @@
+{
+  "sample_rate_hz": 100.0,
+  "duration_s": 180.0,
+  "evaluation_start_s": 30.0,
+  "evaluation_end_s": 150.0,
+  "evaluation_seed": 20260915,
+  "mean_wind_speed_m_s": 3.75,
+  "maximum_wind_speed_m_s": 6.0,
+  "target_turbulence_intensity": 0.2,
+  "measurement_height_m": 2.0,
+  "kaimal_integral_scale_m": 11.34,
+  "air_density_kg_m3": 1.225,
+  "drag_coefficient": 0.55,
+  "projected_area_m2": 0.007853981633974483,
+  "hardware_parameter_source": {
+    "workbook": "02_Hardware/V1.0/01_筐体/おもり計算.xlsx",
+    "sheet": "Sheet1",
+    "column": "E",
+    "variant": "V1.0-Light",
+    "ball_lever_m": -0.16999999999999998,
+    "weight_lever_m": 0.08,
+    "rod_center_m": -0.04499999999999999,
+    "ball_mass_kg": 0.0043259259259259275,
+    "weight_mass_kg": 0.035874,
+    "rod_mass_kg": 0.009542587685278998,
+    "ball_diameter_m": 0.1,
+    "gravity_m_s2": 9.81,
+    "damping_ratio_assumption": 0.05925825176488159
+  },
+  "nominal_parameters": {
+    "inertia_kg_m2": 0.00042796350277537,
+    "damping_n_m_s_per_rad": 0.00031709627284592847,
+    "restoring_n_m_per_rad": 0.016726993199666917,
+    "force_lever_m": 0.16999999999999998
+  },
+  "old_hardware_vc_friction_over_inertia_rad_s2": [
+    0.10983436589379518,
+    0.11563998926310022,
+    0.1220116643002862,
+    0.11768423885812768
+  ],
+  "nominal_friction_acceleration_rad_s2": 0.11666211406061394,
+  "nominal_friction_torque_n_m": 4.992712697456009e-05,
+  "friction_epsilon_deg_s": 0.5,
+  "friction_assumption": "Median old-hardware VC tau_f/I applied to V1.0-Light inertia; not a measurement of the new hardware",
+  "factor_names": ["I", "b", "K", "l", "tau_f"],
+  "factor_half_ranges": [0.25, 0.5, 0.1, 0.05, 1.0],
+  "fixed_tuning_from_real_wind_doe": {
+    "eso3_pole_hz": 45.0,
+    "eso4_pole_hz": 20.0,
+    "rts3_process_noise": 30.0,
+    "rts4_process_noise": 10.0
+  },
+  "assumed_angle_noise_deg": 0.02
+}

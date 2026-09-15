@@ -1,0 +1,19 @@
+Command:
+python -m unittest discover -s 06_Analysis/simulation/tests -p 'test_friction_*.py' -v
+
+Result:
+Ran 4 tests in 0.156 s
+OK
+
+Checks:
+- friction torque opposes positive and negative angular motion
+- zero-friction compensated ESO matches the existing ESO implementation
+- zero-friction compensated EKF/RTS matches the existing implementation
+- friction increases free-decay energy dissipation
+
+Full simulation test suite:
+python -m unittest discover -s 06_Analysis/simulation/tests -p 'test_*.py' -v
+
+Result:
+Ran 21 tests
+OK
