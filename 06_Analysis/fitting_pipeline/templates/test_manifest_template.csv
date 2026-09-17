@@ -1,0 +1,13 @@
+data_file,axis,angle_column,configuration,spacer_count,component_mass_kg,signed_com_radius_m,component_centroid_inertia_kg_m2,force_lever_m,use_for_calibration,valid,notes
+LOG00001_ANGLE.csv,IN,angle1[deg],SP00,0,0,0,0,0.17,1,1,球なし・スペーサなし
+LOG00002_ANGLE.csv,IN,angle1[deg],SP01,1,,,,0.17,1,1,実測した質量・符号付き重心位置・重心慣性を記入
+LOG00003_ANGLE.csv,IN,angle1[deg],SP02,2,,,,0.17,1,1,
+LOG00004_ANGLE.csv,IN,angle1[deg],SP03,3,,,,0.17,1,1,
+LOG00005_ANGLE.csv,IN,angle1[deg],SP04,4,,,,0.17,1,1,
+LOG00006_ANGLE.csv,IN,angle1[deg],BALL,0,,,,0.17,0,1,球あり製品状態
+LOG00007_ANGLE.csv,OUT,angle0[deg],SP00,0,0,0,0,0.17,1,1,球なし・スペーサなし
+LOG00008_ANGLE.csv,OUT,angle0[deg],SP01,1,,,,0.17,1,1,
+LOG00009_ANGLE.csv,OUT,angle0[deg],SP02,2,,,,0.17,1,1,
+LOG00010_ANGLE.csv,OUT,angle0[deg],SP03,3,,,,0.17,1,1,
+LOG00011_ANGLE.csv,OUT,angle0[deg],SP04,4,,,,0.17,1,1,
+LOG00012_ANGLE.csv,OUT,angle0[deg],BALL,0,,,,0.17,0,1,球あり製品状態
