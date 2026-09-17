@@ -1,0 +1,84 @@
+{
+  "input_directory": "04_Data/05_Fitting/20990101",
+  "manifest": "04_Data/05_Fitting/20990101/test_manifest.csv",
+  "manifest_sha256": "9e42941bee102389904e37f9f62321660eb5978ad1c5ea6d0f7bae8837fa76fc",
+  "input_files": [
+    {
+      "path": "04_Data/05_Fitting/20990101/LOG00001_ANGLE.csv",
+      "sha256": "734c0066a726a7513fc328bd5388254bdf4112c3e94098507424f1acea27b3fd"
+    },
+    {
+      "path": "04_Data/05_Fitting/20990101/LOG00002_ANGLE.csv",
+      "sha256": "ded7a7c6596408b992be7ffbf24b9d7c258ea4d1804bc375c052a93550fab7f1"
+    },
+    {
+      "path": "04_Data/05_Fitting/20990101/LOG00003_ANGLE.csv",
+      "sha256": "7aba83844f3d50d417a66b7b74101549cd71e1c44aa3fd6e5a616fdcf57e8f6e"
+    },
+    {
+      "path": "04_Data/05_Fitting/20990101/LOG00004_ANGLE.csv",
+      "sha256": "804e72a93f5851064f5a633860440ac12db5cf4e8faafa5f08754124beaef90e"
+    }
+  ],
+  "plot_switches": {
+    "waveform_fits": true,
+    "free_decay_force": true,
+    "simulated_wind_force": true,
+    "eso": true,
+    "rts": true,
+    "free_decay_plot_warmup_s": 1.0
+  },
+  "segment_settings": {
+    "smooth_time_s": 0.15,
+    "start_angle_min_deg": 35.0,
+    "hold_duration_s": 1.5,
+    "hold_std_max_deg": 0.35,
+    "hold_speed_max_deg_s": 3.0,
+    "release_drop_deg": 0.7,
+    "minimum_decay_time_s": 5.0,
+    "maximum_decay_time_s": 90.0,
+    "settle_duration_s": 5.0,
+    "settle_center_max_deg": 3.0,
+    "settle_std_max_deg": 0.25
+  },
+  "estimator_settings": {
+    "eso_pole_hz": 45.0,
+    "free_decay_rts_force_random_walk_n_per_sample": 1e-07,
+    "wind_rts_force_random_walk_n_per_sample": 30.0,
+    "angle_noise_deg": 0.02,
+    "epsilon_deg_s": 0.5
+  },
+  "wind_settings": {
+    "sample_rate_hz": 100.0,
+    "duration_s": 180.0,
+    "mean_speed_m_s": 3.75,
+    "maximum_speed_m_s": 6.0,
+    "turbulence_intensity": 0.2,
+    "integral_scale_m": 11.34,
+    "air_density_kg_m3": 1.225,
+    "drag_coefficient": 0.55,
+    "projected_area_m2": 0.007853981633974483,
+    "seed": 20260915,
+    "evaluation_start_s": 30.0,
+    "evaluation_end_s": 150.0
+  },
+  "identified_product_parameters": {
+    "IN": {
+      "axis": "IN",
+      "configuration": "BALL",
+      "inertia_kg_m2": 0.004628538414604534,
+      "geometric_inertia_kg_m2": 0.00462856233787128,
+      "restoring_n_m_per_rad": 0.025984910460436154,
+      "damping_n_m_s_per_rad": 0.00019155503546924648,
+      "quadratic_n_m_s2_per_rad2": 0.00014713744088925787,
+      "friction_n_m": 0.0005401019482811227,
+      "force_lever_m": 0.17,
+      "k_over_i_per_s2": 5.614063908046084,
+      "b_over_i_per_s": 0.041385642358466444,
+      "c_over_i_per_rad": 0.03178918001954823,
+      "tau_over_i_rad_s2": 0.1166895248350811,
+      "segments": 6,
+      "epsilon_rad_s": 0.008726646259971648
+    }
+  }
+}
