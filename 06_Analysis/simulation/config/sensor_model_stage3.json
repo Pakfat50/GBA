@@ -1,0 +1,60 @@
+{
+  "sample_rate_hz": 100.0,
+  "training_duration_s": 90.0,
+  "evaluation_duration_s": 180.0,
+  "evaluation_start_s": 30.0,
+  "evaluation_end_s": 150.0,
+  "training_seed": 20260918,
+  "evaluation_seed": 20260919,
+  "sensor_seed": 20260920,
+  "mean_wind_speed_m_s": 3.25,
+  "maximum_wind_speed_m_s": 5.0,
+  "target_turbulence_intensity": 0.2,
+  "measurement_height_m": 2.0,
+  "kaimal_integral_scale_m": 11.34,
+  "air_density_kg_m3": 1.225,
+  "drag_coefficient": 0.55,
+  "projected_area_m2": 0.007853981633974483,
+  "nominal_parameters": {
+    "inertia_kg_m2": 0.00042796350277537,
+    "damping_n_m_s_per_rad": 0.00031709627284592847,
+    "restoring_n_m_per_rad": 0.016726993199666917,
+    "force_lever_m": 0.16999999999999998
+  },
+  "nominal_friction_torque_n_m": 4.992712697456009e-05,
+  "friction_epsilon_deg_s": 0.5,
+  "sensor": {
+    "resolution_bits": 14,
+    "full_scale_deg": 360.0,
+    "white_noise_std_deg": 0.015,
+    "coloured_noise_std_deg": 0.010,
+    "coloured_noise_time_constant_s": 0.474561079,
+    "fixed_delay_s": 0.010,
+    "sampling_jitter_std_s": 0.0,
+    "gain_error_fraction": 0.0,
+    "offset_deg": 0.0
+  },
+  "coefficient_basis": {
+    "resolution": "MT6701 14-bit absolute angle and repository mt6701.cpp conversion",
+    "sample_rate": "TWELITE BLUE normal_mode_task.h BASE_RATE=100 Hz",
+    "time_step": "LOG00008_ANGLE.csv has 10 ms for every recorded interval",
+    "white_noise": "Provisional split chosen so white plus quantisation and coloured RMS is about the prior 0.02 deg PoC assumption",
+    "coloured_noise": "BMI160 platform-angle compensation updates at 20 Hz through LOWPASS k=0.1; tau=-0.05/log(0.9)=0.4746 s",
+    "delay": "Provisional one-sample end-to-end latency; evaluated separately at 0, 10 and 20 ms",
+    "jitter": "Nominal zero because decoded system time is exactly 10 ms; sub-ms jitter is not observable in that log"
+  },
+  "eso_pole_grid_hz": [0.2, 0.35, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 5.0, 8.0, 12.0, 20.0],
+  "rts3_force_random_walk_grid_N_per_sample": [1e-6, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1.0],
+  "rts4_force_rate_random_walk_grid_N_per_s_per_sample": [1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1.0, 3.0],
+  "lpf_cutoff_grid_hz": [0.1, 0.2, 0.35, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0],
+  "sensitivity_cases": {
+    "ideal": {},
+    "nominal": {"use_nominal": true},
+    "noise_2x": {"white_noise_std_deg": 0.030, "coloured_noise_std_deg": 0.020},
+    "delay_0ms": {"fixed_delay_s": 0.0},
+    "delay_20ms": {"fixed_delay_s": 0.020},
+    "jitter_1ms": {"sampling_jitter_std_s": 0.001},
+    "gain_plus_0p2pct": {"gain_error_fraction": 0.002},
+    "offset_plus_0p05deg": {"offset_deg": 0.05}
+  }
+}

@@ -117,3 +117,23 @@ python 06_Analysis/simulation/src/run_friction_observer_doe.py
 ```
 
 設定は`config/friction_observer_doe.json`、結果は`results/friction_observer_doe/`です。結論として、摩擦項は無効化可能かつ軸別に設定可能な形で追加し、同定は引き続きKとIを最優先とします。
+
+## Stage 3：TWELITE BLUEセンサーモデル
+
+[TWELITE BLUEセンサーモデルを含む推定器比較](Sensor_Model_Stage3_Report.md)では、
+MT6701の14 bit量子化、白色・有色角度ノイズ、固定遅延、サンプリングジッタ、
+ゲイン誤差、ゼロ点誤差を物理プラントと独立した測定経路として追加します。
+各要素は設定値をゼロにして個別に無効化できます。
+
+調整用と評価用で異なるKaimal風のseedを使用し、摩擦補償を含む3状態・4状態の
+ESOおよびRTSをセンサー条件下で再調整します。センサー評価へストッパーの影響を
+混ぜないため、この段階では最大風速5.0 m/s、最大角度45°以内に制限しています。
+
+```bash
+python 06_Analysis/simulation/src/run_sensor_model_stage3.py
+python -m unittest discover -s 06_Analysis/simulation/tests -p 'test_sensor_model.py' -v
+```
+
+設定は`config/sensor_model_stage3.json`、数値結果と図は
+`results/sensor_model_stage3/`です。分解能と100 Hz周期は実装・既存ログに基づく値、
+ノイズの内訳と10 ms遅延は実機静止試験前の暫定値です。
