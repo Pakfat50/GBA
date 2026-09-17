@@ -1,0 +1,5 @@
+data_file,axis,angle_column,configuration,spacer_count,component_mass_kg,signed_com_radius_m,component_centroid_inertia_kg_m2,force_lever_m,use_for_calibration,valid,notes
+LOG00001_ANGLE.csv,IN,angle1[deg],SP00,0,0.0,0.0,0.0,0.17,1,1,DEMO generated from existing LOG00014 free-decay characteristics
+LOG00002_ANGLE.csv,IN,angle1[deg],SP01,1,0.0011986550420231006,-0.18,9.396206930459e-09,0.17,1,1,DEMO generated from existing LOG00014 free-decay characteristics
+LOG00003_ANGLE.csv,IN,angle1[deg],SP02,2,0.002397310084046201,-0.18,1.8792413860918e-08,0.17,1,1,DEMO generated from existing LOG00014 free-decay characteristics
+LOG00004_ANGLE.csv,IN,angle1[deg],BALL,0,0.0043,-0.17,4.3e-06,0.17,0,1,DEMO generated from existing LOG00014 free-decay characteristics

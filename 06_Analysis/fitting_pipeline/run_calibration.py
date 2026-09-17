@@ -76,8 +76,10 @@ SEGMENT_SETTINGS = {
 # 自由減衰は「真の外力は0 N」を確認する試験である。
 # RTSの外力変化幅を小さくし、角度ノイズを外力と誤認しにくくする。
 FREE_DECAY_ESTIMATOR_SETTINGS = {
-    "eso_pole_hz": 45.0,
-    "rts_force_random_walk_n_per_sample": 1.0,
+    # 外力0 Nの確認では、実測角度ノイズを外力と誤認しないよう
+    # 変動風用より強く平滑化する。
+    "eso_pole_hz": 1.0,
+    "rts_force_random_walk_n_per_sample": 1e-7,
     "angle_noise_rad": np.deg2rad(0.02),
     "epsilon_rad_s": np.deg2rad(FRICTION_EPSILON_DEG_S),
 }
@@ -694,6 +696,17 @@ def file_sha256(path):
     return digest.hexdigest()
 
 
+def path_for_provenance(path):
+    """リポジトリ内のパスは環境に依存しない相対パスで返す。"""
+
+    resolved = Path(path).resolve()
+    try:
+        return str(resolved.relative_to(REPOSITORY_ROOT))
+    except ValueError:
+        # --data-rootでリポジトリ外を指定した場合は絶対パスを残す。
+        return str(resolved)
+
+
 def save_provenance(date_directory, manifest, manifest_path, result_directory, product_parameters):
     """入力・設定・同定結果の来歴をJSONへ保存する。"""
 
@@ -702,10 +715,12 @@ def save_provenance(date_directory, manifest, manifest_path, result_directory, p
         if int(row["valid"]) != 1:
             continue
         path = date_directory / str(row["data_file"])
-        input_files.append({"path": str(path), "sha256": file_sha256(path)})
+        input_files.append(
+            {"path": path_for_provenance(path), "sha256": file_sha256(path)}
+        )
     provenance = {
-        "input_directory": str(date_directory),
-        "manifest": str(manifest_path),
+        "input_directory": path_for_provenance(date_directory),
+        "manifest": path_for_provenance(manifest_path),
         "manifest_sha256": file_sha256(manifest_path),
         "input_files": input_files,
         "plot_switches": {

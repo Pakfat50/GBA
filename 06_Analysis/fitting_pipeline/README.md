@@ -58,6 +58,20 @@ python 06_Analysis/fitting_pipeline/run_calibration.py --date 20260916
 
 結果は `06_Analysis/fitting_pipeline/results/YYYYMMDD/` に保存する。
 
+## デモの実行
+
+既存の実測自由振動を元に作成したデモ入力を
+`04_Data/05_Fitting/20990101/` に収録している。`20990101` はデモ用の
+予約日付であり、実際の試験日ではない。
+
+```bash
+python 06_Analysis/fitting_pipeline/run_calibration.py --date 20990101
+```
+
+生成方法と確認済み結果は
+[`demo/README.md`](demo/README.md) と
+[`results/20990101/DEMO_REPORT.md`](results/20990101/DEMO_REPORT.md) を参照する。
+
 ## プロット設定
 
 `run_calibration.py` 冒頭の次の値を `True` / `False` で切り替える。
@@ -76,6 +90,8 @@ RTSの外力変化幅は、自由減衰と0 N周辺の残差を確認する場�
 変動風を追従する場合は大きく設定している。それぞれ
 `FREE_DECAY_ESTIMATOR_SETTINGS` と `WIND_ESTIMATOR_SETTINGS` で変更できる。
 使用した値は結果フォルダの `provenance.json` に保存する。
+自由減衰の既定値はESO 1 Hz、RTS外力random walk `1e-7 N/sample`であり、
+外力変化への追従性よりも実測角度ノイズの抑制を優先する。
 
 ## 自動分割の記録
 

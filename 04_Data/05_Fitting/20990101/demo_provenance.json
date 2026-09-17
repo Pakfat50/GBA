@@ -1,0 +1,33 @@
+{
+  "data_kind": "demo_generated_from_existing_free_decay",
+  "not_raw_measurement": true,
+  "source_log": "04_Data/00_Calibration/swing/LOG00014.TXT",
+  "source_sha256": "63feafa28345b56587f83b15e5edea1b9e2eb533bc23249d96c852437fe50b0d",
+  "source_windows_s": [
+    [
+      20.4,
+      32.0
+    ],
+    [
+      47.05,
+      59.05
+    ],
+    [
+      70.2,
+      82.0
+    ],
+    [
+      93.25,
+      105.25
+    ]
+  ],
+  "sample_rate_hz": 25.0,
+  "random_seed": 20990101,
+  "source_normalized_coefficients": {
+    "k_over_i_per_s2": 5.614039,
+    "b_over_i_vc_per_s": 0.082885,
+    "c_over_i_vqc_per_rad": 0.063541,
+    "tau_over_i_rad_s2": 0.116662
+  },
+  "note": "The demo preserves measured noise characteristics and representative decay coefficients, but spacer levels and absolute coefficients are assumed."
+}
