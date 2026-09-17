@@ -146,6 +146,37 @@ class FittingToolsTest(unittest.TestCase):
         self.assertTrue(np.all(np.isfinite(eso)))
         self.assertTrue(np.all(np.isfinite(rts)))
 
+    def test_force_estimators_report_near_zero_during_exact_free_decay(self):
+        """同定モデルと完全に一致する自由減衰では外力がほぼ0 Nになる。"""
+
+        parameters = {
+            "inertia_kg_m2": 0.00043,
+            "damping_n_m_s_per_rad": 0.00015,
+            "restoring_n_m_per_rad": 0.0167,
+            "quadratic_n_m_s2_per_rad2": 0.00001,
+            "friction_n_m": 0.00005,
+            "force_lever_m": 0.17,
+            "epsilon_rad_s": np.deg2rad(0.5),
+        }
+        settings = {
+            "eso_pole_hz": 45.0,
+            "rts_force_random_walk_n_per_sample": 1.0,
+            "angle_noise_rad": np.deg2rad(0.02),
+            "epsilon_rad_s": np.deg2rad(0.5),
+        }
+        dt = 0.01
+        time_s = np.arange(0.0, 8.0, dt)
+        force = np.zeros(len(time_s))
+        initial_state = [np.deg2rad(45.0), 0.0]
+        states = simulate_forced_motion(force, dt, parameters, initial_state)
+        eso = estimate_force_eso(states[:, 0], dt, parameters, settings)
+        rts = estimate_force_rts(states[:, 0], dt, parameters, settings)
+        evaluation = time_s >= 1.0
+        eso_rmse = np.sqrt(np.mean(eso[evaluation] * eso[evaluation]))
+        rts_rmse = np.sqrt(np.mean(rts[evaluation] * rts[evaluation]))
+        self.assertLess(eso_rmse, 0.0001)
+        self.assertLess(rts_rmse, 0.000001)
+
 
 if __name__ == "__main__":
     unittest.main()

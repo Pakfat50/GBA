@@ -465,6 +465,59 @@ def known_nonlinear_torque(angle, speed, restoring, quadratic, friction, epsilon
     return torque
 
 
+def nonlinear_observer_state_step(state, sample_period_s, parameters, epsilon):
+    """外力トルクを一定とした3状態非線形モデルをRK4で1ステップ進める。"""
+
+    inertia = parameters["inertia_kg_m2"]
+    damping = parameters["damping_n_m_s_per_rad"]
+    restoring = parameters["restoring_n_m_per_rad"]
+    quadratic = parameters["quadratic_n_m_s2_per_rad2"]
+    friction = parameters["friction_n_m"]
+
+    def derivative(current):
+        angle = current[0]
+        speed = current[1]
+        external_torque = current[2]
+        acceleration = external_torque
+        acceleration -= damping * speed
+        acceleration -= restoring * np.sin(angle)
+        acceleration -= quadratic * abs(speed) * speed
+        acceleration -= friction * np.tanh(speed / epsilon)
+        acceleration /= inertia
+        return np.array([speed, acceleration, 0.0])
+
+    k1 = derivative(state)
+    k2 = derivative(state + 0.5 * sample_period_s * k1)
+    k3 = derivative(state + 0.5 * sample_period_s * k2)
+    k4 = derivative(state + sample_period_s * k3)
+    return state + sample_period_s * (k1 + 2*k2 + 2*k3 + k4) / 6.0
+
+
+def nonlinear_observer_jacobian(state, sample_period_s, parameters, epsilon):
+    """非線形3状態モデルの局所線形化を離散化して返す。"""
+
+    angle = state[0]
+    speed = state[1]
+    inertia = parameters["inertia_kg_m2"]
+    damping = parameters["damping_n_m_s_per_rad"]
+    restoring = parameters["restoring_n_m_per_rad"]
+    quadratic = parameters["quadratic_n_m_s2_per_rad2"]
+    friction = parameters["friction_n_m"]
+    normalized_speed = speed / epsilon
+    tanh_speed = np.tanh(normalized_speed)
+
+    continuous = np.zeros((3, 3), dtype=float)
+    continuous[0, 1] = 1.0
+    continuous[1, 0] = -restoring * np.cos(angle) / inertia
+    continuous[1, 1] = -damping / inertia
+    continuous[1, 1] -= 2.0 * quadratic * abs(speed) / inertia
+    continuous[1, 1] -= friction / (inertia * epsilon) * (
+        1.0 - tanh_speed * tanh_speed
+    )
+    continuous[1, 2] = 1.0 / inertia
+    return expm(continuous * sample_period_s)
+
+
 def torque_to_horizontal_force(torque, angle, force_lever_m):
     """一般化トルクを球へ加わる水平力へ変換する。"""
 
@@ -488,6 +541,10 @@ def estimate_force_eso(angle_rad, sample_period_s, parameters, settings):
     gain = ackermann_observer_gain(ad, output, np.full(3, target))
     transition = ad - gain @ output
     state = np.zeros(3, dtype=float)
+    # 自由減衰は約45 degから始まる。角度状態を0から開始すると、最初の1点を
+    # 巨大な外力と誤認するため、観測された初期角度で初期化する。
+    if len(angle_rad) > 0:
+        state[0] = float(angle_rad[0])
     estimated_torque = np.zeros(len(angle_rad), dtype=float)
 
     index = 0
@@ -513,12 +570,7 @@ def estimate_force_eso(angle_rad, sample_period_s, parameters, settings):
 def estimate_force_rts(angle_rad, sample_period_s, parameters, settings):
     """摩擦・二乗抵抗・sin(theta)を補償したEKF/RTS外力推定。"""
 
-    ad, bd, output = build_augmented_matrices(
-        parameters["inertia_kg_m2"],
-        parameters["damping_n_m_s_per_rad"],
-        parameters["restoring_n_m_per_rad"],
-        sample_period_s,
-    )
+    output = np.array([[1.0, 0.0, 0.0]])
     count = len(angle_rad)
     process_noise = settings["rts_force_random_walk_n_per_sample"]
     torque_noise = parameters["force_lever_m"] * process_noise
@@ -532,38 +584,23 @@ def estimate_force_rts(angle_rad, sample_period_s, parameters, settings):
     predicted = np.zeros((count, 3), dtype=float)
     filtered_covariance = np.zeros((count, 3, 3), dtype=float)
     predicted_covariance = np.zeros((count, 3, 3), dtype=float)
-    transition_jacobian = np.repeat(ad[None, :, :], count, axis=0)
+    transition_jacobian = np.repeat(np.eye(3)[None, :, :], count, axis=0)
     state = np.zeros(3, dtype=float)
+    if count > 0:
+        state[0] = float(angle_rad[0])
     identity = np.eye(3)
 
     index = 0
     while index < count:
         if index > 0:
             previous = filtered[index - 1]
-            correction = known_nonlinear_torque(
-                previous[0],
-                previous[1],
-                parameters["restoring_n_m_per_rad"],
-                parameters["quadratic_n_m_s2_per_rad2"],
-                parameters["friction_n_m"],
-                settings["epsilon_rad_s"],
+            jacobian = nonlinear_observer_jacobian(
+                previous, sample_period_s, parameters, settings["epsilon_rad_s"]
             )
-            derivative_angle = parameters["restoring_n_m_per_rad"] * (
-                1.0 - np.cos(previous[0])
-            )
-            normalized_speed = previous[1] / settings["epsilon_rad_s"]
-            tanh_speed = np.tanh(normalized_speed)
-            derivative_speed = -2.0 * parameters["quadratic_n_m_s2_per_rad2"] * abs(
-                previous[1]
-            )
-            derivative_speed -= parameters["friction_n_m"] / settings["epsilon_rad_s"] * (
-                1.0 - tanh_speed * tanh_speed
-            )
-            jacobian = ad.copy()
-            jacobian[:, 0] += bd[:, 0] * derivative_angle
-            jacobian[:, 1] += bd[:, 0] * derivative_speed
             transition_jacobian[index] = jacobian
-            state = ad @ previous + bd[:, 0] * correction
+            state = nonlinear_observer_state_step(
+                previous, sample_period_s, parameters, settings["epsilon_rad_s"]
+            )
             covariance = (
                 jacobian @ filtered_covariance[index - 1] @ jacobian.T
                 + process_covariance

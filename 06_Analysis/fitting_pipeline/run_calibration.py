@@ -47,6 +47,10 @@ PLOT_SIMULATED_WIND_FORCE = True
 PLOT_ESO_ESTIMATE = True
 PLOT_RTS_ESTIMATE = True
 
+# オブザーバー初期化直後は過渡誤差が出るため、自由減衰グラフではこの時間を除く。
+# CSVには初期化直後を含む全サンプルを保存する。
+FREE_DECAY_FORCE_PLOT_WARMUP_S = 1.0
+
 # 自由減衰モデルの符号反転を滑らかにする幅。
 FRICTION_EPSILON_DEG_S = 0.5
 
@@ -69,8 +73,18 @@ SEGMENT_SETTINGS = {
     "settle_std_max_deg": 0.25,
 }
 
-# 既存の摩擦オブザーバー解析で選択した設定。
-ESTIMATOR_SETTINGS = {
+# 自由減衰は「真の外力は0 N」を確認する試験である。
+# RTSの外力変化幅を小さくし、角度ノイズを外力と誤認しにくくする。
+FREE_DECAY_ESTIMATOR_SETTINGS = {
+    "eso_pole_hz": 45.0,
+    "rts_force_random_walk_n_per_sample": 1.0,
+    "angle_noise_rad": np.deg2rad(0.02),
+    "epsilon_rad_s": np.deg2rad(FRICTION_EPSILON_DEG_S),
+}
+
+# 変動風の外力変化に追従させる設定。RTSの値は、既存の摩擦オブザーバー
+# 解析で風入力に対して選択した値を使う。
+WIND_ESTIMATOR_SETTINGS = {
     "eso_pole_hz": 45.0,
     "rts_force_random_walk_n_per_sample": 30.0,
     "angle_noise_rad": np.deg2rad(0.02),
@@ -245,6 +259,8 @@ def analyze_all_files(date_directory, manifest, result_directory):
 
         positive_count = 0
         negative_count = 0
+        valid_positive_count = 0
+        valid_negative_count = 0
         for segment in segments:
             if segment["direction"] == "P45":
                 positive_count += 1
@@ -278,8 +294,20 @@ def analyze_all_files(date_directory, manifest, result_directory):
                 "end_time_s": float(segment_time[-1]),
                 "plateau_angle_deg": segment["plateau_angle_deg"],
                 "settled_automatically": segment["settled_automatically"],
+                "valid": int(segment["settled_automatically"]),
+                "quality_note": "" if segment["settled_automatically"] else "静止終了を自動検出できない",
             }
             segment_rows.append(segment_row)
+
+            # 次の試験準備動作が混ざった波形は係数を大きく誤らせる。
+            # そのため元データと分割記録は残すが、自動フィットには使用しない。
+            if not segment["settled_automatically"]:
+                print("  除外: " + segment_id + "（静止終了を検出できません）")
+                continue
+            if segment["direction"] == "P45":
+                valid_positive_count += 1
+            else:
+                valid_negative_count += 1
 
             print("  フィット: " + segment_id)
             fit = fit_one_decay(
@@ -317,9 +345,12 @@ def analyze_all_files(date_directory, manifest, result_directory):
             }
             waveform_records.append(record)
 
-        if positive_count < 3 or negative_count < 3:
+        if valid_positive_count < 3 or valid_negative_count < 3:
             message = "警告: " + data_file + " で必要な自由減衰を検出できませんでした。"
-            message += " P45=" + str(positive_count) + ", N45=" + str(negative_count)
+            message += " 有効P45=" + str(valid_positive_count)
+            message += ", 有効N45=" + str(valid_negative_count)
+            message += "（検出総数 P45=" + str(positive_count)
+            message += ", N45=" + str(negative_count) + "）"
             print(message)
 
     save_csv(result_directory / "segments.csv", segment_rows)
@@ -470,19 +501,28 @@ def plot_waveform_fits(waveform_records, result_directory):
                         continue
                     if record["direction"] != direction:
                         continue
-                    label = "Measured R" + str(record["repetition"])
-                    plot_axis.plot(
-                        record["time_s"], np.rad2deg(record["angle_rad"]), lw=0.8, alpha=0.55, label=label
+                    repetition_text = str(record["repetition"])
+                    measured_line = plot_axis.plot(
+                        record["time_s"],
+                        np.rad2deg(record["angle_rad"]),
+                        lw=0.9,
+                        alpha=0.45,
+                        label="Measured R" + repetition_text,
                     )
+                    measured_color = measured_line[0].get_color()
                     plot_axis.plot(
-                        record["time_s"], np.rad2deg(record["fit_rad"]), lw=1.0, color="black", alpha=0.55
+                        record["time_s"],
+                        np.rad2deg(record["fit_rad"]),
+                        lw=1.1,
+                        linestyle="--",
+                        color=measured_color,
+                        label="Fit R" + repetition_text,
                     )
                 plot_axis.set_title(configuration + " " + direction)
                 plot_axis.set_xlabel("Time from release [s]")
                 plot_axis.set_ylabel("Angle [deg]")
                 plot_axis.grid(alpha=0.25)
-                if row_index == 0 and column_index == 0:
-                    plot_axis.legend(fontsize=7, ncol=2)
+                plot_axis.legend(fontsize=6, ncol=3)
                 column_index += 1
             row_index += 1
         figure.suptitle(axis + " measured free decay and fitted model")
@@ -495,6 +535,7 @@ def calculate_free_decay_forces(waveform_records, product_parameters, result_dir
     """球あり自由減衰では真の外力0 NとしてESO・RTS推定を比較する。"""
 
     output_rows = []
+    metric_rows = []
     for axis in sorted(product_parameters):
         parameters = product_parameters[axis]
         selected_records = []
@@ -513,8 +554,12 @@ def calculate_free_decay_forces(waveform_records, product_parameters, result_dir
         while record_index < len(selected_records):
             record = selected_records[record_index]
             time_s, angle_rad, dt = resample_uniform(record["time_s"], record["angle_rad"])
-            eso_force = estimate_force_eso(angle_rad, dt, parameters, ESTIMATOR_SETTINGS)
-            rts_force = estimate_force_rts(angle_rad, dt, parameters, ESTIMATOR_SETTINGS)
+            eso_force = estimate_force_eso(
+                angle_rad, dt, parameters, FREE_DECAY_ESTIMATOR_SETTINGS
+            )
+            rts_force = estimate_force_rts(
+                angle_rad, dt, parameters, FREE_DECAY_ESTIMATOR_SETTINGS
+            )
             sample_index = 0
             while sample_index < len(time_s):
                 output_rows.append(
@@ -531,11 +576,25 @@ def calculate_free_decay_forces(waveform_records, product_parameters, result_dir
 
             plot_axis = plot_axes[record_index, 0]
             relative_time = time_s - time_s[0]
+            evaluation_mask = relative_time >= FREE_DECAY_FORCE_PLOT_WARMUP_S
+            for method_name, estimate in [("ESO", eso_force), ("RTS", rts_force)]:
+                selected = estimate[evaluation_mask]
+                metric_rows.append(
+                    {
+                        "axis": axis,
+                        "segment_id": record["segment_id"],
+                        "method": method_name,
+                        "warmup_s": FREE_DECAY_FORCE_PLOT_WARMUP_S,
+                        "rmse_n": float(np.sqrt(np.mean(selected * selected))),
+                        "bias_n": float(np.mean(selected)),
+                        "max_abs_error_n": float(np.max(np.abs(selected))),
+                    }
+                )
             plot_axis.axhline(0.0, color="black", lw=1.2, label="True external force")
             if PLOT_ESO_ESTIMATE:
-                plot_axis.plot(relative_time, 1000.0 * eso_force, label="ESO estimate", lw=1.0)
+                plot_axis.plot(relative_time[evaluation_mask], 1000.0 * eso_force[evaluation_mask], label="ESO estimate", lw=1.0)
             if PLOT_RTS_ESTIMATE:
-                plot_axis.plot(relative_time, 1000.0 * rts_force, label="RTS estimate", lw=1.0)
+                plot_axis.plot(relative_time[evaluation_mask], 1000.0 * rts_force[evaluation_mask], label="RTS estimate", lw=1.0)
             plot_axis.set_title(axis + " " + record["direction"] + " free-decay external force")
             plot_axis.set_xlabel("Time from release [s]")
             plot_axis.set_ylabel("Force [mN]")
@@ -548,6 +607,7 @@ def calculate_free_decay_forces(waveform_records, product_parameters, result_dir
         plt.close(figure)
 
     save_csv(result_directory / "free_decay_force.csv", output_rows)
+    save_csv(result_directory / "free_decay_force_metrics.csv", metric_rows)
 
 
 def calculate_simulated_wind_forces(product_parameters, result_directory):
@@ -556,12 +616,34 @@ def calculate_simulated_wind_forces(product_parameters, result_directory):
     time_s, wind_speed, true_force = create_kaimal_wind(WIND_SETTINGS)
     dt = 1.0 / WIND_SETTINGS["sample_rate_hz"]
     output_rows = []
+    metric_rows = []
     for axis in sorted(product_parameters):
         parameters = product_parameters[axis]
         states = simulate_forced_motion(true_force, dt, parameters)
         angle_rad = states[:, 0]
-        eso_force = estimate_force_eso(angle_rad, dt, parameters, ESTIMATOR_SETTINGS)
-        rts_force = estimate_force_rts(angle_rad, dt, parameters, ESTIMATOR_SETTINGS)
+        eso_force = estimate_force_eso(
+            angle_rad, dt, parameters, WIND_ESTIMATOR_SETTINGS
+        )
+        rts_force = estimate_force_rts(
+            angle_rad, dt, parameters, WIND_ESTIMATOR_SETTINGS
+        )
+
+        evaluation_mask = (time_s >= WIND_SETTINGS["evaluation_start_s"]) & (
+            time_s <= WIND_SETTINGS["evaluation_end_s"]
+        )
+        for method_name, estimate in [("ESO", eso_force), ("RTS", rts_force)]:
+            error = estimate[evaluation_mask] - true_force[evaluation_mask]
+            metric_rows.append(
+                {
+                    "axis": axis,
+                    "method": method_name,
+                    "evaluation_start_s": WIND_SETTINGS["evaluation_start_s"],
+                    "evaluation_end_s": WIND_SETTINGS["evaluation_end_s"],
+                    "rmse_n": float(np.sqrt(np.mean(error * error))),
+                    "bias_n": float(np.mean(error)),
+                    "max_abs_error_n": float(np.max(np.abs(error))),
+                }
+            )
 
         index = 0
         while index < len(time_s):
@@ -579,9 +661,7 @@ def calculate_simulated_wind_forces(product_parameters, result_directory):
             index += 1
 
         if PLOT_SIMULATED_WIND_FORCE:
-            mask = (time_s >= WIND_SETTINGS["evaluation_start_s"]) & (
-                time_s <= WIND_SETTINGS["evaluation_end_s"]
-            )
+            mask = evaluation_mask
             figure, plot_axis = plt.subplots(figsize=(13, 5))
             plot_axis.plot(time_s[mask], 1000.0 * true_force[mask], color="black", lw=1.3, label="True force")
             if PLOT_ESO_ESTIMATE:
@@ -598,6 +678,7 @@ def calculate_simulated_wind_forces(product_parameters, result_directory):
             plt.close(figure)
 
     save_csv(result_directory / "simulated_wind_force.csv", output_rows)
+    save_csv(result_directory / "simulated_wind_force_metrics.csv", metric_rows)
 
 
 def file_sha256(path):
@@ -633,14 +714,22 @@ def save_provenance(date_directory, manifest, manifest_path, result_directory, p
             "simulated_wind_force": PLOT_SIMULATED_WIND_FORCE,
             "eso": PLOT_ESO_ESTIMATE,
             "rts": PLOT_RTS_ESTIMATE,
+            "free_decay_plot_warmup_s": FREE_DECAY_FORCE_PLOT_WARMUP_S,
         },
         "segment_settings": SEGMENT_SETTINGS,
         "estimator_settings": {
-            "eso_pole_hz": ESTIMATOR_SETTINGS["eso_pole_hz"],
-            "rts_force_random_walk_n_per_sample": ESTIMATOR_SETTINGS[
+            "eso_pole_hz": WIND_ESTIMATOR_SETTINGS["eso_pole_hz"],
+            "free_decay_rts_force_random_walk_n_per_sample": (
+                FREE_DECAY_ESTIMATOR_SETTINGS[
+                    "rts_force_random_walk_n_per_sample"
+                ]
+            ),
+            "wind_rts_force_random_walk_n_per_sample": WIND_ESTIMATOR_SETTINGS[
                 "rts_force_random_walk_n_per_sample"
             ],
-            "angle_noise_deg": float(np.rad2deg(ESTIMATOR_SETTINGS["angle_noise_rad"])),
+            "angle_noise_deg": float(
+                np.rad2deg(WIND_ESTIMATOR_SETTINGS["angle_noise_rad"])
+            ),
             "epsilon_deg_s": FRICTION_EPSILON_DEG_S,
         },
         "wind_settings": WIND_SETTINGS,

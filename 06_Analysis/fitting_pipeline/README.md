@@ -70,9 +70,18 @@ python 06_Analysis/fitting_pipeline/run_calibration.py --date 20260916
 
 CSV結果はプロット設定にかかわらず保存する。
 
+自由減衰の外力グラフでは、オブザーバー初期化過渡を除くため、既定で最初の1秒を表示・評価から除く。全サンプルは `free_decay_force.csv` に残る。除外時間は `FREE_DECAY_FORCE_PLOT_WARMUP_S` で変更できる。
+
+RTSの外力変化幅は、自由減衰と0 N周辺の残差を確認する場合は小さく、
+変動風を追従する場合は大きく設定している。それぞれ
+`FREE_DECAY_ESTIMATOR_SETTINGS` と `WIND_ESTIMATOR_SETTINGS` で変更できる。
+使用した値は結果フォルダの `provenance.json` に保存する。
+
 ## 自動分割の記録
 
 自動分割結果は `segments.csv` に保存する。元の角度CSVは変更しない。分割が不正な場合は、スクリプト冒頭の分割しきい値を調整する。
+
+静止終了を検出できなかったパートは `valid=0` として `segments.csv` に残すが、係数フィットには使用しない。次の試験準備動作を自由減衰として誤ってフィットすることを防ぐためである。
 
 各入力ファイルには、次の順序で6回の自由減衰が入っていることを前提とする。
 
@@ -95,3 +104,17 @@ I\ddot\theta+b\dot\theta+K\sin\theta+c|\dot\theta|\dot\theta
 ```
 
 想定風シミュレーションでは、周囲風による水平力と球自身の運動による二乗減衰を分離した準定常モデルを使う。実機では相対風速モデルによる追加検証が必要である。
+
+## 主な出力ファイル
+
+| ファイル | 内容 |
+|---|---|
+| `segments.csv` | 自動分割範囲と有効判定 |
+| `segment_fits.csv` | 波形ごとのフィッティング結果 |
+| `calibration_levels.csv` | スペーサ条件ごとの集計値 |
+| `base_parameters.csv` | ダミーウェイトなしの `I`, `K` |
+| `identified_parameters.csv` | 各形態の `I`, `b`, `K`, `c`, `tau_f` |
+| `free_decay_force.csv` | 自由減衰の真値0 NとESO・RTS推定値 |
+| `simulated_wind_force.csv` | 想定風外力の真値とESO・RTS推定値 |
+| `*_metrics.csv` | 外力推定のRMSE、バイアス、最大誤差 |
+| `provenance.json` | 入力ハッシュ、解析設定、同定係数 |
