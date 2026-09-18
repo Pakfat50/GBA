@@ -1,0 +1,27 @@
+{
+  "input_date_directory": "04_Data/05_Fitting/20990102",
+  "manifest": "sensor_noise_manifest.csv",
+  "manifest_sha256": "b9a396c1ef2d43bd27658fbb3b6c4ea616b7c2c1ff6e6fbadff0aa9d569ca483",
+  "input_files": [
+    {
+      "path": "LOG00001_ANGLE.csv",
+      "sha256": "ff5082fa60388432d796cc0ee5926376d8fef503bd494163cd50ca261cbb7b14"
+    }
+  ],
+  "expected_quantization_deg": 0.02197265625,
+  "segment_settings": {
+    "stationary_window_s": 1.0,
+    "stationary_std_max_deg": 0.08,
+    "target_tolerance_deg": 0.8,
+    "minimum_segment_s": 12.0,
+    "edge_trim_s": 1.0
+  },
+  "maximum_correlation_time_s": 3.0,
+  "plot_settings": {
+    "time_series": true,
+    "histogram": true,
+    "psd": true,
+    "autocorrelation": true,
+    "sample_intervals": true
+  }
+}
