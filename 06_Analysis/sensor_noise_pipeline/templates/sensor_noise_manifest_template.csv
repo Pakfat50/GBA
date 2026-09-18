@@ -1,0 +1,3 @@
+data_file,axis,angle_column,condition,target_angle_deg,expected_repetitions,use_start_s,use_end_s,valid,notes
+LOG00001_ANGLE.csv,OUT,angle0[deg],FIXED_0,0,3,,,1,装置を鉛直0 degで剛に固定し3回反復
+LOG00001_ANGLE.csv,IN,angle1[deg],FIXED_0,0,3,,,1,同じログで内軸も解析

@@ -1,0 +1,14 @@
+{
+  "sample_rate_hz": 100.0,
+  "quantization_bits": 14,
+  "OUT": {
+    "white_noise_std_deg": 0.015,
+    "colored_noise_std_deg": 0.01,
+    "colored_time_constant_s": 0.475
+  },
+  "IN": {
+    "white_noise_std_deg": 0.018,
+    "colored_noise_std_deg": 0.008,
+    "colored_time_constant_s": 0.7
+  }
+}
