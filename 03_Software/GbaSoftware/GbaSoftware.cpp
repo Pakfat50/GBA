@@ -10,8 +10,13 @@ GBA_PARAM gba_param;
 GBA_MODE mode = NORMAL;
 
 void setup() {
+    delay(1000);
+    Serial.println("Initalize Start");
     normalModeInit();
+    Serial.println("Initalize Finished");
     get_gba_param(&gba_param);
+    Serial.println("ReadParam Finished");
+    Serial.println("Start Sensing");
 }
 
 void loop() {
