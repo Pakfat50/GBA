@@ -42,6 +42,14 @@
 
 `component_centroid_inertia_kg_m2` は、部品群の合成重心を通り、対象の振動軸と平行な軸まわりの慣性である。SP00はすべて0とする。
 
+20260921試験では、支点からロッド端面まで229 mmとして次の位置を使う。
+
+- スペーサ位置の指定値はロッド端面側の端点である。長さ5 mmを考慮し、
+  各重心位置を支点から221.5、216.5、211.5、206.5 mmとする。
+- 球の支柱側表面は支点から224 mm、球直径は100 mmであるため、
+  球中心と風力作用点は支点から174 mmとする。
+- 球側は復元力を弱めるため、符号付き重心位置は負とする。
+
 ## 実行方法
 
 リポジトリのトップディレクトリで実行する。
@@ -145,6 +153,8 @@ I\ddot\theta+b\dot\theta+K\sin\theta+c|\dot\theta|\dot\theta
 |---|---|
 | `segments.csv` | 自動分割範囲と有効判定 |
 | `segment_fits.csv` | 波形ごとのフィッティング結果 |
+| `waveform_fits_all.png` | 全採用波形の実測値と破線フィットの一覧 |
+| `waveform_fits_individual.zip` | 波形ごとの実測値・フィット図 |
 | `calibration_levels.csv` | スペーサ条件ごとの集計値 |
 | `base_parameters.csv` | ダミーウェイトなしの `I`, `K` |
 | `identified_parameters.csv` | 各形態の `I`, `b`, `K`, `c`, `tau_f` |

@@ -569,8 +569,54 @@ def fit_one_decay(time_s, angle_rad, epsilon_rad_s, target_rate_hz, max_nfev):
         ftol=1e-7,
         gtol=1e-7,
     )
-    prediction = simulate_normalized_decay(relative_time, result.x, epsilon_rad_s)
-    error_deg = np.rad2deg(prediction - angle_rad)
+
+    def evaluate_result(fit_result):
+        prediction_rad = simulate_normalized_decay(
+            relative_time, fit_result.x, epsilon_rad_s
+        )
+        error_deg_value = np.rad2deg(prediction_rad - angle_rad)
+        rmse_value = float(np.sqrt(np.mean(error_deg_value * error_deg_value)))
+        return prediction_rad, error_deg_value, rmse_value
+
+    prediction, error_deg, rmse_deg = evaluate_result(result)
+
+    # 長時間波形では、最初の局所解で減衰項が動かず終了する場合がある。
+    # RMSEが大きい波形だけ、異なる減衰係数から再探索して最良解を採用する。
+    if rmse_deg > 1.2:
+        retry_starts = []
+        retry_starts.append(result.x.copy())
+
+        retry = result.x.copy()
+        retry[1] = 0.02
+        retry[2] = 0.02
+        retry[3] = 0.20
+        retry_starts.append(retry)
+
+        retry = result.x.copy()
+        retry[1] = 0.08
+        retry[2] = 0.0
+        retry[3] = 0.20
+        retry_starts.append(retry)
+
+        for retry_start in retry_starts:
+            retry_result = least_squares(
+                full_residual,
+                retry_start,
+                bounds=(lower, upper),
+                max_nfev=max_nfev * 2,
+                diff_step=1e-3,
+                xtol=1e-8,
+                ftol=1e-8,
+                gtol=1e-8,
+            )
+            retry_prediction, retry_error, retry_rmse = evaluate_result(
+                retry_result
+            )
+            if retry_rmse < rmse_deg:
+                result = retry_result
+                prediction = retry_prediction
+                error_deg = retry_error
+                rmse_deg = retry_rmse
 
     output = {
         "k_over_i_per_s2": float(result.x[0]),
@@ -580,7 +626,7 @@ def fit_one_decay(time_s, angle_rad, epsilon_rad_s, target_rate_hz, max_nfev):
         "offset_deg": float(np.rad2deg(result.x[4])),
         "initial_angle_deg": float(np.rad2deg(result.x[5])),
         "initial_speed_rad_s": float(result.x[6]),
-        "rmse_deg": float(np.sqrt(np.mean(error_deg * error_deg))),
+        "rmse_deg": rmse_deg,
         "success": int(result.success),
         "message": str(result.message),
         "parameters": result.x,

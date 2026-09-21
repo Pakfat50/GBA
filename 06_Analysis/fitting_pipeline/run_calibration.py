@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import sys
+import zipfile
 from pathlib import Path
 
 import matplotlib
@@ -119,6 +120,22 @@ REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 DEFAULT_DATA_ROOT = REPOSITORY_ROOT / "04_Data" / "05_Fitting"
 DEFAULT_RESULT_ROOT = SCRIPT_DIRECTORY / "results"
 MANIFEST_FILE_NAME = "test_manifest.csv"
+SELECTION_FILE_NAME = "waveform_selection.csv"
+
+# 錘計測結果.xlsx と試験治具寸法から補う物理量。
+# 元の test_manifest.csv は変更せず、補完後の値を resolved_manifest.csv に保存する。
+SPACER_MASS_KG = 0.00118
+SPACER_OUTER_RADIUS_M = 0.004
+SPACER_INNER_RADIUS_M = 0.00265
+SPACER_LENGTH_M = 0.005
+BALL_MASS_KG = 0.0039
+BALL_RADIUS_M = 0.05
+ROD_END_RADIUS_M = 0.229
+BALL_NEAR_EDGE_INWARD_M = 0.005
+BALL_COM_RADIUS_M = -(
+    ROD_END_RADIUS_M - BALL_NEAR_EDGE_INWARD_M - BALL_RADIUS_M
+)
+FORCE_LEVER_M = abs(BALL_COM_RADIUS_M)
 
 
 def parse_arguments():
@@ -209,7 +226,7 @@ def read_manifest(date_directory):
         if column not in manifest.columns:
             raise ValueError("test_manifest.csv に " + column + " 列がありません")
 
-    # 数値列を明示的に数値へ変換する。空欄や文字列はエラーとして検出する。
+    # 数値列を明示的に数値へ変換する。物理量の空欄は、この後で計測表から補う。
     numeric_columns = [
         "spacer_count",
         "component_mass_kg",
@@ -222,12 +239,128 @@ def read_manifest(date_directory):
     for column in numeric_columns:
         manifest[column] = pd.to_numeric(manifest[column], errors="coerce")
 
-    valid_rows = manifest[manifest["valid"] == 1].copy()
-    for column in numeric_columns:
-        if valid_rows[column].isna().any():
-            bad = valid_rows[valid_rows[column].isna()]["data_file"].tolist()
-            raise ValueError(column + " が未記入です: " + ", ".join(bad))
     return manifest, manifest_path
+
+
+def one_spacer_centroid_inertia():
+    """円筒スペーサ1個の重心を通る横軸まわり慣性を返す。"""
+
+    radius_term = SPACER_OUTER_RADIUS_M * SPACER_OUTER_RADIUS_M
+    radius_term += SPACER_INNER_RADIUS_M * SPACER_INNER_RADIUS_M
+    length_term = SPACER_LENGTH_M * SPACER_LENGTH_M
+    return SPACER_MASS_KG / 12.0 * (3.0 * radius_term + length_term)
+
+
+def spacer_group_properties(spacer_count):
+    """複数スペーサの合計質量、合成重心位置、重心慣性を返す。"""
+
+    if spacer_count == 0:
+        return 0.0, 0.0, 0.0
+
+    # 指定位置は各スペーサのロッド端面側の端点である。重心はそこから
+    # さらに長さの半分だけ支柱側にある。
+    radii = []
+    spacer_number = 1
+    while spacer_number <= spacer_count:
+        rod_side_edge = ROD_END_RADIUS_M - spacer_number * SPACER_LENGTH_M
+        distance_from_pivot = rod_side_edge - 0.5 * SPACER_LENGTH_M
+        radii.append(-distance_from_pivot)
+        spacer_number += 1
+
+    total_mass = spacer_count * SPACER_MASS_KG
+    group_radius = float(np.mean(radii))
+    centroid_inertia = spacer_count * one_spacer_centroid_inertia()
+    for radius in radii:
+        centroid_inertia += SPACER_MASS_KG * (radius - group_radius) ** 2
+    return total_mass, group_radius, centroid_inertia
+
+
+def resolve_physical_inputs(manifest, result_directory):
+    """計測表と既知寸法から、空欄の質量・取付半径・慣性を補う。"""
+
+    resolved = manifest.copy()
+    source_rows = []
+    for row_index, row in resolved.iterrows():
+        configuration = str(row["configuration"]).strip().upper()
+        spacer_count = int(row["spacer_count"])
+
+        if configuration.startswith("SP"):
+            mass, radius, centroid_inertia = spacer_group_properties(spacer_count)
+            source = "錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み"
+        elif configuration == "BALL":
+            mass = BALL_MASS_KG
+            radius = BALL_COM_RADIUS_M
+            centroid_inertia = 2.0 / 5.0 * mass * BALL_RADIUS_M * BALL_RADIUS_M
+            source = "錘計測結果.xlsx（3.9 g）と球表面224 mm・直径100 mm"
+        else:
+            raise ValueError("未対応の装置形態です: " + configuration)
+
+        resolved.at[row_index, "component_mass_kg"] = mass
+        resolved.at[row_index, "signed_com_radius_m"] = radius
+        resolved.at[row_index, "component_centroid_inertia_kg_m2"] = centroid_inertia
+        resolved.at[row_index, "force_lever_m"] = FORCE_LEVER_M
+        source_rows.append(
+            {
+                "data_file": row["data_file"],
+                "axis": row["axis"],
+                "configuration": configuration,
+                "component_mass_kg": mass,
+                "signed_com_radius_m": radius,
+                "component_centroid_inertia_kg_m2": centroid_inertia,
+                "force_lever_m": FORCE_LEVER_M,
+                "source_or_assumption": source,
+            }
+        )
+
+    valid_rows = resolved[resolved["valid"] == 1]
+    physical_columns = [
+        "component_mass_kg",
+        "signed_com_radius_m",
+        "component_centroid_inertia_kg_m2",
+        "force_lever_m",
+    ]
+    for column in physical_columns:
+        if valid_rows[column].isna().any():
+            raise ValueError(column + " を補完できませんでした")
+
+    resolved.to_csv(
+        result_directory / "resolved_manifest.csv",
+        index=False,
+        encoding="utf-8-sig",
+    )
+    save_csv(result_directory / "physical_input_sources.csv", source_rows)
+    return resolved
+
+
+def read_waveform_selection(result_directory):
+    """確認済みの波形採否表を読み込む。"""
+
+    selection_path = result_directory / "waveform_review" / SELECTION_FILE_NAME
+    if not selection_path.exists():
+        return None, selection_path
+    selection = pd.read_csv(selection_path, encoding="utf-8-sig")
+    required_columns = [
+        "segment_id",
+        "data_file",
+        "axis",
+        "angle_column",
+        "configuration",
+        "direction",
+        "repetition",
+        "start_index",
+        "end_index",
+        "use_for_fitting",
+        "review_status",
+    ]
+    for column in required_columns:
+        if column not in selection.columns:
+            raise ValueError("waveform_selection.csv に " + column + " 列がありません")
+    if not (selection["review_status"].astype(str).str.upper() == "APPROVED").all():
+        raise ValueError("waveform_selection.csv に未確認の波形があります")
+    selection["use_for_fitting"] = pd.to_numeric(
+        selection["use_for_fitting"], errors="raise"
+    ).astype(int)
+    return selection, selection_path
 
 
 def make_segment_identifier(axis, configuration, direction, repetition):
@@ -360,6 +493,97 @@ def analyze_all_files(date_directory, manifest, result_directory):
     return segment_rows, fit_rows, waveform_records
 
 
+def analyze_selected_waveforms(date_directory, selection, result_directory):
+    """確認済みCSVの一行を一波形として読み込み、個別にフィットする。"""
+
+    segment_rows = []
+    fit_rows = []
+    waveform_records = []
+    log_cache = {}
+    epsilon = np.deg2rad(FRICTION_EPSILON_DEG_S)
+
+    for unused_index, selection_row in selection.iterrows():
+        data_file = str(selection_row["data_file"])
+        angle_column = str(selection_row["angle_column"])
+        cache_key = data_file + "|" + angle_column
+        if cache_key not in log_cache:
+            file_path = date_directory / data_file
+            if not file_path.exists():
+                raise FileNotFoundError("データファイルがありません: " + str(file_path))
+            log_cache[cache_key] = read_angle_log(file_path, angle_column)
+
+        time_s, angle_rad = log_cache[cache_key]
+        start = int(selection_row["start_index"])
+        end = int(selection_row["end_index"]) + 1
+        if start < 0 or end > len(time_s) or end <= start:
+            raise ValueError("波形範囲が不正です: " + str(selection_row["segment_id"]))
+
+        segment_row = {
+            "segment_id": str(selection_row["segment_id"]),
+            "data_file": data_file,
+            "axis": str(selection_row["axis"]).strip().upper(),
+            "configuration": str(selection_row["configuration"]).strip().upper(),
+            "direction": str(selection_row["direction"]).strip().upper(),
+            "repetition": int(selection_row["repetition"]),
+            "start_index": start,
+            "end_index": end - 1,
+            "start_time_s": float(time_s[start]),
+            "end_time_s": float(time_s[end - 1]),
+            "valid": int(selection_row["use_for_fitting"]),
+            "quality_note": str(selection_row.get("auto_quality_note", "")),
+        }
+        segment_rows.append(segment_row)
+
+        if int(selection_row["use_for_fitting"]) != 1:
+            print("  除外: " + segment_row["segment_id"])
+            continue
+
+        segment_time = time_s[start:end]
+        segment_angle = angle_rad[start:end]
+        print("  フィット: " + segment_row["segment_id"])
+        fit = fit_one_decay(
+            segment_time,
+            segment_angle,
+            epsilon,
+            FIT_TARGET_RATE_HZ,
+            FIT_MAX_FUNCTION_EVALUATIONS,
+        )
+
+        fit_row = dict(segment_row)
+        for key in [
+            "k_over_i_per_s2",
+            "b_over_i_per_s",
+            "c_over_i_per_rad",
+            "tau_over_i_rad_s2",
+            "offset_deg",
+            "initial_angle_deg",
+            "initial_speed_rad_s",
+            "rmse_deg",
+            "success",
+            "message",
+        ]:
+            fit_row[key] = fit[key]
+        fit_rows.append(fit_row)
+
+        waveform_records.append(
+            {
+                "segment_id": segment_row["segment_id"],
+                "axis": segment_row["axis"],
+                "configuration": segment_row["configuration"],
+                "direction": segment_row["direction"],
+                "repetition": segment_row["repetition"],
+                "time_s": segment_time - segment_time[0],
+                "angle_rad": segment_angle,
+                "fit_rad": fit["prediction_rad"],
+                "rmse_deg": fit["rmse_deg"],
+            }
+        )
+
+    save_csv(result_directory / "segments.csv", segment_rows)
+    save_csv(result_directory / "segment_fits.csv", fit_rows)
+    return segment_rows, fit_rows, waveform_records
+
+
 def make_level_rows(axis, manifest, fit_table):
     """軸ごと・装置構成ごとのK/I平均値と追加量をまとめる。"""
 
@@ -480,57 +704,107 @@ def identify_physical_parameters(manifest, fit_rows, result_directory):
     return base_rows, parameter_rows, product_parameters
 
 
-def plot_waveform_fits(waveform_records, result_directory):
-    """構成×方向ごとに3反復の測定波形とフィットを重ねて表示する。"""
+def draw_waveform_fit(plot_axis, record, show_legend):
+    """一つの実測波形とフィット波形を同じ領域へ描く。"""
 
-    axes = sorted(set(record["axis"] for record in waveform_records))
-    for axis in axes:
-        axis_records = [record for record in waveform_records if record["axis"] == axis]
-        configurations = sorted(set(record["configuration"] for record in axis_records))
-        figure, plot_axes = plt.subplots(
-            len(configurations), 2, figsize=(13, 3.0 * len(configurations)), squeeze=False
+    plot_axis.plot(
+        record["time_s"],
+        np.rad2deg(record["angle_rad"]),
+        color="#1f77b4",
+        lw=0.9,
+        label="Measured",
+    )
+    plot_axis.plot(
+        record["time_s"],
+        np.rad2deg(record["fit_rad"]),
+        color="#d62728",
+        lw=1.0,
+        linestyle="--",
+        label="Fitted model",
+    )
+    title = record["segment_id"] + "  RMSE=" + format(record["rmse_deg"], ".3f") + " deg"
+    plot_axis.set_title(title, fontsize=9)
+    plot_axis.set_xlabel("Time from release [s]")
+    plot_axis.set_ylabel("Angle [deg]")
+    plot_axis.set_ylim(-75.0, 75.0)
+    plot_axis.grid(alpha=0.25)
+    if show_legend:
+        plot_axis.legend(fontsize=8)
+
+
+def save_waveform_fit_overview(records, output_path, title, column_count):
+    """指定した波形群を一覧図として保存する。"""
+
+    if len(records) == 0:
+        return
+    row_count = int(np.ceil(len(records) / float(column_count)))
+    figure, plot_axes = plt.subplots(
+        row_count,
+        column_count,
+        figsize=(4.6 * column_count, 3.0 * row_count),
+        squeeze=False,
+    )
+    plot_number = 0
+    while plot_number < row_count * column_count:
+        row_number = plot_number // column_count
+        column_number = plot_number % column_count
+        plot_axis = plot_axes[row_number, column_number]
+        if plot_number < len(records):
+            draw_waveform_fit(plot_axis, records[plot_number], plot_number == 0)
+        else:
+            plot_axis.axis("off")
+        plot_number += 1
+    figure.suptitle(title)
+    figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.985))
+    figure.savefig(output_path, dpi=170)
+    plt.close(figure)
+
+
+def plot_waveform_fits(waveform_records, result_directory):
+    """全採用波形について実測値とフィットを重ねた図を保存する。"""
+
+    records = sorted(waveform_records, key=lambda item: item["segment_id"])
+    save_waveform_fit_overview(
+        records,
+        result_directory / "waveform_fits_all.png",
+        "All approved free-decay waveforms and fitted models",
+        4,
+    )
+
+    group_keys = []
+    for record in records:
+        key = record["axis"] + "_" + record["configuration"]
+        if key not in group_keys:
+            group_keys.append(key)
+    group_keys.sort()
+    for key in group_keys:
+        group_records = []
+        for record in records:
+            if record["axis"] + "_" + record["configuration"] == key:
+                group_records.append(record)
+        save_waveform_fit_overview(
+            group_records,
+            result_directory / ("waveform_fits_" + key + ".png"),
+            key + " measured waveforms and fitted models",
+            3,
         )
-        row_index = 0
-        while row_index < len(configurations):
-            configuration = configurations[row_index]
-            directions = ["P45", "N45"]
-            column_index = 0
-            while column_index < 2:
-                direction = directions[column_index]
-                plot_axis = plot_axes[row_index, column_index]
-                for record in axis_records:
-                    if record["configuration"] != configuration:
-                        continue
-                    if record["direction"] != direction:
-                        continue
-                    repetition_text = str(record["repetition"])
-                    measured_line = plot_axis.plot(
-                        record["time_s"],
-                        np.rad2deg(record["angle_rad"]),
-                        lw=0.9,
-                        alpha=0.45,
-                        label="Measured R" + repetition_text,
-                    )
-                    measured_color = measured_line[0].get_color()
-                    plot_axis.plot(
-                        record["time_s"],
-                        np.rad2deg(record["fit_rad"]),
-                        lw=1.1,
-                        linestyle="--",
-                        color=measured_color,
-                        label="Fit R" + repetition_text,
-                    )
-                plot_axis.set_title(configuration + " " + direction)
-                plot_axis.set_xlabel("Time from release [s]")
-                plot_axis.set_ylabel("Angle [deg]")
-                plot_axis.grid(alpha=0.25)
-                plot_axis.legend(fontsize=6, ncol=3)
-                column_index += 1
-            row_index += 1
-        figure.suptitle(axis + " measured free decay and fitted model")
+
+    individual_directory = result_directory / "waveform_fits"
+    ensure_directory(individual_directory)
+    individual_paths = []
+    for record in records:
+        figure, plot_axis = plt.subplots(1, 1, figsize=(11, 4.5))
+        draw_waveform_fit(plot_axis, record, True)
         figure.tight_layout()
-        figure.savefig(result_directory / ("waveform_fits_" + axis + ".png"), dpi=160)
+        output_path = individual_directory / (record["segment_id"] + ".png")
+        figure.savefig(output_path, dpi=180)
         plt.close(figure)
+        individual_paths.append(output_path)
+
+    zip_path = result_directory / "waveform_fits_individual.zip"
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for output_path in individual_paths:
+            archive.write(output_path, arcname=output_path.name)
 
 
 def calculate_free_decay_forces(waveform_records, product_parameters, result_directory):
@@ -765,10 +1039,19 @@ def main():
     print("入力フォルダ: " + str(date_directory))
     print("出力フォルダ: " + str(result_directory))
     manifest, manifest_path = read_manifest(date_directory)
+    manifest = resolve_physical_inputs(manifest, result_directory)
+    selection, selection_path = read_waveform_selection(result_directory)
 
-    segment_rows, fit_rows, waveform_records = analyze_all_files(
-        date_directory, manifest, result_directory
-    )
+    if selection is None:
+        print("確認済み波形表がないため、従来の自動分割を使用します")
+        segment_rows, fit_rows, waveform_records = analyze_all_files(
+            date_directory, manifest, result_directory
+        )
+    else:
+        print("確認済み波形表: " + str(selection_path))
+        segment_rows, fit_rows, waveform_records = analyze_selected_waveforms(
+            date_directory, selection, result_directory
+        )
     unused_base, unused_parameters, product_parameters = identify_physical_parameters(
         manifest, fit_rows, result_directory
     )
