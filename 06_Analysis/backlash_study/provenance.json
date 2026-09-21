@@ -1,0 +1,29 @@
+{
+  "input": "04_Data/00_Calibration/swing/LOG00014.TXT",
+  "sha256": "63feafa28345b56587f83b15e5edea1b9e2eb533bc23249d96c852437fe50b0d",
+  "windows_s": [
+    [
+      20.4,
+      32.0
+    ],
+    [
+      47.05,
+      59.05
+    ],
+    [
+      70.2,
+      82.0
+    ],
+    [
+      93.25,
+      105.25
+    ]
+  ],
+  "resampled_rate_hz": 100.0,
+  "friction_epsilon_deg_s": 0.5,
+  "models": {
+    "VC": "viscous plus smoothed Coulomb friction",
+    "VCB": "VC plus restoring-torque play backlash"
+  },
+  "backlash_parameter": "half width; reported total width is twice this value"
+}
