@@ -210,6 +210,7 @@ def detect_free_decay_candidates(time_s, angle_rad, settings):
 
     smooth_count = max(3, int(round(settings["smooth_time_s"] / dt)))
     smooth_deg = moving_average(angle_deg, smooth_count)
+    velocity_deg_s = np.gradient(smooth_deg, time_s)
 
     # 試験終了時の静止角を基準にする。ゼロ点が1～2 degずれていても、
     # 大振幅ピークと静止終了を同じ基準で判定できる。
@@ -295,16 +296,42 @@ def detect_free_decay_candidates(time_s, angle_rad, settings):
             continue
         plateau_amplitude = float(np.percentile(search_values, 90.0))
         release_threshold = plateau_amplitude - settings["release_drop_deg"]
-        # 端部で保持している間に小さな揺れがあると、一度だけ閾値を下回ることが
-        # ある。最初の低下ではなく、ゼロ交差前の「最後の端部サンプル」の直後を
-        # 解放点にすることで、保持区間をフィット波形へ混ぜない。
-        last_plateau_index = first_peak
-        index = first_peak
-        while index <= zero_crossing:
-            if abs(centered_deg[index]) >= release_threshold:
-                last_plateau_index = index
-            index += 1
-        release_index = min(last_plateau_index + 1, zero_crossing)
+
+        # 端部角度は、手で保持している間にも少し変わることがある。角度の閾値
+        # だけで開始点を決めると、この保持区間がフィット対象へ残る。そのため、
+        # 中心向きの速度が一定時間続いた最初の点を、実際の解放点として使う。
+        sustain_count = max(
+            2,
+            int(round(settings.get("release_speed_sustain_s", 0.05) / dt)),
+        )
+        release_speed_min = settings.get("release_speed_min_deg_s", 5.0)
+        release_index = None
+        signed_speed = first_sign * velocity_deg_s[first_peak : zero_crossing + 1]
+        inward_mask = signed_speed <= -release_speed_min
+        inward_groups = find_true_groups(inward_mask)
+
+        # 手で端部へ動かす途中にも中心向きの動きが生じることがある。
+        # 実際の自由振動は、解放後から最初のゼロ交差まで中心向き運動が
+        # 続くため、ゼロ交差に最も近い連続区間の先頭を採用する。
+        group_position = len(inward_groups) - 1
+        while group_position >= 0:
+            inward_start, inward_end = inward_groups[group_position]
+            inward_length = inward_end - inward_start + 1
+            if inward_length >= sustain_count:
+                release_index = first_peak + inward_start
+                break
+            group_position -= 1
+
+        # 速度による解放点が見つからない古いデータでは、従来の角度閾値へ
+        # 戻す。これにより、サンプリング周期が粗いログも解析可能にする。
+        if release_index is None:
+            last_plateau_index = first_peak
+            index = first_peak
+            while index <= zero_crossing:
+                if abs(centered_deg[index]) >= release_threshold:
+                    last_plateau_index = index
+                index += 1
+            release_index = min(last_plateau_index + 1, zero_crossing)
 
         next_candidate_start = len(time_s) - 1
         if group_number + 1 < len(peak_groups):

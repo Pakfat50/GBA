@@ -42,8 +42,14 @@ CANDIDATE_SETTINGS = {
     "candidate_peak_prominence_deg": 0.5,
     "candidate_gap_s": 8.0,
     "peak_distance_s": 0.15,
-    "zero_crossing_search_s": 5.0,
+    # 端部へ動かしてから解放まで数秒保持する場合があるため、最初の
+    # ゼロ交差は十分長く探索する。
+    "zero_crossing_search_s": 15.0,
     "release_drop_deg": 0.7,
+    # 解放前の保持区間をフィットへ混ぜないため、中心向きの速度が
+    # 一定時間続いた点を解放と判定する。
+    "release_speed_min_deg_s": 5.0,
+    "release_speed_sustain_s": 0.05,
     "minimum_decay_time_s": 5.0,
     "maximum_decay_time_s": 90.0,
     "settle_duration_s": 3.0,

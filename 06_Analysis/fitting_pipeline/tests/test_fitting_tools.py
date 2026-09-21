@@ -45,8 +45,10 @@ class FittingToolsTest(unittest.TestCase):
             "candidate_peak_prominence_deg": 0.5,
             "candidate_gap_s": 8.0,
             "peak_distance_s": 0.15,
-            "zero_crossing_search_s": 5.0,
+            "zero_crossing_search_s": 15.0,
             "release_drop_deg": 0.7,
+            "release_speed_min_deg_s": 5.0,
+            "release_speed_sustain_s": 0.05,
             "minimum_decay_time_s": 3.0,
             "maximum_decay_time_s": 30.0,
             "settle_duration_s": 2.0,
@@ -126,6 +128,32 @@ class FittingToolsTest(unittest.TestCase):
         self.assertEqual(len(candidates), 2)
         self.assertEqual(candidates[0]["suggested_use"], 0)
         self.assertEqual(candidates[1]["suggested_use"], 1)
+
+    def test_flat_holding_region_is_removed_before_fitting(self):
+        """解放前の端部保持を候補波形の先頭へ含めない。"""
+
+        dt = 0.01
+        hold_time = np.arange(0.0, 6.0, dt)
+        hold_deg = 60.0 + 0.6 * np.sin(2.0 * np.pi * 0.4 * hold_time)
+        decay_time = np.arange(0.0, 10.0, dt)
+        parameters = np.array(
+            [5.6, 0.16, 0.03, 0.10, 0.0, np.deg2rad(60.0), 0.0]
+        )
+        decay = simulate_normalized_decay(
+            decay_time, parameters, np.deg2rad(0.5)
+        )
+        rest_time = np.arange(0.0, 4.0, dt)
+        angle = np.concatenate(
+            [np.deg2rad(hold_deg), decay, np.zeros(len(rest_time))]
+        )
+        time_s = np.arange(len(angle), dtype=float) * dt
+
+        candidates = detect_free_decay_candidates(
+            time_s, angle, self.candidate_settings
+        )
+        self.assertEqual(len(candidates), 1)
+        self.assertGreater(candidates[0]["start_time_s"], 5.9)
+        self.assertLess(candidates[0]["start_time_s"], 6.2)
 
     def test_waveform_fit_reproduces_synthetic_decay(self):
         time_s = np.arange(0.0, 10.0, 0.02)
