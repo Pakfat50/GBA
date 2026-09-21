@@ -137,3 +137,17 @@ python -m unittest discover -s 06_Analysis/simulation/tests -p 'test_sensor_mode
 設定は`config/sensor_model_stage3.json`、数値結果と図は
 `results/sensor_model_stage3/`です。分解能と100 Hz周期は実装・既存ログに基づく値、
 ノイズの内訳と10 ms遅延は実機静止試験前の暫定値です。
+
+## Stage 4：摩擦・バックラッシュ
+
+[摩擦・バックラッシュの検討](Backlash_Stage4_Report.md)では、Stage 3のセンサーモデルと
+摩擦補償を維持したまま、復元機構へ履歴依存のplayバックラッシュを追加します。
+旧ハード自由振動による識別と、全幅0～2 degのストレス試験を分けて評価します。
+
+```bash
+python 06_Analysis/backlash_study/analyze.py --input 04_Data/00_Calibration/swing/LOG00014.TXT
+python 06_Analysis/simulation/src/run_backlash_stage4.py
+```
+
+設定は`config/backlash_stage4.json`、感度結果は`results/backlash_stage4/`です。
+バックラッシュ幅は新ハードの実測値ではないため、公称補償はまだ有効化しません。

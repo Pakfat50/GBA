@@ -1,0 +1,8 @@
+{
+  "stage3_config": "config/sensor_model_stage3.json",
+  "stage3_summary": "results/sensor_model_stage3/summary.json",
+  "backlash_total_width_deg": [0.0, 0.25, 0.5, 1.0, 2.0],
+  "nominal_stress_width_deg": 0.5,
+  "model": "rate-independent play in restoring torque",
+  "assumption": "stress-test range; not a measurement of V1 hardware"
+}
