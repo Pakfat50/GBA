@@ -11,6 +11,7 @@ import pandas as pd
 from scipy.integrate import solve_ivp
 from scipy.linalg import expm
 from scipy.optimize import least_squares
+from scipy.signal import find_peaks
 
 
 GRAVITY_M_S2 = 9.81
@@ -188,6 +189,227 @@ def split_free_decay(time_s, angle_rad, settings):
         group_index += 1
 
     return segments
+
+
+def detect_free_decay_candidates(time_s, angle_rad, settings):
+    """連続ログから自由減衰の候補波形をすべて取り出す。
+
+    新ハードの試験では、正負の試験、再試験、IN軸とOUT軸を一つのCSVへ
+    続けて記録する。そのため「解放前に一定時間静止した」という条件だけでは
+    波形を取りこぼす。ここでは大振幅の山を検出し、8秒以内に続く山を一回の
+    自由減衰としてまとめる。
+
+    この関数は候補を自動除外しない。品質指標と推奨値だけを返し、最終的な
+    採否は waveform_selection.csv の一行ごとに人が確認する。
+    """
+
+    time_s = np.asarray(time_s, dtype=float)
+    angle_rad = np.asarray(angle_rad, dtype=float)
+    angle_deg = np.rad2deg(angle_rad)
+    dt = float(np.median(np.diff(time_s)))
+
+    smooth_count = max(3, int(round(settings["smooth_time_s"] / dt)))
+    smooth_deg = moving_average(angle_deg, smooth_count)
+
+    # 試験終了時の静止角を基準にする。ゼロ点が1～2 degずれていても、
+    # 大振幅ピークと静止終了を同じ基準で判定できる。
+    tail_count = max(10, int(round(settings["baseline_time_s"] / dt)))
+    tail_count = min(tail_count, len(smooth_deg))
+    baseline_deg = float(np.median(smooth_deg[-tail_count:]))
+    centered_deg = smooth_deg - baseline_deg
+
+    peak_distance = max(1, int(round(settings["peak_distance_s"] / dt)))
+    peak_indices, unused_properties = find_peaks(
+        np.abs(centered_deg),
+        height=settings["candidate_peak_min_deg"],
+        distance=peak_distance,
+        prominence=settings["candidate_peak_prominence_deg"],
+    )
+
+    # 一回の減衰中には正負のピークが交互に並ぶ。それらの間隔は短いので、
+    # 一定時間以上離れたピークだけを別試験として扱う。
+    peak_groups = []
+    for peak_index in peak_indices:
+        if len(peak_groups) == 0:
+            peak_groups.append([int(peak_index)])
+            continue
+        previous_peak = peak_groups[-1][-1]
+        gap_s = time_s[peak_index] - time_s[previous_peak]
+        if gap_s > settings["candidate_gap_s"]:
+            peak_groups.append([int(peak_index)])
+        else:
+            peak_groups[-1].append(int(peak_index))
+
+    # 手やリミットへの接触後、静止を待たずに端部へ戻して再試験した場合は、
+    # 二つの試験の間隔が短く、上の時間条件だけでは一群になる。減衰途中で
+    # 振幅が明確に再増加したピークを、新しい試験の先頭として分割する。
+    refined_groups = []
+    for group in peak_groups:
+        current_group = [group[0]]
+        peak_number = 1
+        while peak_number < len(group):
+            previous_amplitude = abs(centered_deg[group[peak_number - 1]])
+            current_amplitude = abs(centered_deg[group[peak_number]])
+            growth_limit = max(
+                settings["quality_growth_min_deg"],
+                settings["quality_growth_ratio"] * previous_amplitude,
+            )
+            if current_amplitude - previous_amplitude > growth_limit:
+                refined_groups.append(current_group)
+                current_group = [group[peak_number]]
+            else:
+                current_group.append(group[peak_number])
+            peak_number += 1
+        refined_groups.append(current_group)
+    peak_groups = refined_groups
+
+    settle_count = max(3, int(round(settings["settle_duration_s"] / dt)))
+    candidates = []
+    positive_count = 0
+    negative_count = 0
+
+    group_number = 0
+    while group_number < len(peak_groups):
+        group = peak_groups[group_number]
+        first_peak = group[0]
+
+        # 最初のピークから最初のゼロ交差までが、端部保持から解放へ移る区間。
+        # その区間の上位振幅を端部角度とし、そこから中心側へ動いた点を開始にする。
+        first_sign = 1.0
+        if centered_deg[first_peak] < 0.0:
+            first_sign = -1.0
+        zero_crossing = first_peak + 1
+        while zero_crossing < len(centered_deg):
+            if centered_deg[zero_crossing] * first_sign <= 0.0:
+                break
+            if time_s[zero_crossing] - time_s[first_peak] > settings["zero_crossing_search_s"]:
+                break
+            zero_crossing += 1
+        if zero_crossing >= len(centered_deg):
+            group_number += 1
+            continue
+
+        search_values = np.abs(centered_deg[first_peak : zero_crossing + 1])
+        if len(search_values) < 2:
+            group_number += 1
+            continue
+        plateau_amplitude = float(np.percentile(search_values, 90.0))
+        release_threshold = plateau_amplitude - settings["release_drop_deg"]
+        # 端部で保持している間に小さな揺れがあると、一度だけ閾値を下回ることが
+        # ある。最初の低下ではなく、ゼロ交差前の「最後の端部サンプル」の直後を
+        # 解放点にすることで、保持区間をフィット波形へ混ぜない。
+        last_plateau_index = first_peak
+        index = first_peak
+        while index <= zero_crossing:
+            if abs(centered_deg[index]) >= release_threshold:
+                last_plateau_index = index
+            index += 1
+        release_index = min(last_plateau_index + 1, zero_crossing)
+
+        next_candidate_start = len(time_s) - 1
+        if group_number + 1 < len(peak_groups):
+            next_candidate_start = peak_groups[group_number + 1][0]
+
+        minimum_end_time = time_s[release_index] + settings["minimum_decay_time_s"]
+        maximum_end_time = time_s[release_index] + settings["maximum_decay_time_s"]
+        end_index = min(next_candidate_start - 1, len(time_s) - 1)
+        settled = False
+        index = release_index
+        while index < end_index:
+            if time_s[index] < minimum_end_time:
+                index += 1
+                continue
+            if time_s[index] > maximum_end_time:
+                end_index = index
+                break
+            window_end = index + settle_count
+            if window_end >= end_index:
+                break
+            window = smooth_deg[index:window_end]
+            window_center = float(np.mean(window))
+            window_std = float(np.std(window))
+            if abs(window_center - baseline_deg) <= settings["settle_center_max_deg"]:
+                if window_std <= settings["settle_std_max_deg"]:
+                    end_index = index
+                    settled = True
+                    break
+            index += 1
+
+        if end_index <= release_index:
+            group_number += 1
+            continue
+
+        direction = "P"
+        positive_count += 1
+        repetition = positive_count
+        if centered_deg[release_index] < 0.0:
+            direction = "N"
+            positive_count -= 1
+            negative_count += 1
+            repetition = negative_count
+
+        segment_values = centered_deg[release_index : end_index + 1]
+        segment_time = time_s[release_index : end_index + 1]
+        segment_abs = np.abs(segment_values)
+        local_peaks, unused_local_properties = find_peaks(
+            segment_abs,
+            distance=peak_distance,
+            prominence=settings["quality_peak_prominence_deg"],
+        )
+
+        growth_count = 0
+        local_number = 1
+        while local_number < len(local_peaks):
+            previous_value = segment_abs[local_peaks[local_number - 1]]
+            current_value = segment_abs[local_peaks[local_number]]
+            growth_limit = max(
+                settings["quality_growth_min_deg"],
+                settings["quality_growth_ratio"] * previous_value,
+            )
+            if current_value - previous_value > growth_limit:
+                growth_count += 1
+            local_number += 1
+
+        maximum_jump = 0.0
+        if len(segment_values) >= 2:
+            maximum_jump = float(np.max(np.abs(np.diff(segment_values))))
+
+        quality_reasons = []
+        if not settled:
+            quality_reasons.append("静止終了を自動検出できない")
+        if growth_count > 0:
+            quality_reasons.append("減衰途中で振幅が再増加")
+        if float(np.max(segment_abs)) > settings["quality_max_angle_deg"]:
+            quality_reasons.append("角度が品質上限を超過")
+        if maximum_jump > settings["quality_max_jump_deg"]:
+            quality_reasons.append("隣接サンプルの角度跳躍が大きい")
+
+        suggested_use = 1
+        if len(quality_reasons) > 0:
+            suggested_use = 0
+
+        candidates.append(
+            {
+                "start_index": int(release_index),
+                "end_index": int(end_index),
+                "direction": direction,
+                "repetition": int(repetition),
+                "start_time_s": float(time_s[release_index]),
+                "end_time_s": float(time_s[end_index]),
+                "duration_s": float(segment_time[-1] - segment_time[0]),
+                "initial_angle_deg": float(centered_deg[release_index]),
+                "baseline_deg": baseline_deg,
+                "maximum_abs_angle_deg": float(np.max(segment_abs)),
+                "maximum_sample_jump_deg": maximum_jump,
+                "amplitude_growth_count": int(growth_count),
+                "settled_automatically": int(settled),
+                "suggested_use": suggested_use,
+                "quality_note": " / ".join(quality_reasons),
+            }
+        )
+        group_number += 1
+
+    return candidates
 
 
 def simulate_normalized_decay(time_s, parameters, epsilon_rad_s):

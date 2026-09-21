@@ -14,6 +14,7 @@ sys.path.insert(0, str(MODULE_DIRECTORY))
 
 from fitting_tools import estimate_force_eso
 from fitting_tools import estimate_force_rts
+from fitting_tools import detect_free_decay_candidates
 from fitting_tools import fit_one_decay
 from fitting_tools import identify_base_inertia_and_restoring
 from fitting_tools import read_angle_log
@@ -36,6 +37,26 @@ class FittingToolsTest(unittest.TestCase):
             "settle_duration_s": 3.0,
             "settle_center_max_deg": 3.0,
             "settle_std_max_deg": 0.25,
+        }
+        self.candidate_settings = {
+            "smooth_time_s": 0.05,
+            "baseline_time_s": 3.0,
+            "candidate_peak_min_deg": 35.0,
+            "candidate_peak_prominence_deg": 0.5,
+            "candidate_gap_s": 8.0,
+            "peak_distance_s": 0.15,
+            "zero_crossing_search_s": 5.0,
+            "release_drop_deg": 0.7,
+            "minimum_decay_time_s": 3.0,
+            "maximum_decay_time_s": 30.0,
+            "settle_duration_s": 2.0,
+            "settle_center_max_deg": 3.0,
+            "settle_std_max_deg": 0.35,
+            "quality_peak_prominence_deg": 0.2,
+            "quality_growth_min_deg": 3.0,
+            "quality_growth_ratio": 0.12,
+            "quality_max_angle_deg": 75.0,
+            "quality_max_jump_deg": 10.0,
         }
 
     def test_logger_decoder_csv_is_read_and_wrapped(self):
@@ -83,6 +104,28 @@ class FittingToolsTest(unittest.TestCase):
         self.assertEqual(len(segments), 2)
         self.assertEqual(segments[0]["direction"], "P45")
         self.assertEqual(segments[1]["direction"], "N45")
+
+    def test_continuous_retry_is_split_into_separate_candidates(self):
+        """異常試行の直後に再試験しても、二つの候補として残す。"""
+
+        dt = 0.01
+        short_time = np.arange(0.0, 2.0, dt)
+        long_time = np.arange(0.0, 10.0, dt)
+        rest_time = np.arange(0.0, 4.0, dt)
+        parameters = np.array(
+            [5.6, 0.16, 0.03, 0.10, 0.0, np.deg2rad(60.0), 0.0]
+        )
+        first = simulate_normalized_decay(short_time, parameters, np.deg2rad(0.5))
+        second = simulate_normalized_decay(long_time, parameters, np.deg2rad(0.5))
+        angle = np.concatenate([first, second, np.zeros(len(rest_time))])
+        time_s = np.arange(len(angle), dtype=float) * dt
+
+        candidates = detect_free_decay_candidates(
+            time_s, angle, self.candidate_settings
+        )
+        self.assertEqual(len(candidates), 2)
+        self.assertEqual(candidates[0]["suggested_use"], 0)
+        self.assertEqual(candidates[1]["suggested_use"], 1)
 
     def test_waveform_fit_reproduces_synthetic_decay(self):
         time_s = np.arange(0.0, 10.0, 0.02)

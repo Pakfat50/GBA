@@ -1,0 +1,13 @@
+data_file,axis,angle_column,configuration,spacer_count,component_mass_kg,signed_com_radius_m,component_centroid_inertia_kg_m2,force_lever_m,use_for_calibration,valid,notes
+Raw/球/LOG00012_ANGLE.csv,IN,angle0[deg],BALL,0,0.0039,,,,0,1,球あり・連続ログ前半
+Raw/球/LOG00012_ANGLE.csv,OUT,angle1[deg],BALL,0,0.0039,,,,0,1,球あり・連続ログ後半
+Raw/球なし/LOG00013_ANGLE.csv,IN,angle0[deg],SP00,0,0,0,0,,1,1,球なし・スペーサなし・連続ログ前半
+Raw/球なし/LOG00013_ANGLE.csv,OUT,angle1[deg],SP00,0,0,0,0,,1,1,球なし・スペーサなし・連続ログ後半
+Raw/1/LOG00014_ANGLE.csv,IN,angle0[deg],SP01,1,0.0012,,,,1,1,スペーサ1個・連続ログ前半
+Raw/1/LOG00014_ANGLE.csv,OUT,angle1[deg],SP01,1,0.0012,,,,1,1,スペーサ1個・連続ログ後半
+Raw/2/LOG00015_ANGLE.csv,IN,angle0[deg],SP02,2,0.0024,,,,1,1,スペーサ2個・連続ログ前半
+Raw/2/LOG00015_ANGLE.csv,OUT,angle1[deg],SP02,2,0.0024,,,,1,1,スペーサ2個・連続ログ後半
+Raw/3/LOG00016_ANGLE.csv,IN,angle0[deg],SP03,3,,,,,1,1,スペーサ3個・合計質量は計測表に記録なし
+Raw/3/LOG00016_ANGLE.csv,OUT,angle1[deg],SP03,3,,,,,1,1,スペーサ3個・合計質量は計測表に記録なし
+Raw/4/LOG00017_ANGLE.csv,IN,angle0[deg],SP04,4,0.0048,,,,1,1,スペーサ4個・連続ログ前半
+Raw/4/LOG00017_ANGLE.csv,OUT,angle1[deg],SP04,4,0.0048,,,,1,1,スペーサ4個・連続ログ後半
