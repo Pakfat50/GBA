@@ -1,0 +1,7 @@
+data_file,axis,angle_column,configuration,spacer_count,component_mass_kg,signed_com_radius_m,component_centroid_inertia_kg_m2,force_lever_m,use_for_calibration,valid,notes
+LOG00012_ANGLE.csv,IN->OUT,angle0->angle1[deg],BALL,0,,,,,1,1,
+LOG00013_ANGLE.csv,IN->OUT,angle0->angle1[deg],SP00,0,,,,,1,1,
+LOG00014_ANGLE.csv,IN->OUT,angle0->angle1[deg],SP01,1,,,,,1,1,
+LOG00015_ANGLE.csv,IN->OUT,angle0->angle1[deg],SP02,2,,,,,1,1,
+LOG00016_ANGLE.csv,IN->OUT,angle0->angle1[deg],SP03,3,,,,,1,1,
+LOG00017_ANGLE.csv,IN->OUT,angle0->angle1[deg],SP04,4,,,,,1,1,
