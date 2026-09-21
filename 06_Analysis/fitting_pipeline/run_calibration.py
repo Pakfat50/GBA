@@ -27,6 +27,7 @@ from fitting_tools import ensure_directory
 from fitting_tools import estimate_force_eso
 from fitting_tools import estimate_force_rts
 from fitting_tools import fit_one_decay
+from fitting_tools import fit_quality_statistics
 from fitting_tools import identify_base_inertia_and_restoring
 from fitting_tools import read_angle_log
 from fitting_tools import resample_uniform
@@ -41,6 +42,7 @@ from fitting_tools import split_free_decay
 
 # 作成するグラフを True / False で選ぶ。
 PLOT_WAVEFORM_FITS = True
+PLOT_CALIBRATION_FIT = True
 PLOT_FREE_DECAY_FORCE = True
 PLOT_SIMULATED_WIND_FORCE = True
 
@@ -462,6 +464,8 @@ def analyze_all_files(date_directory, manifest, result_directory):
                 "initial_angle_deg",
                 "initial_speed_rad_s",
                 "rmse_deg",
+                "r_value",
+                "r_squared",
                 "success",
                 "message",
             ]:
@@ -477,6 +481,9 @@ def analyze_all_files(date_directory, manifest, result_directory):
                 "time_s": segment_time - segment_time[0],
                 "angle_rad": segment_angle,
                 "fit_rad": fit["prediction_rad"],
+                "rmse_deg": fit["rmse_deg"],
+                "r_value": fit["r_value"],
+                "r_squared": fit["r_squared"],
             }
             waveform_records.append(record)
 
@@ -559,6 +566,8 @@ def analyze_selected_waveforms(date_directory, selection, result_directory):
             "initial_angle_deg",
             "initial_speed_rad_s",
             "rmse_deg",
+            "r_value",
+            "r_squared",
             "success",
             "message",
         ]:
@@ -576,6 +585,8 @@ def analyze_selected_waveforms(date_directory, selection, result_directory):
                 "angle_rad": segment_angle,
                 "fit_rad": fit["prediction_rad"],
                 "rmse_deg": fit["rmse_deg"],
+                "r_value": fit["r_value"],
+                "r_squared": fit["r_squared"],
             }
         )
 
@@ -642,12 +653,24 @@ def identify_physical_parameters(manifest, fit_rows, result_directory):
         base_inertia, base_restoring, checked_rows = identify_base_inertia_and_restoring(
             calibration_rows
         )
+        measured_q = np.asarray(
+            [row["k_over_i_mean"] for row in checked_rows], dtype=float
+        )
+        predicted_q = np.asarray(
+            [row["k_over_i_predicted"] for row in checked_rows], dtype=float
+        )
+        calibration_rmse, calibration_r, calibration_r_squared = (
+            fit_quality_statistics(measured_q, predicted_q)
+        )
         base_rows.append(
             {
                 "axis": axis,
                 "base_inertia_kg_m2": base_inertia,
                 "base_restoring_n_m_per_rad": base_restoring,
                 "calibration_levels": len(calibration_rows),
+                "calibration_rmse_per_s2": calibration_rmse,
+                "calibration_r": calibration_r,
+                "calibration_r_squared": calibration_r_squared,
             }
         )
 
@@ -704,6 +727,79 @@ def identify_physical_parameters(manifest, fit_rows, result_directory):
     return base_rows, parameter_rows, product_parameters
 
 
+def plot_calibration_fit(level_rows, base_rows, output_path):
+    """スペーサ較正の実測値、最小二乗予測、残差と適合度を描く。"""
+
+    level_table = pd.DataFrame(level_rows)
+    base_table = pd.DataFrame(base_rows)
+    axes = sorted(base_table["axis"].tolist())
+    figure, plot_axes = plt.subplots(
+        2, len(axes), figsize=(7.0 * len(axes), 8.0), squeeze=False
+    )
+
+    for axis_number, axis in enumerate(axes):
+        levels = level_table[
+            (level_table["axis"] == axis)
+            & (level_table["use_for_calibration"] == 1)
+        ].copy()
+        levels = levels.sort_values("spacer_count")
+        base = base_table[base_table["axis"] == axis].iloc[0]
+        spacer_count = levels["spacer_count"].to_numpy(dtype=float)
+        measured = levels["k_over_i_mean"].to_numpy(dtype=float)
+        predicted = levels["k_over_i_predicted"].to_numpy(dtype=float)
+        uncertainty = levels["k_over_i_uncertainty"].to_numpy(dtype=float)
+        residual = predicted - measured
+
+        fit_axis = plot_axes[0, axis_number]
+        fit_axis.errorbar(
+            spacer_count,
+            measured,
+            yerr=uncertainty,
+            fmt="o",
+            capsize=4,
+            color="#1f77b4",
+            label="Measured mean ± uncertainty",
+        )
+        fit_axis.plot(
+            spacer_count,
+            predicted,
+            "--o",
+            color="#d62728",
+            label="Least-squares prediction",
+        )
+        annotation = "I0=" + format(base["base_inertia_kg_m2"], ".6e") + " kg m²"
+        annotation += "\nK0=" + format(base["base_restoring_n_m_per_rad"], ".6e") + " N m/rad"
+        annotation += "\nR=" + format(base["calibration_r"], ".6f")
+        annotation += "   R²=" + format(base["calibration_r_squared"], ".6f")
+        annotation += "\nRMSE=" + format(base["calibration_rmse_per_s2"], ".4f") + " s⁻²"
+        fit_axis.text(
+            0.98,
+            0.97,
+            annotation,
+            transform=fit_axis.transAxes,
+            ha="right",
+            va="top",
+            bbox={"facecolor": "white", "alpha": 0.9, "edgecolor": "#bbbbbb"},
+        )
+        fit_axis.set_title(axis + " axis calibration")
+        fit_axis.set_ylabel("K/I [s⁻²]")
+        fit_axis.grid(alpha=0.25)
+        fit_axis.legend()
+
+        residual_axis = plot_axes[1, axis_number]
+        residual_axis.axhline(0.0, color="black", lw=0.8)
+        residual_axis.bar(spacer_count, residual, color="#7f7f7f", width=0.55)
+        residual_axis.set_xlabel("Spacer count")
+        residual_axis.set_ylabel("Predicted - measured [s⁻²]")
+        residual_axis.set_xticks(spacer_count)
+        residual_axis.grid(axis="y", alpha=0.25)
+
+    figure.suptitle("Base inertia and restoring coefficient calibration")
+    figure.tight_layout(rect=(0.0, 0.0, 1.0, 0.97))
+    figure.savefig(output_path, dpi=180)
+    plt.close(figure)
+
+
 def draw_waveform_fit(plot_axis, record, show_legend):
     """一つの実測波形とフィット波形を同じ領域へ描く。"""
 
@@ -723,6 +819,8 @@ def draw_waveform_fit(plot_axis, record, show_legend):
         label="Fitted model",
     )
     title = record["segment_id"] + "  RMSE=" + format(record["rmse_deg"], ".3f") + " deg"
+    title += "  R=" + format(record["r_value"], ".5f")
+    title += "  R²=" + format(record["r_squared"], ".5f")
     plot_axis.set_title(title, fontsize=9)
     plot_axis.set_xlabel("Time from release [s]")
     plot_axis.set_ylabel("Angle [deg]")
@@ -999,6 +1097,7 @@ def save_provenance(date_directory, manifest, manifest_path, result_directory, p
         "input_files": input_files,
         "plot_switches": {
             "waveform_fits": PLOT_WAVEFORM_FITS,
+            "calibration_fit": PLOT_CALIBRATION_FIT,
             "free_decay_force": PLOT_FREE_DECAY_FORCE,
             "simulated_wind_force": PLOT_SIMULATED_WIND_FORCE,
             "eso": PLOT_ESO_ESTIMATE,
@@ -1052,9 +1151,17 @@ def main():
         segment_rows, fit_rows, waveform_records = analyze_selected_waveforms(
             date_directory, selection, result_directory
         )
-    unused_base, unused_parameters, product_parameters = identify_physical_parameters(
+    base_rows, unused_parameters, product_parameters = identify_physical_parameters(
         manifest, fit_rows, result_directory
     )
+
+    if PLOT_CALIBRATION_FIT:
+        calibration_levels = pd.read_csv(result_directory / "calibration_levels.csv")
+        plot_calibration_fit(
+            calibration_levels.to_dict(orient="records"),
+            base_rows,
+            result_directory / "calibration_fit.png",
+        )
 
     if PLOT_WAVEFORM_FITS:
         plot_waveform_fits(waveform_records, result_directory)

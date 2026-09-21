@@ -100,6 +100,7 @@ python 06_Analysis/fitting_pipeline/run_calibration.py --date 20990101
 `run_calibration.py` 冒頭の次の値を `True` / `False` で切り替える。
 
 - `PLOT_WAVEFORM_FITS`
+- `PLOT_CALIBRATION_FIT`
 - `PLOT_FREE_DECAY_FORCE`
 - `PLOT_SIMULATED_WIND_FORCE`
 - `PLOT_ESO_ESTIMATE`
@@ -152,11 +153,12 @@ I\ddot\theta+b\dot\theta+K\sin\theta+c|\dot\theta|\dot\theta
 | ファイル | 内容 |
 |---|---|
 | `segments.csv` | 自動分割範囲と有効判定 |
-| `segment_fits.csv` | 波形ごとのフィッティング結果 |
-| `waveform_fits_all.png` | 全採用波形の実測値と破線フィットの一覧 |
+| `segment_fits.csv` | 波形ごとのフィッティング結果（RMSE、R、R²を含む） |
+| `waveform_fits_all.png` | 全採用波形の実測値と破線フィット、RMSE、R、R²の一覧 |
 | `waveform_fits_individual.zip` | 波形ごとの実測値・フィット図 |
 | `calibration_levels.csv` | スペーサ条件ごとの集計値 |
-| `base_parameters.csv` | ダミーウェイトなしの `I`, `K` |
+| `base_parameters.csv` | ダミーウェイトなしの `I`, `K` と較正RMSE、R、R² |
+| `calibration_fit.png` | `I`, `K` の最小二乗較正曲線、残差、R、R² |
 | `identified_parameters.csv` | 各形態の `I`, `b`, `K`, `c`, `tau_f` |
 | `free_decay_force.csv` | 自由減衰の真値0 NとESO・RTS推定値 |
 | `simulated_wind_force.csv` | 想定風外力の真値とESO・RTS推定値 |

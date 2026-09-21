@@ -16,6 +16,7 @@ from fitting_tools import estimate_force_eso
 from fitting_tools import estimate_force_rts
 from fitting_tools import detect_free_decay_candidates
 from fitting_tools import fit_one_decay
+from fitting_tools import fit_quality_statistics
 from fitting_tools import identify_base_inertia_and_restoring
 from fitting_tools import read_angle_log
 from fitting_tools import simulate_forced_motion
@@ -162,7 +163,17 @@ class FittingToolsTest(unittest.TestCase):
         fit = fit_one_decay(time_s, angle, np.deg2rad(0.5), 15.0, 140)
         self.assertEqual(fit["success"], 1)
         self.assertLess(fit["rmse_deg"], 0.15)
+        self.assertGreater(fit["r_value"], 0.999)
+        self.assertGreater(fit["r_squared"], 0.999)
         self.assertAlmostEqual(fit["k_over_i_per_s2"], truth[0], delta=0.3)
+
+    def test_fit_quality_statistics_reports_r_and_r_squared(self):
+        measured = np.array([1.0, 2.0, 3.0, 4.0])
+        predicted = np.array([1.1, 1.9, 3.2, 3.8])
+        rmse, r_value, r_squared = fit_quality_statistics(measured, predicted)
+        self.assertAlmostEqual(rmse, np.sqrt(0.025), places=12)
+        self.assertGreater(r_value, 0.99)
+        self.assertAlmostEqual(r_squared, 0.98, places=12)
 
     def test_multiple_levels_identify_absolute_i_and_k(self):
         base_inertia = 0.00050

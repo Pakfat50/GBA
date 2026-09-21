@@ -473,6 +473,34 @@ def simulate_normalized_decay(time_s, parameters, epsilon_rad_s):
     return solution.y[0] + offset
 
 
+def fit_quality_statistics(measured, predicted):
+    """実測値と予測値のRMSE、相関係数R、決定係数R^2を返す。"""
+
+    measured = np.asarray(measured, dtype=float)
+    predicted = np.asarray(predicted, dtype=float)
+    if measured.shape != predicted.shape:
+        raise ValueError("実測値と予測値の配列形状が一致しません")
+    if measured.size == 0:
+        raise ValueError("適合度を計算するデータがありません")
+
+    residual = predicted - measured
+    rmse = float(np.sqrt(np.mean(residual * residual)))
+    measured_centered = measured - float(np.mean(measured))
+    predicted_centered = predicted - float(np.mean(predicted))
+    measured_sum_square = float(np.sum(measured_centered * measured_centered))
+    predicted_sum_square = float(np.sum(predicted_centered * predicted_centered))
+
+    r_value = float("nan")
+    if measured_sum_square > 0.0 and predicted_sum_square > 0.0:
+        numerator = float(np.sum(measured_centered * predicted_centered))
+        r_value = numerator / np.sqrt(measured_sum_square * predicted_sum_square)
+
+    r_squared = float("nan")
+    if measured_sum_square > 0.0:
+        r_squared = 1.0 - float(np.sum(residual * residual)) / measured_sum_square
+    return rmse, r_value, r_squared
+
+
 def estimate_initial_frequency(time_s, angle_rad):
     """ゼロ交差から初期固有角周波数を概算する。"""
 
@@ -618,6 +646,9 @@ def fit_one_decay(time_s, angle_rad, epsilon_rad_s, target_rate_hz, max_nfev):
                 error_deg = retry_error
                 rmse_deg = retry_rmse
 
+    unused_rmse_rad, r_value, r_squared = fit_quality_statistics(
+        angle_rad, prediction
+    )
     output = {
         "k_over_i_per_s2": float(result.x[0]),
         "b_over_i_per_s": float(result.x[1]),
@@ -627,6 +658,8 @@ def fit_one_decay(time_s, angle_rad, epsilon_rad_s, target_rate_hz, max_nfev):
         "initial_angle_deg": float(np.rad2deg(result.x[5])),
         "initial_speed_rad_s": float(result.x[6]),
         "rmse_deg": rmse_deg,
+        "r_value": r_value,
+        "r_squared": r_squared,
         "success": int(result.success),
         "message": str(result.message),
         "parameters": result.x,

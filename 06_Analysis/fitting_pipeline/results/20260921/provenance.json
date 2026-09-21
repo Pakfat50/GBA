@@ -1,7 +1,7 @@
 {
   "input_directory": "04_Data/05_Fitting/20260921",
   "manifest": "04_Data/05_Fitting/20260921/test_manifest.csv",
-  "manifest_sha256": "c3e43393fd68e6228aaa00cf1fe259795a0acd7802dcf2ea8c4640331dcae729",
+  "manifest_sha256": "d22a0311887fec83a499a1eb9908359328cff3f2212b02b2eec5084a533071d7",
   "input_files": [
     {
       "path": "04_Data/05_Fitting/20260921/Raw/球/LOG00012_ANGLE.csv",
@@ -54,6 +54,7 @@
   ],
   "plot_switches": {
     "waveform_fits": true,
+    "calibration_fit": true,
     "free_decay_force": true,
     "simulated_wind_force": true,
     "eso": true,
