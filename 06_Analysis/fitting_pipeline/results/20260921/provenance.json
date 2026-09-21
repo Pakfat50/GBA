@@ -1,0 +1,133 @@
+{
+  "input_directory": "04_Data/05_Fitting/20260921",
+  "manifest": "04_Data/05_Fitting/20260921/test_manifest.csv",
+  "manifest_sha256": "c3e43393fd68e6228aaa00cf1fe259795a0acd7802dcf2ea8c4640331dcae729",
+  "input_files": [
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/球/LOG00012_ANGLE.csv",
+      "sha256": "b7c96384ad995ae49de8700935fd21a891204c38ee2d39f18890595de6dbbaa5"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/球/LOG00012_ANGLE.csv",
+      "sha256": "b7c96384ad995ae49de8700935fd21a891204c38ee2d39f18890595de6dbbaa5"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/球なし/LOG00013_ANGLE.csv",
+      "sha256": "f88a505225b32fb34c069fd5886d610aabe4bfe7ae28ed80dbe0c0dd275ae72a"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/球なし/LOG00013_ANGLE.csv",
+      "sha256": "f88a505225b32fb34c069fd5886d610aabe4bfe7ae28ed80dbe0c0dd275ae72a"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/1/LOG00014_ANGLE.csv",
+      "sha256": "5fe004852f2ed08a6c770d09b597b5ea1e1f2b850efeff7c3f1a715c40edc2a8"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/1/LOG00014_ANGLE.csv",
+      "sha256": "5fe004852f2ed08a6c770d09b597b5ea1e1f2b850efeff7c3f1a715c40edc2a8"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/2/LOG00015_ANGLE.csv",
+      "sha256": "fbca1b4d0a5e290658c6455ccfa1d53cb2878c654e6ef8a62d1e7a340563042d"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/2/LOG00015_ANGLE.csv",
+      "sha256": "fbca1b4d0a5e290658c6455ccfa1d53cb2878c654e6ef8a62d1e7a340563042d"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/3/LOG00016_ANGLE.csv",
+      "sha256": "742103863dcb64555a5e9b7cd9b2031f3fa3216f7d7be459ea8c83f55d1e1a9d"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/3/LOG00016_ANGLE.csv",
+      "sha256": "742103863dcb64555a5e9b7cd9b2031f3fa3216f7d7be459ea8c83f55d1e1a9d"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/4/LOG00017_ANGLE.csv",
+      "sha256": "a2abe8b4049065c67a4cf66a3b736a8c63329dc7ac2a51fea78c717c66a24fae"
+    },
+    {
+      "path": "04_Data/05_Fitting/20260921/Raw/4/LOG00017_ANGLE.csv",
+      "sha256": "a2abe8b4049065c67a4cf66a3b736a8c63329dc7ac2a51fea78c717c66a24fae"
+    }
+  ],
+  "plot_switches": {
+    "waveform_fits": true,
+    "free_decay_force": true,
+    "simulated_wind_force": true,
+    "eso": true,
+    "rts": true,
+    "free_decay_plot_warmup_s": 1.0
+  },
+  "segment_settings": {
+    "smooth_time_s": 0.15,
+    "start_angle_min_deg": 35.0,
+    "hold_duration_s": 1.5,
+    "hold_std_max_deg": 0.35,
+    "hold_speed_max_deg_s": 3.0,
+    "release_drop_deg": 0.7,
+    "minimum_decay_time_s": 5.0,
+    "maximum_decay_time_s": 90.0,
+    "settle_duration_s": 5.0,
+    "settle_center_max_deg": 3.0,
+    "settle_std_max_deg": 0.25
+  },
+  "estimator_settings": {
+    "eso_pole_hz": 45.0,
+    "free_decay_rts_force_random_walk_n_per_sample": 1e-07,
+    "wind_rts_force_random_walk_n_per_sample": 30.0,
+    "angle_noise_deg": 0.02,
+    "epsilon_deg_s": 0.5
+  },
+  "wind_settings": {
+    "sample_rate_hz": 100.0,
+    "duration_s": 180.0,
+    "mean_speed_m_s": 3.75,
+    "maximum_speed_m_s": 6.0,
+    "turbulence_intensity": 0.2,
+    "integral_scale_m": 11.34,
+    "air_density_kg_m3": 1.225,
+    "drag_coefficient": 0.55,
+    "projected_area_m2": 0.007853981633974483,
+    "seed": 20260915,
+    "evaluation_start_s": 30.0,
+    "evaluation_end_s": 150.0
+  },
+  "identified_product_parameters": {
+    "IN": {
+      "axis": "IN",
+      "configuration": "BALL",
+      "inertia_kg_m2": 0.00039009374168243855,
+      "geometric_inertia_kg_m2": 0.00036826020127184736,
+      "restoring_n_m_per_rad": 0.015870862528513753,
+      "damping_n_m_s_per_rad": 1.1608690238815851e-08,
+      "quadratic_n_m_s2_per_rad2": 1.414973012509791e-05,
+      "friction_n_m": 9.721995290063296e-05,
+      "force_lever_m": 0.174,
+      "k_over_i_per_s2": 40.68474018594653,
+      "b_over_i_per_s": 2.9758719503544552e-05,
+      "c_over_i_per_rad": 0.036272640683932586,
+      "tau_over_i_rad_s2": 0.2492220266885908,
+      "segments": 6,
+      "epsilon_rad_s": 0.008726646259971648
+    },
+    "OUT": {
+      "axis": "OUT",
+      "configuration": "BALL",
+      "inertia_kg_m2": 0.0003904169798440308,
+      "geometric_inertia_kg_m2": 0.0003691894426839278,
+      "restoring_n_m_per_rad": 0.014998206872469552,
+      "damping_n_m_s_per_rad": 3.4481276158562595e-05,
+      "quadratic_n_m_s2_per_rad2": 1.2703620935201418e-05,
+      "friction_n_m": 0.00011119941677934852,
+      "force_lever_m": 0.174,
+      "k_over_i_per_s2": 38.41586725675006,
+      "b_over_i_per_s": 0.08831909967731848,
+      "c_over_i_per_rad": 0.03253859742544096,
+      "tau_over_i_rad_s2": 0.284822183768165,
+      "segments": 6,
+      "epsilon_rad_s": 0.008726646259971648
+    }
+  }
+}

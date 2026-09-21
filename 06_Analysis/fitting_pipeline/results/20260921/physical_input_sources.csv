@@ -1,0 +1,13 @@
+data_file,axis,configuration,component_mass_kg,signed_com_radius_m,component_centroid_inertia_kg_m2,force_lever_m,source_or_assumption
+Raw/球/LOG00012_ANGLE.csv,IN,BALL,0.0039,-0.174,3.9e-06,0.174,錘計測結果.xlsx（3.9 g）と球表面224 mm・直径100 mm
+Raw/球/LOG00012_ANGLE.csv,OUT,BALL,0.0039,-0.174,3.9e-06,0.174,錘計測結果.xlsx（3.9 g）と球表面224 mm・直径100 mm
+Raw/球なし/LOG00013_ANGLE.csv,IN,SP00,0.0,0.0,0.0,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
+Raw/球なし/LOG00013_ANGLE.csv,OUT,SP00,0.0,0.0,0.0,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
+Raw/1/LOG00014_ANGLE.csv,IN,SP01,0.00118,-0.2215,9.249970833333335e-09,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
+Raw/1/LOG00014_ANGLE.csv,OUT,SP01,0.00118,-0.2215,9.249970833333335e-09,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
+Raw/2/LOG00015_ANGLE.csv,IN,SP02,0.00236,-0.219,3.32499416666667e-08,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
+Raw/2/LOG00015_ANGLE.csv,OUT,SP02,0.00236,-0.219,3.32499416666667e-08,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
+Raw/3/LOG00016_ANGLE.csv,IN,SP03,0.00354,-0.2165,8.67499124999998e-08,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
+Raw/3/LOG00016_ANGLE.csv,OUT,SP03,0.00354,-0.2165,8.67499124999998e-08,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
+Raw/4/LOG00017_ANGLE.csv,IN,SP04,0.00472,-0.214,1.8449988333333297e-07,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
+Raw/4/LOG00017_ANGLE.csv,OUT,SP04,0.00472,-0.214,1.8449988333333297e-07,0.174,錘計測結果.xlsx（1個1.18 g）とロッド端面側端点5 mm刻み
