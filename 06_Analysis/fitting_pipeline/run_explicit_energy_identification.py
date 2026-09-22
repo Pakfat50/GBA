@@ -494,6 +494,90 @@ def validate_waveforms(records, physical, coefficients, previous_fit_path):
     return metrics, plot_records
 
 
+def validate_previous_representative_waveforms(
+    records,
+    representative_parameter_path,
+    individual_fit_path,
+):
+    """従来法の形態別代表係数を固定し、今回と同じ条件で全波形を再計算する。
+
+    従来のwaveform_fits_all.pngは波形ごとの係数と初期条件を使っていたため、
+    代表係数による今回の検証と直接比較できない。この関数では従来法で集約した
+    axis×configurationのidentified_parameters.csvだけを物理係数として使う。
+    """
+
+    parameter_table = pd.read_csv(
+        representative_parameter_path, encoding="utf-8-sig"
+    ).set_index(["axis", "configuration"])
+    individual = pd.read_csv(
+        individual_fit_path, encoding="utf-8-sig"
+    ).set_index("segment_id")
+    minimum_amplitude = np.deg2rad(MINIMUM_ENERGY_AMPLITUDE_DEG)
+    epsilon = np.deg2rad(FRICTION_EPSILON_DEG_S)
+    metrics = []
+    plot_records = []
+
+    for record in records:
+        key = (record["axis"], record["configuration"])
+        if key not in parameter_table.index:
+            raise KeyError("従来法の代表係数がありません: " + str(key))
+        values = parameter_table.loc[key]
+        turning = record["turning"]
+        valid_turning = np.flatnonzero(turning["amplitude_rad"] >= minimum_amplitude)
+        if len(valid_turning) < 3:
+            continue
+        first_turning = valid_turning[0]
+        last_turning = valid_turning[-1]
+        start_index = int(turning["indices"][first_turning])
+        end_index = int(turning["indices"][last_turning]) + 1
+        time_s = record["time_s"][start_index:end_index]
+        relative_time = time_s - time_s[0]
+        measured = record["angle_rad"][start_index:end_index] - record["center_rad"]
+        initial_angle = (
+            turning["smoothed_angle_rad"][start_index] - record["center_rad"]
+        )
+        parameters = np.asarray(
+            [
+                float(values["k_over_i_per_s2"]),
+                float(values["b_over_i_per_s"]),
+                float(values["c_over_i_per_rad"]),
+                float(values["tau_over_i_rad_s2"]),
+                0.0,
+                initial_angle,
+                0.0,
+            ]
+        )
+        predicted = simulate_normalized_decay(relative_time, parameters, epsilon)
+        rmse_rad, correlation, r_squared = fit_quality_statistics(measured, predicted)
+        individual_rmse = float(
+            individual.loc[record["segment_id"], "rmse_deg"]
+        )
+        metrics.append(
+            {
+                "segment_id": record["segment_id"],
+                "axis": record["axis"],
+                "configuration": record["configuration"],
+                "direction": record["direction"],
+                "samples": len(measured),
+                "representative_waveform_rmse_deg": float(np.rad2deg(rmse_rad)),
+                "representative_waveform_r": correlation,
+                "representative_waveform_r_squared": r_squared,
+                "individual_waveform_fit_rmse_deg": individual_rmse,
+            }
+        )
+        plot_records.append(
+            {
+                "segment_id": record["segment_id"],
+                "time_s": relative_time,
+                "measured_rad": measured,
+                "predicted_rad": predicted,
+                "rmse_deg": float(np.rad2deg(rmse_rad)),
+                "r_squared": r_squared,
+            }
+        )
+    return metrics, plot_records
+
+
 def plot_frequency_calibration(level_rows, base_rows, output_path):
     table = pd.DataFrame(level_rows)
     base = pd.DataFrame(base_rows).set_index("axis")
@@ -608,8 +692,10 @@ def write_report(
     diagnostics,
     metrics,
     direction_rows,
+    previous_representative_metrics,
 ):
     metric_table = pd.DataFrame(metrics)
+    previous_representative_table = pd.DataFrame(previous_representative_metrics)
     base_table = pd.DataFrame(base_rows).set_index("axis")
     parameter_table = pd.DataFrame(parameter_rows)
     direction_table = pd.DataFrame(direction_rows)
@@ -694,9 +780,18 @@ def write_report(
             f"{metric_table['previous_full_fit_rmse_deg'].mean():.3f} | "
             f"{metric_table['previous_full_fit_rmse_deg'].median():.3f} | "
             f"{metric_table['previous_full_fit_rmse_deg'].max():.3f} |",
+            f"| 従来法の形態別代表係数RMSE [deg] | "
+            f"{previous_representative_table['representative_waveform_rmse_deg'].mean():.3f} | "
+            f"{previous_representative_table['representative_waveform_rmse_deg'].median():.3f} | "
+            f"{previous_representative_table['representative_waveform_rmse_deg'].max():.3f} |",
             "",
             "陽な方法は1区間先の損失を直接説明するが、再帰包絡線と元波形では誤差が累積する。"
             "特に波形RMSEには減衰誤差だけでなく、共通K/Iと各試行固有周期の微小差による位相ずれも含まれる。",
+            "",
+            "従来の `waveform_fits_all.png` は各波形固有の7変数フィット結果であり、代表係数の"
+            "評価ではない。公平な比較のため、従来法のaxis×configuration代表係数を固定し、"
+            "今回と同じ中心角・最初の有効頂点・初速度0・評価範囲で再計算した。なお従来代表係数は"
+            "形態ごとにb、c、tauを持つため、形態間でも共有する今回の陽エネルギー法より自由度が高い。",
             "",
             "## 折り返し方向別の残差",
             "",
@@ -723,10 +818,12 @@ def write_report(
             "- [周期較正](frequency_calibration.png)",
             "- [頂点間エネルギー損失](energy_fit.png)",
             "- [全波形の固定係数再現](waveform_validation.png)",
+            "- [従来法の形態別代表係数による全波形再現](previous_representative_waveform_validation.png)",
             "- [波形別周期](frequency_segments.csv)",
             "- [頂点間損失](energy_intervals.csv)",
             "- [折り返し方向別残差](direction_residuals.csv)",
             "- [波形別評価値](waveform_metrics.csv)",
+            "- [従来法の代表係数による波形別評価値](previous_representative_waveform_metrics.csv)",
         ]
     )
     output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -790,6 +887,42 @@ def main():
         parent_result / "segment_fits.csv",
     )
     save_csv(output_directory / "waveform_metrics.csv", metrics)
+    previous_representative_metrics, previous_representative_plot_records = (
+        validate_previous_representative_waveforms(
+            records,
+            parent_result / "identified_parameters.csv",
+            parent_result / "segment_fits.csv",
+        )
+    )
+    save_csv(
+        output_directory / "previous_representative_waveform_metrics.csv",
+        previous_representative_metrics,
+    )
+    current_metric_table = pd.DataFrame(metrics)
+    previous_metric_table = pd.DataFrame(previous_representative_metrics)
+    save_csv(
+        output_directory / "representative_method_comparison.csv",
+        [
+            {
+                "method": "explicit_energy_representative",
+                "mean_rmse_deg": float(current_metric_table["waveform_rmse_deg"].mean()),
+                "median_rmse_deg": float(current_metric_table["waveform_rmse_deg"].median()),
+                "maximum_rmse_deg": float(current_metric_table["waveform_rmse_deg"].max()),
+            },
+            {
+                "method": "previous_representative_by_axis_configuration",
+                "mean_rmse_deg": float(previous_metric_table["representative_waveform_rmse_deg"].mean()),
+                "median_rmse_deg": float(previous_metric_table["representative_waveform_rmse_deg"].median()),
+                "maximum_rmse_deg": float(previous_metric_table["representative_waveform_rmse_deg"].max()),
+            },
+            {
+                "method": "previous_individual_waveform_fit",
+                "mean_rmse_deg": float(previous_metric_table["individual_waveform_fit_rmse_deg"].mean()),
+                "median_rmse_deg": float(previous_metric_table["individual_waveform_fit_rmse_deg"].median()),
+                "maximum_rmse_deg": float(previous_metric_table["individual_waveform_fit_rmse_deg"].max()),
+            },
+        ],
+    )
 
     print("4/4 図とレポートを作成")
     plot_frequency_calibration(
@@ -798,6 +931,10 @@ def main():
     plot_energy_fit(interval_rows, output_directory / "energy_fit.png")
     plot_waveform_overview(
         plot_records, output_directory / "waveform_validation.png"
+    )
+    plot_waveform_overview(
+        previous_representative_plot_records,
+        output_directory / "previous_representative_waveform_validation.png",
     )
     write_report(
         output_directory / "FITTING_REPORT.md",
@@ -808,6 +945,7 @@ def main():
         diagnostics,
         metrics,
         direction_rows,
+        previous_representative_metrics,
     )
     print("結果: " + str(output_directory))
 

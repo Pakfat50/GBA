@@ -96,6 +96,8 @@ python 06_Analysis/fitting_pipeline/run_explicit_energy_identification.py --date
 - `energy_intervals.csv`: 頂点間エネルギー損失の実測値、予測値、残差
 - `identified_parameters.csv`: 周期・陽エネルギー法による絶対係数
 - `waveform_metrics.csv`: 固定係数による元波形と頂点包絡線の偏差
+- `previous_representative_waveform_validation.png`: 従来法の形態別代表係数による全波形再現
+- `representative_method_comparison.csv`: 今回代表係数、従来代表係数、従来個別フィットの比較
 - `FITTING_REPORT.md`: 方法、係数、従来法との比較
 
 結果は `06_Analysis/fitting_pipeline/results/YYYYMMDD/` に保存する。

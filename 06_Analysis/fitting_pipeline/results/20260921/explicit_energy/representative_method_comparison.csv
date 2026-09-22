@@ -1,0 +1,4 @@
+method,mean_rmse_deg,median_rmse_deg,maximum_rmse_deg
+explicit_energy_representative,3.0672483174567198,2.8563826722023613,5.670548311796244
+previous_representative_by_axis_configuration,2.281748919096039,1.8431163688394039,5.654289377161422
+previous_individual_waveform_fit,0.817739815304186,0.8046050072503319,1.9068244752789176

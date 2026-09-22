@@ -50,8 +50,11 @@ R(A) = 2*A,  k = sin(A/2)
 | 波形RMSE [deg] | 3.067 | 2.856 | 5.671 |
 | 頂点包絡線RMSE [deg] | 2.332 | 2.078 | 5.877 |
 | 従来の波形別同時フィットRMSE [deg] | 0.818 | 0.805 | 1.907 |
+| 従来法の形態別代表係数RMSE [deg] | 2.282 | 1.843 | 5.654 |
 
 陽な方法は1区間先の損失を直接説明するが、再帰包絡線と元波形では誤差が累積する。特に波形RMSEには減衰誤差だけでなく、共通K/Iと各試行固有周期の微小差による位相ずれも含まれる。
+
+従来の `waveform_fits_all.png` は各波形固有の7変数フィット結果であり、代表係数の評価ではない。公平な比較のため、従来法のaxis×configuration代表係数を固定し、今回と同じ中心角・最初の有効頂点・初速度0・評価範囲で再計算した。なお従来代表係数は形態ごとにb、c、tauを持つため、形態間でも共有する今回の陽エネルギー法より自由度が高い。
 
 ## 折り返し方向別の残差
 
@@ -69,7 +72,9 @@ OUT軸では `+to-` と `-to+` の平均残差が反対符号となる。これ�
 - [周期較正](frequency_calibration.png)
 - [頂点間エネルギー損失](energy_fit.png)
 - [全波形の固定係数再現](waveform_validation.png)
+- [従来法の形態別代表係数による全波形再現](previous_representative_waveform_validation.png)
 - [波形別周期](frequency_segments.csv)
 - [頂点間損失](energy_intervals.csv)
 - [折り返し方向別残差](direction_residuals.csv)
 - [波形別評価値](waveform_metrics.csv)
+- [従来法の代表係数による波形別評価値](previous_representative_waveform_metrics.csv)
