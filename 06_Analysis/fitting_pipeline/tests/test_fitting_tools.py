@@ -23,6 +23,7 @@ from fitting_tools import fit_one_decay
 from fitting_tools import fit_quality_statistics
 from fitting_tools import identify_base_inertia_and_restoring
 from fitting_tools import identify_k_over_i_from_turning_points
+from fitting_tools import nonlinear_period_samples
 from fitting_tools import preprocess_free_decay
 from fitting_tools import read_angle_log
 from fitting_tools import refine_turning_point_quadratic
@@ -217,6 +218,18 @@ class FittingToolsTest(unittest.TestCase):
             turning["time_s"], turning["amplitude_rad"]
         )
         self.assertAlmostEqual(identified["k_over_i_per_s2"], truth[0], delta=0.15)
+
+    def test_nonlinear_period_sample_reports_finite_amplitude_correction(self):
+        time_s = np.arange(0.0, 10.0, 0.002)
+        truth = np.array([36.0, 0.0, 0.0, 0.0, 0.0, np.deg2rad(60.0), 0.0])
+        angle = simulate_normalized_decay(time_s, truth, np.deg2rad(0.5))
+        turning = extract_decay_turning_points(time_s, angle, 0.0)
+        samples = nonlinear_period_samples(
+            turning["time_s"], turning["amplitude_rad"], 5.0
+        )
+        self.assertGreater(len(samples), 2)
+        self.assertGreater(samples[0]["finite_amplitude_correction_ratio"], 1.1)
+        self.assertAlmostEqual(samples[0]["k_over_i_per_s2"], truth[0], delta=0.1)
 
     def test_quadratic_turning_point_recovers_subsample_vertex(self):
         time_s = np.array([0.8, 1.0, 1.2])

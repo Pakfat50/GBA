@@ -841,12 +841,12 @@ def preprocess_free_decay(
     }
 
 
-def identify_k_over_i_from_turning_points(
+def nonlinear_period_samples(
     turning_time_s,
     turning_amplitude_rad,
     minimum_amplitude_deg=5.0,
 ):
-    """同符号頂点間の周期から、有限振幅補正済みのK/Iを求める。
+    """同符号頂点間の周期から有限振幅補正済みK/Iサンプルを返す。
 
     二つ隣の頂点までを1周期として時刻量子化の影響を抑える。周期中に振幅が
     減るため、両端のポテンシャルエネルギー平均に対応する代表振幅を使う。
@@ -873,14 +873,50 @@ def identify_k_over_i_from_turning_points(
             np.clip(1.0 - normalized_energy, -1.0, 1.0)
         )
         elliptic_parameter = np.sin(0.5 * representative_amplitude) ** 2
-        q_value = (
-            4.0 * ellipk(elliptic_parameter) / period
-        ) ** 2
-        samples.append(float(q_value))
+        elliptic_integral = float(ellipk(elliptic_parameter))
+        q_value = (4.0 * elliptic_integral / period) ** 2
+        small_angle_q = (2.0 * np.pi / period) ** 2
+        samples.append(
+            {
+                "start_peak_number": int(index),
+                "end_peak_number": int(index + 2),
+                "start_time_s": float(time_s[index]),
+                "end_time_s": float(time_s[index + 2]),
+                "period_s": float(period),
+                "start_amplitude_rad": float(first),
+                "end_amplitude_rad": float(last),
+                "representative_amplitude_rad": float(representative_amplitude),
+                "elliptic_parameter": float(elliptic_parameter),
+                "elliptic_integral_first_kind": elliptic_integral,
+                "k_over_i_per_s2": float(q_value),
+                "small_angle_k_over_i_per_s2": float(small_angle_q),
+                "finite_amplitude_correction_ratio": float(
+                    q_value / small_angle_q
+                ),
+            }
+        )
 
-    if len(samples) < 2:
+    return samples
+
+
+def identify_k_over_i_from_turning_points(
+    turning_time_s,
+    turning_amplitude_rad,
+    minimum_amplitude_deg=5.0,
+):
+    """同符号頂点間の周期から、有限振幅補正済みのK/Iを求める。"""
+
+    sample_rows = nonlinear_period_samples(
+        turning_time_s,
+        turning_amplitude_rad,
+        minimum_amplitude_deg,
+    )
+
+    if len(sample_rows) < 2:
         raise ValueError("振幅条件を満たす周期が2個以上ありません")
-    samples = np.asarray(samples, dtype=float)
+    samples = np.asarray(
+        [row["k_over_i_per_s2"] for row in sample_rows], dtype=float
+    )
     median = float(np.median(samples))
     median_absolute_deviation = float(np.median(np.abs(samples - median)))
     robust_sigma = 1.4826 * median_absolute_deviation
@@ -890,6 +926,7 @@ def identify_k_over_i_from_turning_points(
         "robust_sigma_per_s2": robust_sigma,
         "number_of_periods": int(len(samples)),
         "samples_per_s2": samples,
+        "sample_rows": sample_rows,
     }
 
 

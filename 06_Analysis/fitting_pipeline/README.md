@@ -26,6 +26,19 @@ python 06_Analysis/fitting_pipeline/run_hybrid_preprocessing.py --date 20260921
 保存する。解放後の最初の半周期を除外し、最初の折返し頂点を時間原点、実測頂点角度を
 初期角度、初期速度を0として固定する。
 
+Stage 1で確定した頂点から、有限振幅を補正した同符号頂点間周期を用いて
+`I`、`K` を決定するStage 2は次のように実行する。
+
+```bash
+python 06_Analysis/fitting_pipeline/run_hybrid_frequency_identification.py --date 20260921
+```
+
+結果は `results/YYYYMMDD/hybrid_identification/02_frequency_identification/` に保存する。
+波形ごとの `K/I` は周期サンプルの中央値、形態ごとの `K/I` は波形代表値の
+算術平均とする。SP00～SP04の既知慣性・復元力増分から軸別の基準 `I0`、`K0` を
+同定し、BALLは重力復元力と実測 `K/I` から実効慣性を求める。減衰係数はこの段階では
+同定しない。
+
 ## 入力フォルダ
 
 ```text

@@ -1,0 +1,16 @@
+{
+  "stage": 2,
+  "date": "20260921",
+  "minimum_amplitude_deg": 5.0,
+  "period_definition": "time between turning points of the same sign",
+  "finite_amplitude_correction": "complete elliptic integral using energy-mean endpoint amplitude",
+  "waveform_aggregation": "median of corrected K/I period samples",
+  "configuration_aggregation": "arithmetic mean of waveform medians",
+  "spacer_parameter_method": "shared I0 and K0 with known delta I and delta K",
+  "ball_parameter_method": "known gravity restoring and effective I = K / measured K-over-I",
+  "input_sha256": {
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/turning_points.csv": "ee9eb9efdbcaf1cfdea10e4e6744cc5ce6337d692521bc44568280240adc1289",
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/waveform_preprocessing.csv": "780122f90bfb5ffe586632de2addd5bcec3ef564a53f862dc4616ff73ddcf0c7",
+    "06_Analysis/fitting_pipeline/results/20260921/resolved_manifest.csv": "34496920606fdcf0e7e79066c78f2acac7f3d575d330177c325309a9f5da0946"
+  }
+}
