@@ -738,10 +738,12 @@ def estimate_envelope_center(
         upper = np.interp(evaluation_time, positive_time, positive_angle)
         lower = np.interp(evaluation_time, negative_time, negative_angle)
         midpoint = 0.5 * (upper + lower)
-        return evaluation_time, midpoint
+        return evaluation_time, upper, lower, midpoint
 
     all_extrema = np.ones(len(time_s), dtype=bool)
-    initial_time, initial_midpoint = calculate_midline(all_extrema)
+    initial_time, initial_upper, initial_lower, initial_midpoint = calculate_midline(
+        all_extrema
+    )
     initial_center = float(np.mean(initial_midpoint))
     minimum_amplitude = np.deg2rad(minimum_amplitude_deg)
     amplitude_mask = np.abs(angle - initial_center) >= minimum_amplitude
@@ -753,7 +755,9 @@ def estimate_envelope_center(
     else:
         used_mask = all_extrema
 
-    midpoint_time, midpoint = calculate_midline(used_mask)
+    midpoint_time, upper_envelope, lower_envelope, midpoint = calculate_midline(
+        used_mask
+    )
     center = float(np.mean(midpoint))
     midpoint_deviation = midpoint - center
     midpoint_mean_absolute_deviation = float(np.mean(np.abs(midpoint_deviation)))
@@ -768,6 +772,8 @@ def estimate_envelope_center(
         "center_rad": center,
         "used_extrema_mask": used_mask,
         "midpoint_time_s": midpoint_time,
+        "upper_envelope_rad": upper_envelope,
+        "lower_envelope_rad": lower_envelope,
         "midpoint_rad": midpoint,
         "midpoint_mean_absolute_deviation_rad": midpoint_mean_absolute_deviation,
         "midpoint_range_rad": midpoint_range,
@@ -828,6 +834,8 @@ def preprocess_free_decay(
         "midpoint_range_rad": center["midpoint_range_rad"],
         "midpoint_slope_rad_s": center["midpoint_slope_rad_s"],
         "midpoint_time_s": center["midpoint_time_s"],
+        "upper_envelope_rad": center["upper_envelope_rad"],
+        "lower_envelope_rad": center["lower_envelope_rad"],
         "midpoint_rad": center["midpoint_rad"],
         "extrema": extrema,
     }

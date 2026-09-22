@@ -117,6 +117,20 @@
 | OUT_SP01_P_R01 | OUT | SP01 | 0.304 |
 | OUT_SP01_N_R04 | OUT | SP01 | 0.300 |
 
+## 全46波形の前処理概要
+
+振動開始から停止までの実波形を表示し、較正に使用する範囲と中心決定の根拠を一枚で確認する。
+図中の較正範囲は、最初の採用頂点から振幅4 deg以上の最後の採用頂点までである。
+
+1. 灰色線: 振動開始から停止までの実波形
+2. 水色背景: 較正に使用する時刻範囲
+3. 赤線・青線: 上側・下側包絡線
+4. 緑線: 上下包絡線の中点系列
+5. 黒破線: 採用した包絡線中心値。各パネル右上に `center y = ... deg` と表示
+6. 紫丸: 較正に採用する頂点
+
+![全46波形の前処理概要](all_waveform_preprocessing_overview.png)
+
 ## Stage 1のレビュー結論
 
 1. 承認: 各波形の包絡線中点の算術平均を平衡中心とする。
@@ -126,6 +140,7 @@
 
 ## 出力
 
+- [全46波形の前処理概要](all_waveform_preprocessing_overview.png)
 - [波形別の中心推定方法比較](preprocessing_overview.png)
 - [試験中の中心変化と波形別初期状態](center_stability_and_initial_state.png)
 - [波形別前処理結果](waveform_preprocessing.csv)

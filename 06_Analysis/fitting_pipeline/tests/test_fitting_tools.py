@@ -241,6 +241,12 @@ class FittingToolsTest(unittest.TestCase):
         self.assertAlmostEqual(
             result["center_rad"], float(np.mean(result["midpoint_rad"])), places=14
         )
+        np.testing.assert_allclose(
+            result["midpoint_rad"],
+            0.5 * (
+                result["upper_envelope_rad"] + result["lower_envelope_rad"]
+            ),
+        )
         self.assertAlmostEqual(
             np.rad2deg(result["center_rad"]), np.rad2deg(center), delta=0.05
         )

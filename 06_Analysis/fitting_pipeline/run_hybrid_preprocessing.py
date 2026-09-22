@@ -17,6 +17,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Patch
 import numpy as np
 import pandas as pd
 
@@ -61,6 +63,7 @@ def analyze_waveforms(date_directory, selection):
     waveform_rows = []
     extrema_rows = []
     midpoint_rows = []
+    waveform_plot_records = []
     cache = {}
     for unused_index, row in selection.iterrows():
         if int(row["use_for_fitting"]) != 1:
@@ -146,6 +149,18 @@ def analyze_waveforms(date_directory, selection):
                 ),
             }
         )
+        waveform_plot_records.append(
+            {
+                "segment_id": str(row["segment_id"]),
+                "axis": str(row["axis"]).strip().upper(),
+                "configuration": str(row["configuration"]).strip().upper(),
+                "direction": str(row["direction"]).strip().upper(),
+                "repetition": int(row["repetition"]),
+                "time_s": time_s,
+                "angle_rad": angle_rad,
+                "result": result,
+            }
+        )
 
         for peak_number in range(len(extrema["indices"])):
             amplitude_deg = float(np.rad2deg(extrema["amplitude_rad"][peak_number]))
@@ -184,8 +199,11 @@ def analyze_waveforms(date_directory, selection):
                 }
             )
 
-        for midpoint_time, midpoint in zip(
-            result["midpoint_time_s"], result["midpoint_rad"]
+        for midpoint_time, upper, lower, midpoint in zip(
+            result["midpoint_time_s"],
+            result["upper_envelope_rad"],
+            result["lower_envelope_rad"],
+            result["midpoint_rad"],
         ):
             midpoint_rows.append(
                 {
@@ -194,6 +212,8 @@ def analyze_waveforms(date_directory, selection):
                     "configuration": str(row["configuration"]).strip().upper(),
                     "direction": str(row["direction"]).strip().upper(),
                     "time_s": float(midpoint_time),
+                    "upper_envelope_deg": float(np.rad2deg(upper)),
+                    "lower_envelope_deg": float(np.rad2deg(lower)),
                     "midpoint_deg": float(np.rad2deg(midpoint)),
                     "deviation_from_center_deg": float(
                         np.rad2deg(midpoint - result["center_rad"])
@@ -201,7 +221,167 @@ def analyze_waveforms(date_directory, selection):
                 }
             )
 
-    return waveform_rows, extrema_rows, midpoint_rows, cache
+    return waveform_rows, extrema_rows, midpoint_rows, cache, waveform_plot_records
+
+
+def plot_all_waveform_preprocessing(waveform_plot_records, output_path):
+    """全46波形について、振動開始から停止までの前処理結果を一覧表示する。"""
+
+    records = sorted(
+        waveform_plot_records,
+        key=lambda item: (
+            item["axis"],
+            item["configuration"],
+            item["direction"],
+            item["repetition"],
+        ),
+    )
+    column_count = 4
+    row_count = int(np.ceil(len(records) / column_count))
+    maximum_abs_angle = max(
+        float(np.max(np.abs(np.rad2deg(record["angle_rad"]))))
+        for record in records
+    )
+    angle_limit = max(10.0, 10.0 * np.ceil(maximum_abs_angle / 10.0))
+    figure, axes = plt.subplots(
+        row_count,
+        column_count,
+        figsize=(25, 3.15 * row_count),
+        squeeze=False,
+    )
+
+    for plot_number, record in enumerate(records):
+        axis = axes.flat[plot_number]
+        result = record["result"]
+        extrema = result["extrema"]
+        start_time = float(record["time_s"][0])
+        time_from_start = record["time_s"] - start_time
+        extrema_time = extrema["time_s"] - start_time
+        midpoint_time = result["midpoint_time_s"] - start_time
+        initial_peak = int(result["initial_peak_number"])
+        eligible = np.arange(len(extrema_time)) >= initial_peak
+        eligible &= extrema["amplitude_rad"] >= np.deg2rad(MINIMUM_AMPLITUDE_DEG)
+        eligible_indices = np.flatnonzero(eligible)
+        calibration_start = float(extrema_time[eligible_indices[0]])
+        calibration_end = float(extrema_time[eligible_indices[-1]])
+
+        axis.axvspan(
+            calibration_start,
+            calibration_end,
+            color="#d7ecff",
+            alpha=0.75,
+            zorder=0,
+        )
+        axis.plot(
+            time_from_start,
+            np.rad2deg(record["angle_rad"]),
+            color="0.45",
+            linewidth=0.65,
+            zorder=1,
+        )
+        axis.plot(
+            midpoint_time,
+            np.rad2deg(result["upper_envelope_rad"]),
+            color="tab:red",
+            linewidth=1.25,
+            zorder=2,
+        )
+        axis.plot(
+            midpoint_time,
+            np.rad2deg(result["lower_envelope_rad"]),
+            color="tab:blue",
+            linewidth=1.25,
+            zorder=2,
+        )
+        axis.plot(
+            midpoint_time,
+            np.rad2deg(result["midpoint_rad"]),
+            color="tab:green",
+            linewidth=1.1,
+            zorder=3,
+        )
+        center_deg = float(np.rad2deg(result["center_rad"]))
+        axis.axhline(
+            center_deg,
+            color="black",
+            linestyle="--",
+            linewidth=1.0,
+            zorder=3,
+        )
+        axis.scatter(
+            extrema_time[eligible],
+            np.rad2deg(extrema["angle_rad"][eligible]),
+            color="tab:purple",
+            edgecolors="white",
+            linewidths=0.35,
+            s=15,
+            zorder=4,
+        )
+        axis.text(
+            0.985,
+            0.965,
+            f"center y = {center_deg:.3f} deg\n"
+            f"cal. {calibration_start:.2f}-{calibration_end:.2f} s",
+            transform=axis.transAxes,
+            ha="right",
+            va="top",
+            fontsize=7,
+            bbox={"facecolor": "white", "edgecolor": "0.75", "alpha": 0.82},
+        )
+        axis.set_title(record["segment_id"], fontsize=9)
+        axis.set_xlim(0.0, float(time_from_start[-1]))
+        axis.set_ylim(-angle_limit, angle_limit)
+        axis.grid(True, alpha=0.20)
+        axis.tick_params(labelsize=7)
+
+    for unused_axis in axes.flat[len(records) :]:
+        unused_axis.axis("off")
+
+    legend_handles = [
+        Line2D([0], [0], color="0.45", linewidth=1.2, label="Measured waveform"),
+        Patch(facecolor="#d7ecff", edgecolor="none", label="Calibration range"),
+        Line2D([0], [0], color="tab:red", linewidth=1.5, label="Upper envelope"),
+        Line2D([0], [0], color="tab:blue", linewidth=1.5, label="Lower envelope"),
+        Line2D([0], [0], color="tab:green", linewidth=1.5, label="Envelope midpoint"),
+        Line2D(
+            [0],
+            [0],
+            color="black",
+            linestyle="--",
+            linewidth=1.2,
+            label="Adopted center (panel value)",
+        ),
+        Line2D(
+            [0],
+            [0],
+            color="tab:purple",
+            marker="o",
+            linestyle="none",
+            markersize=5,
+            label="Adopted turning points",
+        ),
+    ]
+    figure.suptitle(
+        "All 46 waveforms: start-to-stop preprocessing overview",
+        fontsize=17,
+        y=0.995,
+    )
+    figure.legend(
+        handles=legend_handles,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.982),
+        ncol=4,
+        fontsize=10,
+    )
+    figure.supxlabel("Time from vibration start [s]", fontsize=12)
+    figure.supylabel("Measured angle [deg]", fontsize=12)
+    figure.tight_layout(rect=(0.025, 0.025, 0.995, 0.955))
+    figure.savefig(
+        output_path,
+        dpi=120,
+        pil_kwargs={"compress_level": 9},
+    )
+    plt.close(figure)
 
 
 def plot_center_method_comparison(waveform_rows, output_path):
@@ -511,6 +691,20 @@ def write_report(output_path, waveform_rows, group_rows, direction_rows):
     lines.extend(
         [
             "",
+            "## 全46波形の前処理概要",
+            "",
+            "振動開始から停止までの実波形を表示し、較正に使用する範囲と中心決定の根拠を一枚で確認する。",
+            "図中の較正範囲は、最初の採用頂点から振幅4 deg以上の最後の採用頂点までである。",
+            "",
+            "1. 灰色線: 振動開始から停止までの実波形",
+            "2. 水色背景: 較正に使用する時刻範囲",
+            "3. 赤線・青線: 上側・下側包絡線",
+            "4. 緑線: 上下包絡線の中点系列",
+            "5. 黒破線: 採用した包絡線中心値。各パネル右上に `center y = ... deg` と表示",
+            "6. 紫丸: 較正に採用する頂点",
+            "",
+            "![全46波形の前処理概要](all_waveform_preprocessing_overview.png)",
+            "",
             "## Stage 1のレビュー結論",
             "",
             "1. 承認: 各波形の包絡線中点の算術平均を平衡中心とする。",
@@ -520,6 +714,7 @@ def write_report(output_path, waveform_rows, group_rows, direction_rows):
             "",
             "## 出力",
             "",
+            "- [全46波形の前処理概要](all_waveform_preprocessing_overview.png)",
             "- [波形別の中心推定方法比較](preprocessing_overview.png)",
             "- [試験中の中心変化と波形別初期状態](center_stability_and_initial_state.png)",
             "- [波形別前処理結果](waveform_preprocessing.csv)",
@@ -547,9 +742,13 @@ def main():
         parent_result / "hybrid_identification" / "01_preprocessing"
     )
     ensure_directory(output_directory)
-    waveform_rows, extrema_rows, midpoint_rows, cache = analyze_waveforms(
-        date_directory, selection
-    )
+    (
+        waveform_rows,
+        extrema_rows,
+        midpoint_rows,
+        cache,
+        waveform_plot_records,
+    ) = analyze_waveforms(date_directory, selection)
     group_rows = group_summary(pd.DataFrame(waveform_rows))
     direction_rows = direction_comparison(pd.DataFrame(waveform_rows))
     save_csv(output_directory / "waveform_preprocessing.csv", waveform_rows)
@@ -563,6 +762,10 @@ def main():
     plot_center_stability_and_initial_state(
         waveform_rows,
         output_directory / "center_stability_and_initial_state.png",
+    )
+    plot_all_waveform_preprocessing(
+        waveform_plot_records,
+        output_directory / "all_waveform_preprocessing_overview.png",
     )
     write_report(
         output_directory / "PREPROCESSING_REPORT.md",
