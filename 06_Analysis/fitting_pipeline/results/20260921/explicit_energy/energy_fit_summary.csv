@@ -1,0 +1,2 @@
+b_IN,b_OUT,tau_IN,tau_OUT,c_rod,c_sphere,success,message,intervals,angle_equivalent_rmse_deg,normalized_design_condition_number
+8.618581490856381e-26,3.7702359533116216e-05,0.00011524220798768182,8.764560000143483e-05,1.225590785742628e-06,1.1288771431136673e-05,1,`gtol` termination condition is satisfied.,2068,0.5868263902605882,15.265125141898206

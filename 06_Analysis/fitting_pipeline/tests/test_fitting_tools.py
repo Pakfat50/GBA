@@ -15,9 +15,12 @@ sys.path.insert(0, str(MODULE_DIRECTORY))
 from fitting_tools import estimate_force_eso
 from fitting_tools import estimate_force_rts
 from fitting_tools import detect_free_decay_candidates
+from fitting_tools import explicit_half_cycle_energy_basis
+from fitting_tools import extract_decay_turning_points
 from fitting_tools import fit_one_decay
 from fitting_tools import fit_quality_statistics
 from fitting_tools import identify_base_inertia_and_restoring
+from fitting_tools import identify_k_over_i_from_turning_points
 from fitting_tools import read_angle_log
 from fitting_tools import simulate_forced_motion
 from fitting_tools import simulate_normalized_decay
@@ -200,6 +203,56 @@ class FittingToolsTest(unittest.TestCase):
         self.assertAlmostEqual(inertia, base_inertia, delta=1e-8)
         self.assertAlmostEqual(restoring, base_restoring, delta=1e-7)
         self.assertEqual(len(predictions), 5)
+
+    def test_frequency_is_identified_from_nonlinear_turning_points(self):
+        time_s = np.arange(0.0, 12.0, 0.005)
+        truth = np.array([40.0, 0.0, 0.0, 0.0, 0.0, np.deg2rad(60.0), 0.0])
+        angle = simulate_normalized_decay(time_s, truth, np.deg2rad(0.5))
+        turning = extract_decay_turning_points(time_s, angle, 0.0)
+        identified = identify_k_over_i_from_turning_points(
+            turning["time_s"], turning["amplitude_rad"]
+        )
+        self.assertAlmostEqual(identified["k_over_i_per_s2"], truth[0], delta=0.15)
+
+    def test_explicit_energy_basis_has_small_angle_limits(self):
+        amplitude = 0.05
+        inertia = 0.0004
+        restoring = 0.016
+        omega = np.sqrt(restoring / inertia)
+        basis = explicit_half_cycle_energy_basis(amplitude, inertia, restoring)
+        viscous_limit = 0.5 * np.pi * amplitude**2 * omega
+        quadratic_limit = 4.0 / 3.0 * amplitude**3 * omega**2
+        friction_limit = 2.0 * amplitude
+        self.assertAlmostEqual(
+            basis["viscous_basis"] / viscous_limit, 1.0, delta=0.002
+        )
+        self.assertAlmostEqual(
+            basis["quadratic_basis"] / quadratic_limit, 1.0, delta=0.002
+        )
+        self.assertAlmostEqual(basis["friction_basis"], friction_limit, places=12)
+
+    def test_explicit_energy_linear_system_recovers_coefficients(self):
+        inertia = 0.0004
+        restoring = 0.016
+        truth = np.array([3.0e-5, 1.2e-5, 8.0e-5])
+        matrix = []
+        for amplitude_deg in [8.0, 15.0, 25.0, 40.0, 60.0]:
+            basis = explicit_half_cycle_energy_basis(
+                np.deg2rad(amplitude_deg), inertia, restoring
+            )
+            matrix.append(
+                [
+                    basis["viscous_basis"],
+                    basis["quadratic_basis"],
+                    basis["friction_basis"],
+                ]
+            )
+        matrix = np.asarray(matrix)
+        measured_loss = matrix @ truth
+        identified, unused_residual, unused_rank, unused_singular = np.linalg.lstsq(
+            matrix, measured_loss, rcond=None
+        )
+        np.testing.assert_allclose(identified, truth, rtol=1e-9, atol=1e-12)
 
     def test_force_estimators_return_finite_arrays(self):
         parameters = {

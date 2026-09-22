@@ -11,7 +11,8 @@ import pandas as pd
 from scipy.integrate import solve_ivp
 from scipy.linalg import expm
 from scipy.optimize import least_squares
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, savgol_filter
+from scipy.special import ellipe, ellipk
 
 
 GRAVITY_M_S2 = 9.81
@@ -519,6 +520,165 @@ def estimate_initial_frequency(time_s, angle_rad):
         if period > 0.0:
             return 2.0 * np.pi / period
     return np.sqrt(5.6)
+
+
+def extract_decay_turning_points(
+    time_s,
+    angle_rad,
+    center_rad,
+    smooth_time_s=0.07,
+    prominence_deg=0.25,
+):
+    """自由減衰波形から正負が交互に並ぶ頂点を抽出する。
+
+    center_radは波形フィットから求めず、試験前後の静止区間など独立に求めた
+    平衡角を渡す。頂点角度は平滑化波形から読み、時刻は元のサンプル時刻を使う。
+    """
+
+    time_s = np.asarray(time_s, dtype=float)
+    angle_rad = np.asarray(angle_rad, dtype=float)
+    if len(time_s) != len(angle_rad) or len(time_s) < 9:
+        raise ValueError("頂点抽出には同じ長さの9点以上の時刻・角度が必要です")
+    sample_period = float(np.median(np.diff(time_s)))
+    if sample_period <= 0.0:
+        raise ValueError("時刻は単調増加でなければなりません")
+
+    window = max(5, int(round(smooth_time_s / sample_period)))
+    if window % 2 == 0:
+        window += 1
+    maximum_window = len(angle_rad) if len(angle_rad) % 2 == 1 else len(angle_rad) - 1
+    window = min(window, maximum_window)
+    if window < 5:
+        smoothed = angle_rad.copy()
+    else:
+        smoothed = savgol_filter(angle_rad, window, 3)
+
+    omega_guess = estimate_initial_frequency(time_s - time_s[0], smoothed)
+    period_guess = 2.0 * np.pi / max(omega_guess, 1e-6)
+    minimum_distance = max(3, int(0.30 * period_guess / sample_period))
+    prominence = np.deg2rad(prominence_deg)
+    positive, unused_positive_properties = find_peaks(
+        smoothed, prominence=prominence, distance=minimum_distance
+    )
+    negative, unused_negative_properties = find_peaks(
+        -smoothed, prominence=prominence, distance=minimum_distance
+    )
+    candidates = np.sort(np.concatenate([positive, negative]))
+
+    # 同符号の候補が連続した場合は、平衡位置から遠い方だけを残す。
+    selected = []
+    for index in candidates:
+        sign = np.sign(smoothed[index] - center_rad)
+        if sign == 0.0:
+            continue
+        if len(selected) == 0:
+            selected.append(int(index))
+            continue
+        previous_sign = np.sign(smoothed[selected[-1]] - center_rad)
+        if sign != previous_sign:
+            selected.append(int(index))
+        elif abs(smoothed[index] - center_rad) > abs(
+            smoothed[selected[-1]] - center_rad
+        ):
+            selected[-1] = int(index)
+
+    indices = np.asarray(selected, dtype=int)
+    return {
+        "indices": indices,
+        "time_s": time_s[indices],
+        "angle_rad": smoothed[indices],
+        "amplitude_rad": np.abs(smoothed[indices] - center_rad),
+        "sign": np.sign(smoothed[indices] - center_rad).astype(int),
+        "smoothed_angle_rad": smoothed,
+    }
+
+
+def identify_k_over_i_from_turning_points(
+    turning_time_s,
+    turning_amplitude_rad,
+    minimum_amplitude_deg=5.0,
+):
+    """同符号頂点間の周期から、有限振幅補正済みのK/Iを求める。
+
+    二つ隣の頂点までを1周期として時刻量子化の影響を抑える。周期中に振幅が
+    減るため、両端のポテンシャルエネルギー平均に対応する代表振幅を使う。
+    """
+
+    time_s = np.asarray(turning_time_s, dtype=float)
+    amplitude = np.asarray(turning_amplitude_rad, dtype=float)
+    if len(time_s) != len(amplitude) or len(time_s) < 3:
+        raise ValueError("K/I同定には3点以上の頂点が必要です")
+    minimum_amplitude = np.deg2rad(minimum_amplitude_deg)
+    samples = []
+    for index in range(len(time_s) - 2):
+        first = amplitude[index]
+        last = amplitude[index + 2]
+        if min(first, last) < minimum_amplitude:
+            continue
+        period = time_s[index + 2] - time_s[index]
+        if period <= 0.0:
+            continue
+        normalized_energy = 0.5 * (
+            (1.0 - np.cos(first)) + (1.0 - np.cos(last))
+        )
+        representative_amplitude = np.arccos(
+            np.clip(1.0 - normalized_energy, -1.0, 1.0)
+        )
+        elliptic_parameter = np.sin(0.5 * representative_amplitude) ** 2
+        q_value = (
+            4.0 * ellipk(elliptic_parameter) / period
+        ) ** 2
+        samples.append(float(q_value))
+
+    if len(samples) < 2:
+        raise ValueError("振幅条件を満たす周期が2個以上ありません")
+    samples = np.asarray(samples, dtype=float)
+    median = float(np.median(samples))
+    median_absolute_deviation = float(np.median(np.abs(samples - median)))
+    robust_sigma = 1.4826 * median_absolute_deviation
+    return {
+        "k_over_i_per_s2": median,
+        "sample_std_per_s2": float(np.std(samples, ddof=1)),
+        "robust_sigma_per_s2": robust_sigma,
+        "number_of_periods": int(len(samples)),
+        "samples_per_s2": samples,
+    }
+
+
+def explicit_half_cycle_energy_basis(amplitude_rad, inertia, restoring):
+    """前の頂点振幅から半周期のb、c、tauエネルギー基底を返す。
+
+    戻り値B、C、Rは、半周期の損失を
+    ``delta_E = b*B + c*C + tau*R`` と書くための係数である。有限振幅の
+    非線形振り子を使い、sin(theta)をthetaへ近似しない。
+    """
+
+    amplitude = float(amplitude_rad)
+    inertia = float(inertia)
+    restoring = float(restoring)
+    if amplitude <= 0.0 or amplitude >= np.pi:
+        raise ValueError("頂点振幅は0より大きくpiより小さくしてください")
+    if inertia <= 0.0 or restoring <= 0.0:
+        raise ValueError("IとKは正でなければなりません")
+
+    omega_zero = np.sqrt(restoring / inertia)
+    elliptic_parameter = np.sin(0.5 * amplitude) ** 2
+    first_kind = ellipk(elliptic_parameter)
+    second_kind = ellipe(elliptic_parameter)
+    viscous_basis = 8.0 * omega_zero * (
+        second_kind - (1.0 - elliptic_parameter) * first_kind
+    )
+    quadratic_basis = 4.0 * omega_zero * omega_zero * (
+        np.sin(amplitude) - amplitude * np.cos(amplitude)
+    )
+    friction_basis = 2.0 * amplitude
+    half_period = 2.0 * first_kind / omega_zero
+    return {
+        "viscous_basis": float(viscous_basis),
+        "quadratic_basis": float(quadratic_basis),
+        "friction_basis": float(friction_basis),
+        "half_period_s": float(half_period),
+    }
 
 
 def choose_fit_samples(time_s, target_rate_hz):

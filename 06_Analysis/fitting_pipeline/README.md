@@ -7,6 +7,9 @@
 3. 既知の追加質量・慣性を使い、複数条件の最小二乗法から絶対係数を同定
 4. 自由減衰時の外力推定と、Kaimal想定風に対する真値・推定値を比較
 
+全波形同時フィットとは独立に、頂点周期と陽なエネルギー損失式で係数を求め、
+固定係数による元波形再現性を評価する比較スクリプトも用意している。
+
 ## 入力フォルダ
 
 ```text
@@ -78,6 +81,22 @@ python 06_Analysis/fitting_pipeline/run_calibration.py
 ```bash
 python 06_Analysis/fitting_pipeline/run_calibration.py --date 20260916
 ```
+
+周期から `I`, `K`、前の頂点振幅から明示した半周期エネルギー損失から
+`b`, `c`, `tau_f` を同定する場合は、確認済み波形表を作成した後に次を実行する。
+
+```bash
+python 06_Analysis/fitting_pipeline/run_explicit_energy_identification.py --date 20260921
+```
+
+結果は `results/YYYYMMDD/explicit_energy/` に保存する。主な出力は次のとおり。
+
+- `frequency_segments.csv`: 波形別の有限振幅補正済み `K/I`
+- `frequency_levels.csv`: 形態別 `K/I` と既知増分による較正結果
+- `energy_intervals.csv`: 頂点間エネルギー損失の実測値、予測値、残差
+- `identified_parameters.csv`: 周期・陽エネルギー法による絶対係数
+- `waveform_metrics.csv`: 固定係数による元波形と頂点包絡線の偏差
+- `FITTING_REPORT.md`: 方法、係数、従来法との比較
 
 結果は `06_Analysis/fitting_pipeline/results/YYYYMMDD/` に保存する。
 
