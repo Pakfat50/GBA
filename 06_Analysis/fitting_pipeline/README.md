@@ -14,6 +14,18 @@
 次段階の同定仕様と段階的コミット計画は
 [`HYBRID_IDENTIFICATION_PLAN.md`](HYBRID_IDENTIFICATION_PLAN.md) を参照する。
 
+ハイブリッド同定Stage 1として、物理係数をフィットせずに頂点、平衡中心、初期状態を
+決定する場合は次を実行する。
+
+```bash
+python 06_Analysis/fitting_pipeline/run_hybrid_preprocessing.py --date 20260921
+```
+
+結果は `results/YYYYMMDD/hybrid_identification/01_preprocessing/` に保存する。
+平衡中心は正負頂点包絡線の中点中央値から求め、全点平均と従来の終端中央値も比較用に
+保存する。解放後の最初の半周期を除外し、最初の折返し頂点を時間原点、実測頂点角度を
+初期角度、初期速度を0として固定する。
+
 ## 入力フォルダ
 
 ```text

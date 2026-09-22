@@ -15,13 +15,17 @@ sys.path.insert(0, str(MODULE_DIRECTORY))
 from fitting_tools import estimate_force_eso
 from fitting_tools import estimate_force_rts
 from fitting_tools import detect_free_decay_candidates
+from fitting_tools import estimate_envelope_center
 from fitting_tools import explicit_half_cycle_energy_basis
+from fitting_tools import extract_decay_extrema
 from fitting_tools import extract_decay_turning_points
 from fitting_tools import fit_one_decay
 from fitting_tools import fit_quality_statistics
 from fitting_tools import identify_base_inertia_and_restoring
 from fitting_tools import identify_k_over_i_from_turning_points
+from fitting_tools import preprocess_free_decay
 from fitting_tools import read_angle_log
+from fitting_tools import refine_turning_point_quadratic
 from fitting_tools import simulate_forced_motion
 from fitting_tools import simulate_normalized_decay
 from fitting_tools import split_free_decay
@@ -213,6 +217,42 @@ class FittingToolsTest(unittest.TestCase):
             turning["time_s"], turning["amplitude_rad"]
         )
         self.assertAlmostEqual(identified["k_over_i_per_s2"], truth[0], delta=0.15)
+
+    def test_quadratic_turning_point_recovers_subsample_vertex(self):
+        time_s = np.array([0.8, 1.0, 1.2])
+        truth_time = 1.07
+        values = 3.0 - 2.5 * (time_s - truth_time) ** 2
+        peak_time, peak_value, used = refine_turning_point_quadratic(
+            time_s, values, 1
+        )
+        self.assertEqual(used, 1)
+        self.assertAlmostEqual(peak_time, truth_time, places=12)
+        self.assertAlmostEqual(peak_value, 3.0, places=12)
+
+    def test_envelope_center_recovers_damped_oscillation_center(self):
+        time_s = np.arange(0.0, 14.0, 0.013)
+        center = np.deg2rad(1.7)
+        amplitude = np.deg2rad(58.0) * np.exp(-0.075 * time_s)
+        angle = center + amplitude * np.cos(2.0 * np.pi * 0.72 * time_s)
+        extrema = extract_decay_extrema(time_s, angle)
+        result = estimate_envelope_center(
+            extrema["time_s"], extrema["angle_rad"], extrema["kind"]
+        )
+        self.assertAlmostEqual(
+            np.rad2deg(result["center_rad"]), np.rad2deg(center), delta=0.05
+        )
+        first_peak_time = extrema["time_s"][0] - time_s[0]
+        self.assertGreater(first_peak_time, 0.6)
+        self.assertLess(first_peak_time, 0.8)
+        self.assertEqual(extrema["kind"][0], -1)
+
+        preprocessing = preprocess_free_decay(
+            time_s, angle, existing_center_rad=center
+        )
+        self.assertEqual(preprocessing["initial_speed_rad_s"], 0.0)
+        self.assertGreater(preprocessing["ignored_initial_half_cycle_s"], 0.6)
+        self.assertLess(preprocessing["ignored_initial_half_cycle_s"], 0.8)
+        self.assertLess(preprocessing["initial_angle_rad"], 0.0)
 
     def test_explicit_energy_basis_has_small_angle_limits(self):
         amplitude = 0.05

@@ -593,6 +593,244 @@ def extract_decay_turning_points(
     }
 
 
+def refine_turning_point_quadratic(time_s, values, index):
+    """近傍3点の二次補間で頂点時刻と値をサンプル間へ補正する。"""
+
+    time_s = np.asarray(time_s, dtype=float)
+    values = np.asarray(values, dtype=float)
+    index = int(index)
+    if index <= 0 or index >= len(values) - 1:
+        return float(time_s[index]), float(values[index]), 0
+
+    local_time = time_s[index - 1 : index + 2] - time_s[index]
+    local_values = values[index - 1 : index + 2]
+    quadratic, linear, constant = np.polyfit(local_time, local_values, 2)
+    scale = max(float(np.max(np.abs(local_values))), 1.0)
+    if abs(quadratic) <= np.finfo(float).eps * scale:
+        return float(time_s[index]), float(values[index]), 0
+
+    vertex_time = -linear / (2.0 * quadratic)
+    if vertex_time < local_time[0] or vertex_time > local_time[-1]:
+        return float(time_s[index]), float(values[index]), 0
+
+    vertex_value = quadratic * vertex_time * vertex_time
+    vertex_value += linear * vertex_time + constant
+    return float(time_s[index] + vertex_time), float(vertex_value), 1
+
+
+def extract_decay_extrema(
+    time_s,
+    angle_rad,
+    smooth_time_s=0.07,
+    prominence_deg=0.25,
+):
+    """平衡中心を仮定せず、交互に並ぶ極大・極小を二次補間して返す。"""
+
+    time_s = np.asarray(time_s, dtype=float)
+    angle_rad = np.asarray(angle_rad, dtype=float)
+    if len(time_s) != len(angle_rad) or len(time_s) < 9:
+        raise ValueError("極値抽出には同じ長さの9点以上の時刻・角度が必要です")
+    sample_period = float(np.median(np.diff(time_s)))
+    if sample_period <= 0.0:
+        raise ValueError("時刻は単調増加でなければなりません")
+
+    window = max(5, int(round(smooth_time_s / sample_period)))
+    if window % 2 == 0:
+        window += 1
+    maximum_window = len(angle_rad) if len(angle_rad) % 2 == 1 else len(angle_rad) - 1
+    window = min(window, maximum_window)
+    if window < 5:
+        smoothed = angle_rad.copy()
+    else:
+        smoothed = savgol_filter(angle_rad, window, 3)
+
+    omega_guess = estimate_initial_frequency(time_s - time_s[0], smoothed)
+    period_guess = 2.0 * np.pi / max(omega_guess, 1e-6)
+    minimum_distance = max(3, int(0.30 * period_guess / sample_period))
+    prominence = np.deg2rad(prominence_deg)
+    positive, unused_positive_properties = find_peaks(
+        smoothed, prominence=prominence, distance=minimum_distance
+    )
+    negative, unused_negative_properties = find_peaks(
+        -smoothed, prominence=prominence, distance=minimum_distance
+    )
+
+    candidates = []
+    for index in positive:
+        candidates.append((int(index), 1))
+    for index in negative:
+        candidates.append((int(index), -1))
+    candidates.sort(key=lambda item: item[0])
+
+    # 中心値を使わず、同じ種類の極値が連続した場合は外側の候補を残す。
+    selected = []
+    for index, kind in candidates:
+        if len(selected) == 0 or kind != selected[-1][1]:
+            selected.append((index, kind))
+            continue
+        previous_index = selected[-1][0]
+        replace = kind > 0 and smoothed[index] > smoothed[previous_index]
+        replace = replace or (
+            kind < 0 and smoothed[index] < smoothed[previous_index]
+        )
+        if replace:
+            selected[-1] = (index, kind)
+
+    if len(selected) < 4:
+        raise ValueError("上下包絡線の算出に必要な極値が4点以上ありません")
+
+    indices = []
+    kinds = []
+    refined_time = []
+    refined_angle = []
+    interpolated = []
+    for index, kind in selected:
+        peak_time, peak_angle, used_quadratic = refine_turning_point_quadratic(
+            time_s, smoothed, index
+        )
+        indices.append(index)
+        kinds.append(kind)
+        refined_time.append(peak_time)
+        refined_angle.append(peak_angle)
+        interpolated.append(used_quadratic)
+
+    return {
+        "indices": np.asarray(indices, dtype=int),
+        "time_s": np.asarray(refined_time, dtype=float),
+        "angle_rad": np.asarray(refined_angle, dtype=float),
+        "kind": np.asarray(kinds, dtype=int),
+        "quadratic_interpolation_used": np.asarray(interpolated, dtype=int),
+        "smoothed_angle_rad": smoothed,
+    }
+
+
+def estimate_envelope_center(
+    extrema_time_s,
+    extrema_angle_rad,
+    extrema_kind,
+    minimum_amplitude_deg=4.0,
+):
+    """上下の極値包絡線の中点中央値から平衡中心を決定する。"""
+
+    time_s = np.asarray(extrema_time_s, dtype=float)
+    angle = np.asarray(extrema_angle_rad, dtype=float)
+    kind = np.asarray(extrema_kind, dtype=int)
+    if len(time_s) != len(angle) or len(time_s) != len(kind):
+        raise ValueError("極値の時刻、角度、種類は同じ長さでなければなりません")
+
+    def calculate_midline(use_mask):
+        positive = use_mask & (kind > 0)
+        negative = use_mask & (kind < 0)
+        if np.count_nonzero(positive) < 2 or np.count_nonzero(negative) < 2:
+            raise ValueError("平衡中心の算出には正負各2点以上の極値が必要です")
+        positive_time = time_s[positive]
+        positive_angle = angle[positive]
+        negative_time = time_s[negative]
+        negative_angle = angle[negative]
+        common_start = max(positive_time[0], negative_time[0])
+        common_end = min(positive_time[-1], negative_time[-1])
+        evaluation_time = time_s[
+            use_mask & (time_s >= common_start) & (time_s <= common_end)
+        ]
+        evaluation_time = np.unique(evaluation_time)
+        if len(evaluation_time) < 2:
+            raise ValueError("上下包絡線に共通する時間範囲が不足しています")
+        upper = np.interp(evaluation_time, positive_time, positive_angle)
+        lower = np.interp(evaluation_time, negative_time, negative_angle)
+        midpoint = 0.5 * (upper + lower)
+        return evaluation_time, midpoint
+
+    all_extrema = np.ones(len(time_s), dtype=bool)
+    initial_time, initial_midpoint = calculate_midline(all_extrema)
+    initial_center = float(np.median(initial_midpoint))
+    minimum_amplitude = np.deg2rad(minimum_amplitude_deg)
+    amplitude_mask = np.abs(angle - initial_center) >= minimum_amplitude
+    if np.count_nonzero(amplitude_mask & (kind > 0)) >= 2:
+        if np.count_nonzero(amplitude_mask & (kind < 0)) >= 2:
+            used_mask = amplitude_mask
+        else:
+            used_mask = all_extrema
+    else:
+        used_mask = all_extrema
+
+    midpoint_time, midpoint = calculate_midline(used_mask)
+    center = float(np.median(midpoint))
+    midpoint_deviation = midpoint - center
+    midpoint_mad = float(np.median(np.abs(midpoint_deviation)))
+    midpoint_range = float(np.max(midpoint) - np.min(midpoint))
+    if len(midpoint_time) >= 2:
+        relative_time = midpoint_time - midpoint_time[0]
+        midpoint_slope = float(np.polyfit(relative_time, midpoint, 1)[0])
+    else:
+        midpoint_slope = 0.0
+
+    return {
+        "center_rad": center,
+        "used_extrema_mask": used_mask,
+        "midpoint_time_s": midpoint_time,
+        "midpoint_rad": midpoint,
+        "midpoint_mad_rad": midpoint_mad,
+        "midpoint_range_rad": midpoint_range,
+        "midpoint_slope_rad_s": midpoint_slope,
+    }
+
+
+def preprocess_free_decay(
+    time_s,
+    angle_rad,
+    existing_center_rad=None,
+    minimum_amplitude_deg=4.0,
+):
+    """中心、最初の静止頂点、初期状態を自由変数なしで決定する。"""
+
+    time_s = np.asarray(time_s, dtype=float)
+    angle_rad = np.asarray(angle_rad, dtype=float)
+    extrema = extract_decay_extrema(time_s, angle_rad)
+    center = estimate_envelope_center(
+        extrema["time_s"],
+        extrema["angle_rad"],
+        extrema["kind"],
+        minimum_amplitude_deg,
+    )
+    center_rad = center["center_rad"]
+    amplitude = np.abs(extrema["angle_rad"] - center_rad)
+    valid = np.flatnonzero(amplitude >= np.deg2rad(minimum_amplitude_deg))
+    if len(valid) == 0:
+        raise ValueError("初期状態に使える振幅の頂点がありません")
+    initial_peak = int(valid[0])
+
+    tail_count = max(5, int(round(0.1 * len(angle_rad))))
+    computed_tail_center = float(np.median(angle_rad[-tail_count:]))
+    if existing_center_rad is None:
+        existing_center_rad = computed_tail_center
+
+    extrema["amplitude_rad"] = amplitude
+    extrema["used_for_center"] = center["used_extrema_mask"].astype(int)
+    extrema["is_initial_peak"] = np.zeros(len(amplitude), dtype=int)
+    extrema["is_initial_peak"][initial_peak] = 1
+    return {
+        "center_rad": center_rad,
+        "all_point_mean_rad": float(np.mean(angle_rad)),
+        "tail_median_rad": float(existing_center_rad),
+        "computed_segment_tail_median_rad": computed_tail_center,
+        "initial_peak_number": initial_peak,
+        "initial_time_s": float(extrema["time_s"][initial_peak]),
+        "initial_angle_rad": float(
+            extrema["angle_rad"][initial_peak] - center_rad
+        ),
+        "initial_speed_rad_s": 0.0,
+        "ignored_initial_half_cycle_s": float(
+            extrema["time_s"][initial_peak] - time_s[0]
+        ),
+        "midpoint_mad_rad": center["midpoint_mad_rad"],
+        "midpoint_range_rad": center["midpoint_range_rad"],
+        "midpoint_slope_rad_s": center["midpoint_slope_rad_s"],
+        "midpoint_time_s": center["midpoint_time_s"],
+        "midpoint_rad": center["midpoint_rad"],
+        "extrema": extrema,
+    }
+
+
 def identify_k_over_i_from_turning_points(
     turning_time_s,
     turning_amplitude_rad,

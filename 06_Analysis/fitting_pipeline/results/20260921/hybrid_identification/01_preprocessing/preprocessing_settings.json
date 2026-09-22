@@ -1,0 +1,19 @@
+{
+  "stage": 1,
+  "date": "20260921",
+  "minimum_amplitude_deg": 4.0,
+  "smooth_time_s": 0.07,
+  "peak_prominence_deg": 0.25,
+  "center_method": "median of interpolated positive/negative envelope midpoint",
+  "initial_state_method": "first detected turning point after release; speed fixed to zero",
+  "selection_file": "06_Analysis/fitting_pipeline/results/20260921/waveform_review/waveform_selection.csv",
+  "selection_sha256": "f013098c9b0de29f611b804e60658c58e084195e73edb0c2473383a8351c7f92",
+  "input_sha256": {
+    "04_Data/05_Fitting/20260921/Raw/球/LOG00012_ANGLE.csv": "b7c96384ad995ae49de8700935fd21a891204c38ee2d39f18890595de6dbbaa5",
+    "04_Data/05_Fitting/20260921/Raw/球なし/LOG00013_ANGLE.csv": "f88a505225b32fb34c069fd5886d610aabe4bfe7ae28ed80dbe0c0dd275ae72a",
+    "04_Data/05_Fitting/20260921/Raw/1/LOG00014_ANGLE.csv": "5fe004852f2ed08a6c770d09b597b5ea1e1f2b850efeff7c3f1a715c40edc2a8",
+    "04_Data/05_Fitting/20260921/Raw/2/LOG00015_ANGLE.csv": "fbca1b4d0a5e290658c6455ccfa1d53cb2878c654e6ef8a62d1e7a340563042d",
+    "04_Data/05_Fitting/20260921/Raw/3/LOG00016_ANGLE.csv": "742103863dcb64555a5e9b7cd9b2031f3fa3216f7d7be459ea8c83f55d1e1a9d",
+    "04_Data/05_Fitting/20260921/Raw/4/LOG00017_ANGLE.csv": "a2abe8b4049065c67a4cf66a3b736a8c63329dc7ac2a51fea78c717c66a24fae"
+  }
+}
