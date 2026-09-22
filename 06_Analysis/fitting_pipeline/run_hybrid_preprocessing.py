@@ -2,7 +2,7 @@
 
 物理係数は同定せず、確認済み波形ごとに次を決める。
 
-1. 平衡中心を上下頂点包絡線の中点中央値から算出する。
+1. 平衡中心を上下頂点包絡線の中点の算術平均から算出する。
 2. 最初の半周期を除外し、最初の折返し頂点を時間原点にする。
 3. 初期角度を実測頂点、初期速度を0として固定する。
 4. 全点平均、従来の終端中央値と平衡中心を比較する。
@@ -88,6 +88,10 @@ def analyze_waveforms(date_directory, selection):
         segment_tail_deg = float(
             np.rad2deg(result["computed_segment_tail_median_rad"])
         )
+        midpoint_deg = np.rad2deg(result["midpoint_rad"])
+        quarter_count = max(1, int(np.ceil(len(midpoint_deg) / 4.0)))
+        early_midpoint_mean_deg = float(np.mean(midpoint_deg[:quarter_count]))
+        late_midpoint_mean_deg = float(np.mean(midpoint_deg[-quarter_count:]))
         waveform_rows.append(
             {
                 "segment_id": str(row["segment_id"]),
@@ -112,11 +116,18 @@ def analyze_waveforms(date_directory, selection):
                 "mean_minus_envelope_deg": mean_deg - center_deg,
                 "tail_minus_envelope_deg": tail_deg - center_deg,
                 "segment_tail_minus_envelope_deg": segment_tail_deg - center_deg,
-                "midpoint_mad_deg": float(
-                    np.rad2deg(result["midpoint_mad_rad"])
+                "midpoint_mean_absolute_deviation_deg": float(
+                    np.rad2deg(
+                        result["midpoint_mean_absolute_deviation_rad"]
+                    )
                 ),
                 "midpoint_range_deg": float(
                     np.rad2deg(result["midpoint_range_rad"])
+                ),
+                "early_midpoint_mean_deg": early_midpoint_mean_deg,
+                "late_midpoint_mean_deg": late_midpoint_mean_deg,
+                "late_minus_early_midpoint_deg": (
+                    late_midpoint_mean_deg - early_midpoint_mean_deg
                 ),
                 "midpoint_slope_deg_s": float(
                     np.rad2deg(result["midpoint_slope_rad_s"])
@@ -193,15 +204,15 @@ def analyze_waveforms(date_directory, selection):
     return waveform_rows, extrema_rows, midpoint_rows, cache
 
 
-def plot_preprocessing_overview(waveform_rows, output_path):
-    """全波形の中心差、安定性、初期状態を一枚で比較する。"""
+def plot_center_method_comparison(waveform_rows, output_path):
+    """各波形で求めた中心と比較用中心を明示的な凡例付きで示す。"""
 
     table = pd.DataFrame(waveform_rows).sort_values(
         ["axis", "configuration", "direction", "repetition"]
     ).reset_index(drop=True)
     x = np.arange(len(table))
     labels = table["segment_id"].tolist()
-    figure, axes = plt.subplots(4, 1, figsize=(22, 15), sharex=True)
+    figure, axes = plt.subplots(2, 1, figsize=(22, 11), sharex=True)
 
     axes[0].plot(
         x,
@@ -209,25 +220,25 @@ def plot_preprocessing_overview(waveform_rows, output_path):
         "o-",
         linewidth=1.0,
         markersize=4,
-        label="Envelope midpoint median",
+        label="Adopted: mean of envelope midpoints",
     )
     axes[0].plot(
         x,
         table["all_point_mean_deg"],
         "x",
         markersize=5,
-        label="All-point mean",
+        label="Comparison: mean of all angle samples",
     )
     axes[0].plot(
         x,
         table["existing_tail_baseline_deg"],
         "+",
         markersize=6,
-        label="Existing tail baseline",
+        label="Comparison: end-of-test reference",
     )
     axes[0].set_ylabel("Center [deg]")
-    axes[0].set_title("Deterministic center and initial-state preprocessing")
-    axes[0].legend(ncol=3, loc="best")
+    axes[0].set_title("Center estimate for each waveform")
+    axes[0].legend(ncol=3, loc="upper center", fontsize=11)
 
     axes[1].axhline(0.0, color="0.35", linewidth=0.8)
     axes[1].plot(
@@ -235,42 +246,67 @@ def plot_preprocessing_overview(waveform_rows, output_path):
         table["mean_minus_envelope_deg"],
         "o",
         markersize=4,
-        label="Mean - envelope",
+        label="All-sample mean minus adopted center",
     )
     axes[1].plot(
         x,
         table["tail_minus_envelope_deg"],
         "s",
         markersize=3.5,
-        label="Tail - envelope",
+        label="End reference minus adopted center",
     )
-    axes[1].set_ylabel("Center difference [deg]")
-    axes[1].legend(ncol=2, loc="best")
+    axes[1].set_ylabel("Difference from adopted center [deg]")
+    axes[1].legend(ncol=2, loc="upper center", fontsize=11)
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(labels, rotation=90, fontsize=7)
+    axes[1].set_xlabel("Waveform (each waveform is processed independently)")
 
-    axes[2].plot(
+    for axis in axes:
+        axis.grid(True, alpha=0.25)
+    figure.tight_layout()
+    figure.savefig(output_path, dpi=150)
+    plt.close(figure)
+
+
+def plot_center_stability_and_initial_state(waveform_rows, output_path):
+    """試験中の中点変化と、固定した波形別初期角度を示す。"""
+
+    table = pd.DataFrame(waveform_rows).sort_values(
+        ["axis", "configuration", "direction", "repetition"]
+    ).reset_index(drop=True)
+    x = np.arange(len(table))
+    labels = table["segment_id"].tolist()
+    figure, axes = plt.subplots(2, 1, figsize=(22, 11), sharex=True)
+
+    axes[0].axhspan(-0.5, 0.5, color="0.90", label="Measurement-error range (±0.5 deg)")
+    axes[0].axhline(0.0, color="0.35", linewidth=0.8)
+    axes[0].plot(
         x,
-        table["midpoint_mad_deg"],
+        table["late_minus_early_midpoint_deg"],
         "o",
-        markersize=4,
-        label="Midpoint MAD",
-    )
-    axes[2].plot(
-        x,
-        table["midpoint_range_deg"],
-        ".",
         markersize=5,
-        label="Midpoint range",
+        label="Last-quarter mean minus first-quarter mean",
     )
-    axes[2].set_ylabel("Midpoint variation [deg]")
-    axes[2].legend(ncol=2, loc="best")
+    axes[0].set_ylabel("Change in envelope midpoint [deg]")
+    axes[0].set_title("Within-waveform center stability (diagnostic only; no correction applied)")
+    axes[0].legend(ncol=2, loc="upper center", fontsize=11)
 
-    colors = np.where(table["initial_peak_kind"] == "MAX", "tab:red", "tab:blue")
-    axes[3].axhline(0.0, color="0.35", linewidth=0.8)
-    axes[3].scatter(x, table["initial_angle_deg"], c=colors, s=18)
-    axes[3].set_ylabel("Initial centered angle [deg]")
-    axes[3].set_xticks(x)
-    axes[3].set_xticklabels(labels, rotation=90, fontsize=7)
-    axes[3].set_xlabel("Approved waveform")
+    maximum = table["initial_peak_kind"] == "MAX"
+    axes[1].axhline(0.0, color="0.35", linewidth=0.8)
+    axes[1].scatter(
+        x[maximum], table.loc[maximum, "initial_angle_deg"],
+        color="tab:red", s=28, label="Initial state is a positive maximum",
+    )
+    axes[1].scatter(
+        x[~maximum], table.loc[~maximum, "initial_angle_deg"],
+        color="tab:blue", s=28, label="Initial state is a negative minimum",
+    )
+    axes[1].set_ylabel("Initial angle about adopted center [deg]")
+    axes[1].set_title("Fixed initial state after excluding the first half-cycle (initial speed = 0)")
+    axes[1].legend(ncol=2, loc="upper center", fontsize=11)
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(labels, rotation=90, fontsize=7)
+    axes[1].set_xlabel("Waveform (initial state is not shared between waveforms)")
 
     for axis in axes:
         axis.grid(True, alpha=0.25)
@@ -295,8 +331,13 @@ def group_summary(table):
                 "tail_difference_abs_mean_deg": float(
                     group["tail_minus_envelope_deg"].abs().mean()
                 ),
-                "midpoint_mad_mean_deg": float(group["midpoint_mad_deg"].mean()),
+                "midpoint_mean_absolute_deviation_mean_deg": float(
+                    group["midpoint_mean_absolute_deviation_deg"].mean()
+                ),
                 "midpoint_range_max_deg": float(group["midpoint_range_deg"].max()),
+                "late_minus_early_midpoint_mean_deg": float(
+                    group["late_minus_early_midpoint_deg"].mean()
+                ),
             }
         )
     return rows
@@ -343,15 +384,27 @@ def write_report(output_path, waveform_rows, group_rows, direction_rows):
     lines = [
         "# Stage 1: 頂点・平衡中心・初期状態の決定",
         "",
-        "## 実施内容",
+        "## 採用済みの判断",
         "",
-        "- 平衡中心に依存せず極大・極小を抽出",
-        "- 各頂点を近傍3点の二次補間でサンプル間へ補正",
-        "- 振幅4 deg以上の上下包絡線中点の中央値を平衡中心として固定",
-        "- 解放後最初の折返し頂点を時間原点・初期角度として固定",
-        "- 初期速度を0に固定",
-        "- 全点平均、既存の終端中央値と比較",
-        "- 物理係数の同定は未実施",
+        "| 項目 | 採用内容 | フィッティング変数か |",
+        "|---|---|---|",
+        "| 平衡中心 | 各波形の上下包絡線中点の算術平均 | いいえ |",
+        "| 時間原点 | 解放後の最初の半周期を除外した、最初の折返し頂点 | いいえ |",
+        "| 初期角度 | 上記頂点の実測角度から、その波形の平衡中心を引いた値 | いいえ |",
+        "| 初期速度 | 頂点なので0 | いいえ |",
+        "| センサーオフセット | Stage 1では考慮しない | いいえ |",
+        "| 試験中の中心変化 | 約0.5 degは計測誤差範囲として補正・除外しない | いいえ |",
+        "",
+        "中心、時間原点、初期角度は46波形それぞれで決めている。軸・形態別または全波形の",
+        "平均値を、個々の波形の初期条件として流用していない。物理係数の同定はまだ行っていない。",
+        "",
+        "## 算出方法",
+        "",
+        "1. 平衡中心を仮定せず極大・極小を抽出する。",
+        "2. 各頂点の時刻と角度を、近傍3点の二次補間で補正する。",
+        "3. 振幅4 deg以上の正負頂点から上下包絡線を作る。",
+        "4. 同じ時刻の上下包絡線の中点を求め、その算術平均を当該波形の平衡中心とする。",
+        "5. 解放後最初の折返し頂点を、時間原点・初期角度として固定する。",
         "",
         "## 全体集計",
         "",
@@ -362,24 +415,48 @@ def write_report(output_path, waveform_rows, group_rows, direction_rows):
         f"- |全点平均 - 包絡線中心| 最大: {table['mean_minus_envelope_deg'].abs().max():.3f} deg",
         f"- |既存終端中心 - 包絡線中心| 中央値: {table['tail_minus_envelope_deg'].abs().median():.3f} deg",
         f"- |既存終端中心 - 包絡線中心| 最大: {table['tail_minus_envelope_deg'].abs().max():.3f} deg",
-        f"- 包絡線中点MAD 中央値: {table['midpoint_mad_deg'].median():.3f} deg",
+        f"- 包絡線中点の平均絶対偏差の中央値: {table['midpoint_mean_absolute_deviation_deg'].median():.3f} deg",
         f"- 包絡線中点範囲 最大: {table['midpoint_range_deg'].max():.3f} deg",
+        f"- 後半1/4中点平均 - 前半1/4中点平均の中央値: {table['late_minus_early_midpoint_deg'].median():.3f} deg",
         f"- 除外した最初の半周期 中央値: {table['ignored_initial_half_cycle_s'].median():.3f} s",
         f"- 初期振幅 中央値: {table['initial_angle_deg'].abs().median():.3f} deg",
         f"- 包絡線中心の|P開始 - N開始| 中央値: {directions['envelope_abs_direction_difference_deg'].median():.3f} deg",
         f"- 全点平均の|P開始 - N開始| 中央値: {directions['all_point_mean_abs_direction_difference_deg'].median():.3f} deg",
         "",
+        "### 指標の定義",
+        "",
+        "- 包絡線中点の平均絶対偏差: 各中点と、その波形で採用した中点平均との差の絶対値を平均した値。",
+        "- 包絡線中点範囲: 同じ波形における中点の最大値と最小値の差。外れ値にも反応する診断値。",
+        "- 前半・後半1/4中点平均: 中点系列の先頭25%と末尾25%をそれぞれ算術平均した値。",
+        "- 表中の「中央値」: 46波形の集計値を極端な波形に左右されにくく示すためだけに使用。波形中心の算出には使用しない。",
+        "",
+        "## 試験中の中心変化に関する誤差メモ",
+        "",
+        "包絡線中点には、前半から後半へ約0.5 deg変化する傾向が見られる。今回は計測誤差範囲と判断し、",
+        "中心は時間変化させず、各波形の中点系列全体の算術平均で固定する。この変化だけを理由に波形を除外しない。",
+        "",
+        "後段の連続波形再現で誤差が大きい場合、または残差に時間・振幅・方向依存性が残る場合は、",
+        "次を修正候補として再評価する。",
+        "",
+        "- 振幅または時間に依存する平衡中心",
+        "- 角度センサーの非線形性またはゼロ点変化",
+        "- 方向別摩擦またはヒステリシス",
+        "",
         "## 軸・形態別集計",
         "",
-        "| 軸 | 形態 | 波形数 | 包絡線中心平均 [deg] | 標準偏差 [deg] | |平均との差|平均 [deg] | |終端との差|平均 [deg] | 中点MAD平均 [deg] | 中点範囲最大 [deg] |",
-        "|---|---|---:|---:|---:|---:|---:|---:|---:|",
+        "ここでの群平均は診断用であり、個々の波形の中心・初期条件には使用しない。",
+        "",
+        "| 軸 | 形態 | 波形数 | 波形別中心の群平均 [deg] | 群内標準偏差 [deg] | |全点平均との差|平均 [deg] | |終端との差|平均 [deg] | 中点の平均絶対偏差の群平均 [deg] | 中点範囲最大 [deg] | 後半-前半の群平均 [deg] |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for unused_index, row in groups.iterrows():
         lines.append(
             f"| {row['axis']} | {row['configuration']} | {int(row['waveforms'])} | "
             f"{row['envelope_center_mean_deg']:.3f} | {row['envelope_center_std_deg']:.3f} | "
             f"{row['mean_difference_abs_mean_deg']:.3f} | {row['tail_difference_abs_mean_deg']:.3f} | "
-            f"{row['midpoint_mad_mean_deg']:.3f} | {row['midpoint_range_max_deg']:.3f} |"
+            f"{row['midpoint_mean_absolute_deviation_mean_deg']:.3f} | "
+            f"{row['midpoint_range_max_deg']:.3f} | "
+            f"{row['late_minus_early_midpoint_mean_deg']:.3f} |"
         )
 
     lines.extend(
@@ -434,15 +511,17 @@ def write_report(output_path, waveform_rows, group_rows, direction_rows):
     lines.extend(
         [
             "",
-            "## レビュー事項",
+            "## Stage 1のレビュー結論",
             "",
-            "1. 平衡中心の主値として包絡線中点中央値を採用するか。",
-            "2. 包絡線中点のMAD・範囲が大きい波形を除外せず、現状どおり残差診断へ回すか。",
-            "3. 最初の折返し頂点を初期状態とし、それ以前の半周期を全波形で除外するか。",
+            "1. 承認: 各波形の包絡線中点の算術平均を平衡中心とする。",
+            "2. 承認: 最初の半周期を除外し、最初の折返し頂点で時間・角度・速度を固定する。",
+            "3. 承認: 約0.5 degの中点変化は今回は計測誤差として補正せず、波形も除外しない。",
+            "4. 記録: 後段の誤差が大きい場合に、中心変化を修正候補へ戻す。",
             "",
             "## 出力",
             "",
-            "- [前処理概要図](preprocessing_overview.png)",
+            "- [波形別の中心推定方法比較](preprocessing_overview.png)",
+            "- [試験中の中心変化と波形別初期状態](center_stability_and_initial_state.png)",
             "- [波形別前処理結果](waveform_preprocessing.csv)",
             "- [二次補間後の全頂点](turning_points.csv)",
             "- [包絡線中点系列](center_midpoints.csv)",
@@ -478,8 +557,12 @@ def main():
     save_csv(output_directory / "center_midpoints.csv", midpoint_rows)
     save_csv(output_directory / "preprocessing_group_summary.csv", group_rows)
     save_csv(output_directory / "center_direction_comparison.csv", direction_rows)
-    plot_preprocessing_overview(
+    plot_center_method_comparison(
         waveform_rows, output_directory / "preprocessing_overview.png"
+    )
+    plot_center_stability_and_initial_state(
+        waveform_rows,
+        output_directory / "center_stability_and_initial_state.png",
     )
     write_report(
         output_directory / "PREPROCESSING_REPORT.md",
@@ -500,7 +583,9 @@ def main():
         "minimum_amplitude_deg": MINIMUM_AMPLITUDE_DEG,
         "smooth_time_s": 0.07,
         "peak_prominence_deg": 0.25,
-        "center_method": "median of interpolated positive/negative envelope midpoint",
+        "center_method": "arithmetic mean of interpolated positive/negative envelope midpoint for each waveform",
+        "center_drift_reference_deg": 0.5,
+        "center_drift_policy": "ignore as measurement error in Stage 1; reconsider if downstream residuals are large or systematic",
         "initial_state_method": "first detected turning point after release; speed fixed to zero",
         "selection_file": str(selection_path.relative_to(REPOSITORY_ROOT)),
         "selection_sha256": file_sha256(selection_path),

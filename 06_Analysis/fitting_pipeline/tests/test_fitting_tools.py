@@ -239,6 +239,9 @@ class FittingToolsTest(unittest.TestCase):
             extrema["time_s"], extrema["angle_rad"], extrema["kind"]
         )
         self.assertAlmostEqual(
+            result["center_rad"], float(np.mean(result["midpoint_rad"])), places=14
+        )
+        self.assertAlmostEqual(
             np.rad2deg(result["center_rad"]), np.rad2deg(center), delta=0.05
         )
         first_peak_time = extrema["time_s"][0] - time_s[0]
@@ -253,6 +256,22 @@ class FittingToolsTest(unittest.TestCase):
         self.assertGreater(preprocessing["ignored_initial_half_cycle_s"], 0.6)
         self.assertLess(preprocessing["ignored_initial_half_cycle_s"], 0.8)
         self.assertLess(preprocessing["initial_angle_rad"], 0.0)
+
+    def test_envelope_center_uses_arithmetic_mean_not_median(self):
+        time_s = np.arange(6, dtype=float)
+        angle_deg = np.array([3.0, -1.0, 3.0, -1.0, 11.0, -1.0])
+        kind = np.array([1, -1, 1, -1, 1, -1])
+        result = estimate_envelope_center(
+            time_s,
+            np.deg2rad(angle_deg),
+            kind,
+            minimum_amplitude_deg=0.0,
+        )
+        midpoint_deg = np.rad2deg(result["midpoint_rad"])
+        self.assertAlmostEqual(np.rad2deg(result["center_rad"]), 2.5)
+        self.assertNotAlmostEqual(
+            np.rad2deg(result["center_rad"]), float(np.median(midpoint_deg))
+        )
 
     def test_explicit_energy_basis_has_small_angle_limits(self):
         amplitude = 0.05

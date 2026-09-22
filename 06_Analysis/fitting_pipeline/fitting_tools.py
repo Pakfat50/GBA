@@ -710,7 +710,7 @@ def estimate_envelope_center(
     extrema_kind,
     minimum_amplitude_deg=4.0,
 ):
-    """上下の極値包絡線の中点中央値から平衡中心を決定する。"""
+    """上下の極値包絡線の中点の算術平均から平衡中心を決定する。"""
 
     time_s = np.asarray(extrema_time_s, dtype=float)
     angle = np.asarray(extrema_angle_rad, dtype=float)
@@ -742,7 +742,7 @@ def estimate_envelope_center(
 
     all_extrema = np.ones(len(time_s), dtype=bool)
     initial_time, initial_midpoint = calculate_midline(all_extrema)
-    initial_center = float(np.median(initial_midpoint))
+    initial_center = float(np.mean(initial_midpoint))
     minimum_amplitude = np.deg2rad(minimum_amplitude_deg)
     amplitude_mask = np.abs(angle - initial_center) >= minimum_amplitude
     if np.count_nonzero(amplitude_mask & (kind > 0)) >= 2:
@@ -754,9 +754,9 @@ def estimate_envelope_center(
         used_mask = all_extrema
 
     midpoint_time, midpoint = calculate_midline(used_mask)
-    center = float(np.median(midpoint))
+    center = float(np.mean(midpoint))
     midpoint_deviation = midpoint - center
-    midpoint_mad = float(np.median(np.abs(midpoint_deviation)))
+    midpoint_mean_absolute_deviation = float(np.mean(np.abs(midpoint_deviation)))
     midpoint_range = float(np.max(midpoint) - np.min(midpoint))
     if len(midpoint_time) >= 2:
         relative_time = midpoint_time - midpoint_time[0]
@@ -769,7 +769,7 @@ def estimate_envelope_center(
         "used_extrema_mask": used_mask,
         "midpoint_time_s": midpoint_time,
         "midpoint_rad": midpoint,
-        "midpoint_mad_rad": midpoint_mad,
+        "midpoint_mean_absolute_deviation_rad": midpoint_mean_absolute_deviation,
         "midpoint_range_rad": midpoint_range,
         "midpoint_slope_rad_s": midpoint_slope,
     }
@@ -822,7 +822,9 @@ def preprocess_free_decay(
         "ignored_initial_half_cycle_s": float(
             extrema["time_s"][initial_peak] - time_s[0]
         ),
-        "midpoint_mad_rad": center["midpoint_mad_rad"],
+        "midpoint_mean_absolute_deviation_rad": center[
+            "midpoint_mean_absolute_deviation_rad"
+        ],
         "midpoint_range_rad": center["midpoint_range_rad"],
         "midpoint_slope_rad_s": center["midpoint_slope_rad_s"],
         "midpoint_time_s": center["midpoint_time_s"],
