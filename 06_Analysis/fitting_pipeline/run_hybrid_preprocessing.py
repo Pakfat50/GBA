@@ -561,6 +561,37 @@ def write_report(output_path, waveform_rows, group_rows, direction_rows):
     directions = pd.DataFrame(direction_rows)
     largest_mean = table.iloc[table["mean_minus_envelope_deg"].abs().argsort()[::-1][:5]]
     largest_tail = table.iloc[table["tail_minus_envelope_deg"].abs().argsort()[::-1][:5]]
+    adopted_table = table.sort_values(
+        ["axis", "configuration", "direction", "repetition"]
+    ).reset_index(drop=True)
+    adopted_condition_lines = [
+        "## 結論: 46波形で採用した中心値・初期条件",
+        "",
+        "集計値の中央値や群平均を全波形共通の初期条件には使用していない。",
+        "下表のとおり、包絡線中心、時間原点、初期角度を46波形それぞれで決定し、初期速度だけを全波形で0に固定した。",
+        "採用中心は、各波形における上下包絡線中点系列の算術平均である。",
+        "",
+        "| 波形 | 条件（軸／形態／開始方向） | 採用中心 θeq [deg] | 時間原点（振動開始後） [s] | 中心基準初期角度 θ(0) [deg] | 初期速度 [deg/s] | 初期頂点 |",
+        "|---|---|---:|---:|---:|---:|---|",
+    ]
+    for unused_index, row in adopted_table.iterrows():
+        initial_peak = "極大" if row["initial_peak_kind"] == "MAX" else "極小"
+        condition = f"{row['axis']}／{row['configuration']}／{row['direction']}"
+        adopted_condition_lines.append(
+            f"| {row['segment_id']} | {condition} | "
+            f"{row['envelope_center_deg']:.3f} | "
+            f"{row['ignored_initial_half_cycle_s']:.3f} | "
+            f"{row['initial_angle_deg']:.3f} | "
+            f"{row['initial_speed_deg_s']:.3f} | {initial_peak} |"
+        )
+    adopted_condition_lines.extend(
+        [
+            "",
+            "`時間原点（振動開始後）` は、除外した最初の半周期の長さと同じである。",
+            "各行の初期角度は採用中心を差し引いた角度であり、センサーの絶対角度ではない。",
+            "",
+        ]
+    )
     lines = [
         "# Stage 1: 頂点・平衡中心・初期状態の決定",
         "",
@@ -705,6 +736,7 @@ def write_report(output_path, waveform_rows, group_rows, direction_rows):
             "",
             "![全46波形の前処理概要](all_waveform_preprocessing_overview.png)",
             "",
+            *adopted_condition_lines,
             "## Stage 1のレビュー結論",
             "",
             "1. 承認: 各波形の包絡線中点の算術平均を平衡中心とする。",
