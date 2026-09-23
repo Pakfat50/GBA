@@ -42,9 +42,20 @@ CROSS_VALIDATION_OBJECTIVE_TOLERANCE = 1.0e-8
 CROSS_VALIDATION_LINE_SEARCH_STEPS = 6
 CV_LINEARIZATION_VALIDATION_FOLDS = 2
 CV_RMSE_RELATIVE_TOLERANCE = 0.01
+# 34枚を横4列にすると9行となり、各パネルの波形と凡例を判読できる縦横比になる。
+WAVEFORM_OVERVIEW_COLUMNS = 4
+# 表示曲線だけの刻み。半周期を60分割し、ODEの最大刻みT0/80と同程度以上の描画密度にする。
+WAVEFORM_TRAJECTORY_SUBDIVISIONS = 60
 
 FREE_PARAMETER_NAMES = ["b_IN", "b_OUT", "c_rod", "tau_IN", "tau_OUT"]
-FIXED_PARAMETER_NAMES = ["b_OUT", "c_rod", "tau_IN", "tau_OUT"]
+B_IN_FIXED_PARAMETER_NAMES = ["b_OUT", "c_rod", "tau_IN", "tau_OUT"]
+NO_LINEAR_PARAMETER_NAMES = ["c_rod", "tau_IN", "tau_OUT"]
+FIXED_PARAMETER_NAMES = B_IN_FIXED_PARAMETER_NAMES
+MODEL_PREFIXES = {
+    "b_IN_free": "free",
+    "b_IN_fixed_zero": "fixed",
+    "b_IN_b_OUT_fixed_zero": "no_linear",
+}
 
 
 def parse_arguments():
@@ -53,6 +64,18 @@ def parse_arguments():
     )
     parser.add_argument("--date", required=True, help="試験日。例: 20260921")
     parser.add_argument("--result-root", type=Path, default=DEFAULT_RESULT_ROOT)
+    parser.add_argument(
+        "--data-root",
+        type=Path,
+        default=REPOSITORY_ROOT / "04_Data" / "05_Fitting",
+        help="実波形ログのルート。配下に試験日ディレクトリを置く",
+    )
+    parser.add_argument(
+        "--waveform-selection",
+        type=Path,
+        default=None,
+        help="waveform_selection.csv。省略時は結果ルート内のレビュー済み表を使う",
+    )
     parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
     parser.add_argument(
         "--skip-cross-validation",
@@ -71,6 +94,20 @@ def file_sha256(path):
                 break
             digest.update(block)
     return digest.hexdigest()
+
+
+def repository_input_key(path):
+    """外部作業コピーでもリポジトリ内と同じ入力キーを返す。"""
+
+    path = Path(path).resolve()
+    try:
+        return str(path.relative_to(REPOSITORY_ROOT.resolve()))
+    except ValueError:
+        parts = path.parts
+        for anchor in ["04_Data", "06_Analysis"]:
+            if anchor in parts:
+                return str(Path(*parts[parts.index(anchor) :]))
+    return path.name
 
 
 def save_figure(figure, output_path, dpi=150):
@@ -95,6 +132,78 @@ def read_inputs(parent_result):
     waveforms = pd.read_csv(waveform_path)
     parameters = pd.read_csv(parameter_path)
     return turning, waveforms, parameters, [turning_path, waveform_path, parameter_path]
+
+
+def read_waveform_plot_inputs(date_directory, selection_path, waveform_summary):
+    """34波形の実測ログと、Stage 1で採用した中心・区間を読み込む。"""
+
+    if not selection_path.exists():
+        raise FileNotFoundError("波形採否表がありません: " + str(selection_path))
+    selection = pd.read_csv(selection_path, encoding="utf-8-sig")
+    required = {
+        "segment_id",
+        "data_file",
+        "axis",
+        "angle_column",
+        "configuration",
+        "direction",
+        "repetition",
+        "start_index",
+        "end_index",
+        "use_for_fitting",
+        "review_status",
+    }
+    missing = sorted(required - set(selection.columns))
+    if missing:
+        raise ValueError("波形採否表の列が不足しています: " + ", ".join(missing))
+    if not (selection["review_status"].astype(str).str.upper() == "APPROVED").all():
+        raise ValueError("波形採否表に未承認行があります")
+
+    summary = waveform_summary.set_index("segment_id")
+    selected = selection[
+        (pd.to_numeric(selection["use_for_fitting"], errors="raise") == 1)
+        & (selection["configuration"].astype(str).str.upper() != "BALL")
+    ].copy()
+    cache = {}
+    records = []
+    input_paths = [selection_path]
+    for unused_index, row in selected.iterrows():
+        segment_id = str(row["segment_id"])
+        if segment_id not in summary.index:
+            raise ValueError(segment_id + " のStage 1波形情報がありません")
+        data_path = date_directory / str(row["data_file"])
+        if data_path not in cache:
+            if not data_path.exists():
+                raise FileNotFoundError("実波形ログがありません: " + str(data_path))
+            cache[data_path] = pd.read_csv(data_path)
+            input_paths.append(data_path)
+        complete = cache[data_path]
+        angle_column = str(row["angle_column"])
+        if "systime[ms]" not in complete or angle_column not in complete:
+            raise ValueError(str(data_path) + " に時刻または角度列がありません")
+        time_ms = pd.to_numeric(complete["systime[ms]"], errors="coerce")
+        angle_deg = pd.to_numeric(complete[angle_column], errors="coerce")
+        valid = np.isfinite(time_ms.to_numpy()) & np.isfinite(angle_deg.to_numpy())
+        complete_time_s = time_ms.to_numpy(dtype=float)[valid] / 1000.0
+        complete_angle_deg = angle_deg.to_numpy(dtype=float)[valid]
+        complete_angle_deg = (complete_angle_deg + 180.0) % 360.0 - 180.0
+        start = int(row["start_index"])
+        end = int(row["end_index"]) + 1
+        center_deg = float(summary.loc[segment_id, "envelope_center_deg"])
+        records.append(
+            {
+                "segment_id": segment_id,
+                "axis": str(row["axis"]).strip().upper(),
+                "configuration": str(row["configuration"]).strip().upper(),
+                "direction": str(row["direction"]).strip().upper(),
+                "repetition": int(row["repetition"]),
+                "time_s": complete_time_s[start:end],
+                "centered_angle_deg": complete_angle_deg[start:end] - center_deg,
+            }
+        )
+    if len(records) != 34:
+        raise ValueError("球なし採用波形が34件ではありません: " + str(len(records)))
+    return records, input_paths
 
 
 def build_intervals(turning, parameters, minimum_amplitude_deg=MINIMUM_AMPLITUDE_DEG):
@@ -243,6 +352,52 @@ def solve_interval_with_sensitivities(interval, physical):
         "sensitivity_tau": float(event_state[6]),
         "function_evaluations": int(solution.nfev),
     }
+
+
+def solve_interval_trajectory(
+    interval,
+    physical,
+    sample_count=WAVEFORM_TRAJECTORY_SUBDIVISIONS + 1,
+):
+    """実測頂点から予測次頂点までのフィット曲線を返す。"""
+
+    inertia = interval["inertia_kg_m2"]
+    restoring = interval["restoring_n_m_per_rad"]
+    initial_angle = interval["start_angle_rad"]
+    damping, quadratic, friction = _local_coefficients(interval, physical)
+    epsilon = np.deg2rad(FRICTION_EPSILON_DEG_S)
+    small_period = 2.0 * math.pi * math.sqrt(inertia / restoring)
+
+    def differential_equation(unused_time, state):
+        angle, speed = state
+        acceleration = -restoring * np.sin(angle)
+        acceleration -= damping * speed
+        acceleration -= quadratic * abs(speed) * speed
+        acceleration -= friction * np.tanh(speed / epsilon)
+        return [speed, acceleration / inertia]
+
+    def next_turning_event(unused_time, state):
+        return state[1]
+
+    next_turning_event.terminal = True
+    next_turning_event.direction = 1.0 if initial_angle > 0.0 else -1.0
+    solution = solve_ivp(
+        differential_equation,
+        (0.0, MAXIMUM_SEARCH_PERIODS * small_period),
+        [initial_angle, 0.0],
+        method="DOP853",
+        events=next_turning_event,
+        dense_output=True,
+        rtol=1.0e-9,
+        atol=[1.0e-12, 1.0e-12],
+        max_step=MAX_STEP_PERIOD_FRACTION * small_period,
+    )
+    if not solution.success or len(solution.t_events[0]) != 1:
+        raise RuntimeError(interval["interval_id"] + " の軌跡終端を検出できません")
+    event_time = float(solution.t_events[0][0])
+    relative_time = np.linspace(0.0, event_time, int(sample_count))
+    angle = solution.sol(relative_time)[0]
+    return relative_time, angle
 
 
 def _solve_task(task):
@@ -788,24 +943,25 @@ def validate_linearized_cross_validation(
     return validation_rows
 
 
-def make_interval_rows(intervals, free_fit, fixed_fit):
+def make_interval_rows(intervals, model_fits):
     rows = []
     for index, interval in enumerate(intervals):
         row = dict(interval)
-        for model_name, fit in [("free", free_fit), ("fixed", fixed_fit)]:
+        for model_name, fit in model_fits.items():
+            prefix = MODEL_PREFIXES[model_name]
             prediction = fit["predictions"][index]
             predicted_deg = float(np.rad2deg(prediction["predicted_next_angle_rad"]))
-            row[model_name + "_predicted_next_angle_deg"] = predicted_deg
-            row[model_name + "_residual_deg"] = (
+            row[prefix + "_predicted_next_angle_deg"] = predicted_deg
+            row[prefix + "_residual_deg"] = (
                 predicted_deg - interval["measured_next_angle_deg"]
             )
-            row[model_name + "_amplitude_residual_deg"] = (
+            row[prefix + "_amplitude_residual_deg"] = (
                 abs(predicted_deg) - abs(interval["measured_next_angle_deg"])
             )
-            row[model_name + "_predicted_half_period_s"] = prediction[
+            row[prefix + "_predicted_half_period_s"] = prediction[
                 "predicted_half_period_s"
             ]
-            row[model_name + "_half_period_residual_s"] = (
+            row[prefix + "_half_period_residual_s"] = (
                 prediction["predicted_half_period_s"]
                 - interval["measured_half_period_s"]
             )
@@ -861,7 +1017,7 @@ def plot_results(interval_rows, cv_rows, comparison_rows, adopted_model, output_
     table = pd.DataFrame(interval_rows)
     cv = pd.DataFrame(cv_rows)
     comparison = pd.DataFrame(comparison_rows).set_index("model")
-    adopted_prefix = "free" if adopted_model == "b_IN_free" else "fixed"
+    adopted_prefix = MODEL_PREFIXES[adopted_model]
     residual_column = adopted_prefix + "_amplitude_residual_deg"
     prediction_column = adopted_prefix + "_predicted_next_angle_deg"
     figure, axes = plt.subplots(2, 2, figsize=(13, 9))
@@ -899,15 +1055,18 @@ def plot_results(interval_rows, cv_rows, comparison_rows, adopted_model, output_
     axes[0, 1].legend()
     box_data = [
         cv[cv["model"] == model]["rmse_deg"].to_numpy(dtype=float)
-        for model in ["b_IN_free", "b_IN_fixed_zero"]
+        for model in MODEL_PREFIXES
     ]
-    axes[1, 0].boxplot(box_data, tick_labels=["b_IN free", "b_IN=0"])
+    axes[1, 0].boxplot(
+        box_data,
+        tick_labels=["both b free", "b_IN=0", "both b=0"],
+    )
     axes[1, 0].set_ylabel("leave-one-waveform-out RMSE [deg]")
     axes[1, 0].grid(True, axis="y", alpha=0.3)
     names = ["training", "LOO-CV"]
     x_value = np.arange(len(names))
-    width = 0.35
-    for offset, model in [(-0.5, "b_IN_free"), (0.5, "b_IN_fixed_zero")]:
+    width = 0.25
+    for offset, model in zip([-1.0, 0.0, 1.0], MODEL_PREFIXES):
         values = [
             comparison.loc[model, "waveform_equal_rmse_deg"],
             comparison.loc[model, "cv_waveform_equal_rmse_deg"],
@@ -927,6 +1086,125 @@ def plot_results(interval_rows, cv_rows, comparison_rows, adopted_model, output_
     save_figure(figure, output_path)
 
 
+def plot_waveform_overlays(
+    waveform_records,
+    intervals,
+    adopted_fit,
+    output_path,
+):
+    """全34波形へ区間別フィット曲線と実波形を重ねて表示する。"""
+
+    records = sorted(
+        waveform_records,
+        key=lambda item: (
+            item["axis"],
+            item["configuration"],
+            item["direction"],
+            item["repetition"],
+        ),
+    )
+    interval_indices = {}
+    for index, interval in enumerate(intervals):
+        interval_indices.setdefault(interval["segment_id"], []).append(index)
+    column_count = WAVEFORM_OVERVIEW_COLUMNS
+    row_count = int(math.ceil(len(records) / column_count))
+    figure, axes = plt.subplots(
+        row_count,
+        column_count,
+        figsize=(6.0 * column_count, 3.0 * row_count),
+        squeeze=False,
+    )
+    for plot_number, record in enumerate(records):
+        axis = axes.flat[plot_number]
+        indices = interval_indices[record["segment_id"]]
+        segment_intervals = [intervals[index] for index in indices]
+        time_origin = segment_intervals[0]["start_time_s"]
+        final_time = segment_intervals[-1]["end_time_s"]
+        measured_mask = (record["time_s"] >= time_origin) & (
+            record["time_s"] <= final_time
+        )
+        axis.plot(
+            record["time_s"][measured_mask] - time_origin,
+            record["centered_angle_deg"][measured_mask],
+            color="0.55",
+            linewidth=0.65,
+            label="measured waveform" if plot_number == 0 else None,
+            zorder=1,
+        )
+        predicted_times = []
+        predicted_angles = []
+        measured_peak_times = [segment_intervals[0]["start_time_s"] - time_origin]
+        measured_peak_angles = [segment_intervals[0]["start_angle_deg"]]
+        for interval_index in indices:
+            interval = intervals[interval_index]
+            relative_time, angle_rad = solve_interval_trajectory(
+                interval, adopted_fit["parameters"]
+            )
+            axis.plot(
+                interval["start_time_s"] - time_origin + relative_time,
+                np.rad2deg(angle_rad),
+                color="#d95f02",
+                linewidth=1.05,
+                alpha=0.92,
+                label="interval fit" if plot_number == 0 and interval_index == indices[0] else None,
+                zorder=2,
+            )
+            prediction = adopted_fit["predictions"][interval_index]
+            predicted_times.append(
+                interval["start_time_s"]
+                - time_origin
+                + prediction["predicted_half_period_s"]
+            )
+            predicted_angles.append(
+                np.rad2deg(prediction["predicted_next_angle_rad"])
+            )
+            measured_peak_times.append(interval["end_time_s"] - time_origin)
+            measured_peak_angles.append(interval["measured_next_angle_deg"])
+        axis.scatter(
+            measured_peak_times,
+            measured_peak_angles,
+            s=9,
+            color="#1b1b1b",
+            label="measured peaks" if plot_number == 0 else None,
+            zorder=3,
+        )
+        axis.scatter(
+            predicted_times,
+            predicted_angles,
+            s=12,
+            marker="x",
+            linewidths=0.8,
+            color="#d95f02",
+            label="predicted peaks" if plot_number == 0 else None,
+            zorder=4,
+        )
+        residual_deg = np.rad2deg(adopted_fit["residual_rad"][indices])
+        rmse_deg = float(np.sqrt(np.mean(residual_deg**2)))
+        axis.set_title(record["segment_id"] + f"  RMSE={rmse_deg:.3f} deg", fontsize=8)
+        axis.set_xlim(0.0, final_time - time_origin)
+        axis.grid(True, alpha=0.2)
+        axis.tick_params(labelsize=7)
+    for unused_axis in axes.flat[len(records) :]:
+        unused_axis.axis("off")
+    figure.supxlabel("time from first fitted peak [s]")
+    figure.supylabel("centered angle [deg]")
+    handles, labels = axes.flat[0].get_legend_handles_labels()
+    figure.legend(
+        handles,
+        labels,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 0.989),
+        ncol=4,
+        frameon=False,
+    )
+    figure.suptitle(
+        "Stage 4 measured waveforms and interval-reset fits (34 no-ball records)",
+        y=0.999,
+    )
+    figure.tight_layout(rect=(0.02, 0.02, 1.0, 0.972))
+    save_figure(figure, output_path)
+
+
 def write_report(
     output_path,
     interval_rows,
@@ -937,14 +1215,21 @@ def write_report(
     robust_scale_deg,
     adopted_model,
     decision,
+    b_out_decision,
 ):
     intervals = pd.DataFrame(interval_rows)
     comparison = pd.DataFrame(comparison_rows).set_index("model")
-    uncertainty = pd.DataFrame(uncertainty_rows).set_index("parameter")
+    uncertainty = pd.DataFrame(uncertainty_rows)
+    free_uncertainty = uncertainty[uncertainty["model"] == "b_IN_free"].set_index(
+        "parameter"
+    )
+    fixed_uncertainty = uncertainty[
+        uncertainty["model"] == "b_IN_fixed_zero"
+    ].set_index("parameter")
     cv = pd.DataFrame(cv_rows)
     cv_validation = pd.DataFrame(cv_validation_rows)
     adopted = comparison.loc[adopted_model]
-    adopted_prefix = "free" if adopted_model == "b_IN_free" else "fixed"
+    adopted_prefix = MODEL_PREFIXES[adopted_model]
     amplitude_residual_column = adopted_prefix + "_amplitude_residual_deg"
     amplitude_correlations = {
         axis: float(
@@ -975,7 +1260,8 @@ def write_report(
         "",
         f"球なし34波形、{len(intervals)}半周期を用い、Stage 2で固定したI、Kと",
         "Stage 3の厳密な頂点間ODEからc_rod、軸別b、tauを共有同定した。",
-        f"b_IN自由モデルとb_IN=0固定モデルを比較し、採用候補は`{adopted_model}`となった。",
+        "b_IN自由、b_IN=0、および既採用候補からb_OUTも0にした両b=0モデルを比較し、",
+        f"採用候補は`{adopted_model}`となった。",
         "係数は波形別・半周期別には求めず、全対象波形で共有している。",
         "",
         "## 同定方法",
@@ -1000,7 +1286,7 @@ def write_report(
         "| モデル | 学習・波形等重みRMSE [deg] | LOO-CV・波形等重みRMSE [deg] | 最大波形RMSE [deg] |",
         "|---|---:|---:|---:|",
     ]
-    for model in ["b_IN_free", "b_IN_fixed_zero"]:
+    for model in MODEL_PREFIXES:
         row = comparison.loc[model]
         lines.append(
             f"| {model} | {row['waveform_equal_rmse_deg']:.6f} | "
@@ -1012,6 +1298,11 @@ def write_report(
             "b_IN=0固定の採用条件は、自由モデルのb_INの95%区間が0を含み、かつ固定モデルの",
             "1波形除外交差検証誤差が自由モデルより悪化しないこととした。",
             f"判定: {decision}",
+            "",
+            "b_OUT=0は、既採用候補のb_IN=0を維持して両軸の線形粘性を0にしたモデルとして比較した。",
+            "採用条件はb_IN=0モデルにおけるb_OUTの95%区間が0を含み、かつ両b=0モデルの",
+            "LOO-CV誤差がb_IN=0モデルより悪化しないことである。",
+            f"判定: {b_out_decision}",
             "",
             "## 採用候補係数",
             "",
@@ -1029,7 +1320,7 @@ def write_report(
             "|---|---:|---:|---:|---:|",
         ]
     )
-    for name, row in uncertainty.iterrows():
+    for name, row in free_uncertainty.iterrows():
         lines.append(
             f"| {name} | {row['value']:.9e} | {row['standard_error']:.3e} | "
             f"{row['ci95_lower']:.9e} | {row['ci95_upper']:.9e} |"
@@ -1039,6 +1330,22 @@ def write_report(
             "",
             "上表はb_IN自由モデルの局所ヤコビアンとロバスト重みから求めた近似区間である。",
             "境界付き推定のため厳密な確率区間ではなく、b_IN=0比較の診断値として扱う。",
+            "",
+            "## b_IN=0モデルの係数・近似区間",
+            "",
+            "| 係数 | 値 | 標準誤差 | 95%下限 | 95%上限 |",
+            "|---|---:|---:|---:|---:|",
+        ]
+    )
+    for name, row in fixed_uncertainty.iterrows():
+        lines.append(
+            f"| {name} | {row['value']:.9e} | {row['standard_error']:.3e} | "
+            f"{row['ci95_lower']:.9e} | {row['ci95_upper']:.9e} |"
+        )
+    lines.extend(
+        [
+            "",
+            "上表はb_OUT=0比較の診断値であり、b_INは0に固定しているため表に含めない。",
             "",
             "## 固定数値と根拠",
             "",
@@ -1058,6 +1365,17 @@ def write_report(
             "| 完全再同定最大反復8 | 全データ最適解を初期値にする検証用ロバストGauss-Newtonの上限。合成データで汎用L-BFGS-Bと同じ係数を2%以内で回収することも自動試験する。 |",
             "| CV刻み収束1e-6、目的関数相対変化1e-8 | 無次元化係数の更新量とロバスト目的関数の二つの停止条件。係数尺度は陽エネルギー初期値から決定する。 |",
             "| CVラインサーチ最大6回 | 1、1/2、…、1/32倍のGauss-Newton刻みを試し、目的関数が減少する最大刻みを採用する。 |",
+            "| 波形概要図4列 | 34波形を9行に収め、各パネルの波形と凡例を判読できる縦横比にする表示専用設定。解析値には影響しない。 |",
+            "| 半周期表示60分割 | ODEの最大刻みT0/80と同程度以上の描画密度で滑らかに表示する設定。フィット計算は適応刻みの厳密ODEで行う。 |",
+            "",
+            "## 34波形の実測・フィット重ね合わせ",
+            "",
+            "![球なし34波形の実測波形と区間別フィット](waveform_fit_overview.png)",
+            "",
+            "橙線は採用候補係数によるフィット結果、灰線は中心補正後の実測波形である。",
+            "Stage 4の目的関数に合わせ、各橙線は半周期開始時に実測頂点へリセットしている。",
+            "したがって、これは1半周期先フィットの重ね合わせであり、最初から最後まで自由走行させた連続再現ではない。",
+            "黒点は実測頂点、橙の×印は予測次頂点を表す。各パネルのRMSEは次頂点角の誤差である。",
             "",
             "## 残差と検証",
             "",
@@ -1099,10 +1417,12 @@ def write_report(
             "- [全半周期の予測と残差](interval_predictions.csv)",
             "- [モデル比較](model_comparison.csv)",
             "- [係数と近似信頼区間](parameter_uncertainty.csv)",
+            "- [b_IN=0モデルの係数相関](parameter_correlation_b_in_fixed.csv)",
             "- [1波形除外交差検証](leave_one_waveform_out.csv)",
             "- [線形化LOO近似の完全再同定検証](cv_approximation_validation.csv)",
             "- [残差集計](residual_summary.csv)",
             "- [結果概要図](rod_damping_identification.png)",
+            "- [34波形の実測・フィット重ね合わせ](waveform_fit_overview.png)",
             "- [実行条件](stage4_settings.json)",
         ]
     )
@@ -1116,7 +1436,10 @@ def main():
         parent_result / "hybrid_identification" / "04_rod_damping_identification"
     )
     output_directory.mkdir(parents=True, exist_ok=True)
-    turning, unused_waveforms, parameters, input_paths = read_inputs(parent_result)
+    turning, waveforms, parameters, input_paths = read_inputs(parent_result)
+    selection_path = arguments.waveform_selection
+    if selection_path is None:
+        selection_path = parent_result / "waveform_review" / "waveform_selection.csv"
     intervals = build_intervals(turning, parameters)
     free_initial = initial_energy_fit(intervals, FREE_PARAMETER_NAMES)
     scales = parameter_scales(free_initial)
@@ -1126,12 +1449,12 @@ def main():
     if worker_count > 1:
         pool = multiprocessing.Pool(processes=worker_count)
     try:
-        print("1/5 初期残差尺度を決定", flush=True)
+        print("1/6 初期残差尺度を決定", flush=True)
         unused_initial_results, initial_residual = evaluate_intervals(
             intervals, free_initial, pool
         )
         robust_scale_deg = robust_scale_from_initial(initial_residual)
-        print("2/5 b_IN自由モデルを同定", flush=True)
+        print("2/6 b_IN自由モデルを同定", flush=True)
         free_fit = fit_model(
             intervals,
             FREE_PARAMETER_NAMES,
@@ -1142,33 +1465,61 @@ def main():
         )
         fixed_initial = dict(free_fit["parameters"])
         fixed_initial["b_IN"] = 0.0
-        print("3/5 b_IN=0固定モデルを同定", flush=True)
+        print("3/6 b_IN=0固定モデルを同定", flush=True)
         fixed_fit = fit_model(
             intervals,
-            FIXED_PARAMETER_NAMES,
+            B_IN_FIXED_PARAMETER_NAMES,
             scales,
             robust_scale_deg,
             fixed_initial,
             pool,
         )
-        if not free_fit["success"] or not fixed_fit["success"]:
+        no_linear_initial = dict(fixed_fit["parameters"])
+        no_linear_initial["b_OUT"] = 0.0
+        print("4/6 b_IN=b_OUT=0固定モデルを同定", flush=True)
+        no_linear_fit = fit_model(
+            intervals,
+            NO_LINEAR_PARAMETER_NAMES,
+            scales,
+            robust_scale_deg,
+            no_linear_initial,
+            pool,
+        )
+        if not all(
+            fit["success"] for fit in [free_fit, fixed_fit, no_linear_fit]
+        ):
             raise RuntimeError(
                 "共有減衰同定が収束しません: "
                 + free_fit["message"]
                 + " / "
                 + fixed_fit["message"]
+                + " / "
+                + no_linear_fit["message"]
             )
         free_metrics = model_metrics(intervals, free_fit)
         fixed_metrics = model_metrics(intervals, fixed_fit)
-        uncertainty_rows, correlation = parameter_uncertainty(
+        no_linear_metrics = model_metrics(intervals, no_linear_fit)
+        free_uncertainty_rows, correlation = parameter_uncertainty(
             intervals,
             free_fit,
             FREE_PARAMETER_NAMES,
             robust_scale_deg,
         )
+        fixed_uncertainty_rows, fixed_correlation = parameter_uncertainty(
+            intervals,
+            fixed_fit,
+            B_IN_FIXED_PARAMETER_NAMES,
+            robust_scale_deg,
+        )
+        uncertainty_rows = [
+            {"model": "b_IN_free", **row} for row in free_uncertainty_rows
+        ] + [
+            {"model": "b_IN_fixed_zero", **row}
+            for row in fixed_uncertainty_rows
+        ]
         if arguments.skip_cross_validation:
             raise RuntimeError("正式なStage 4成果では交差検証を省略できません")
-        print("4/5 1波形除外交差検証", flush=True)
+        print("5/6 1波形除外交差検証", flush=True)
         cv_rows = []
         cv_rows.extend(
             cross_validate_waveforms(
@@ -1185,10 +1536,21 @@ def main():
             cross_validate_waveforms(
                 intervals,
                 "b_IN_fixed_zero",
-                FIXED_PARAMETER_NAMES,
+                B_IN_FIXED_PARAMETER_NAMES,
                 scales,
                 robust_scale_deg,
                 fixed_fit,
+                pool,
+            )
+        )
+        cv_rows.extend(
+            cross_validate_waveforms(
+                intervals,
+                "b_IN_b_OUT_fixed_zero",
+                NO_LINEAR_PARAMETER_NAMES,
+                scales,
+                robust_scale_deg,
+                no_linear_fit,
                 pool,
             )
         )
@@ -1210,10 +1572,22 @@ def main():
                 intervals,
                 cv_rows,
                 "b_IN_fixed_zero",
-                FIXED_PARAMETER_NAMES,
+                B_IN_FIXED_PARAMETER_NAMES,
                 scales,
                 robust_scale_deg,
                 fixed_fit,
+                pool,
+            )
+        )
+        cv_validation_rows.extend(
+            validate_linearized_cross_validation(
+                intervals,
+                cv_rows,
+                "b_IN_b_OUT_fixed_zero",
+                NO_LINEAR_PARAMETER_NAMES,
+                scales,
+                robust_scale_deg,
+                no_linear_fit,
                 pool,
             )
         )
@@ -1250,6 +1624,7 @@ def main():
     for model_name, fit, metrics in [
         ("b_IN_free", free_fit, free_metrics),
         ("b_IN_fixed_zero", fixed_fit, fixed_metrics),
+        ("b_IN_b_OUT_fixed_zero", no_linear_fit, no_linear_metrics),
     ]:
         model_cv = cv_table[cv_table["model"] == model_name]
         comparison_rows.append(
@@ -1271,7 +1646,7 @@ def main():
         )
     comparison = pd.DataFrame(comparison_rows).set_index("model")
     b_in_uncertainty = {
-        row["parameter"]: row for row in uncertainty_rows
+        row["parameter"]: row for row in free_uncertainty_rows
     }["b_IN"]
     interval_includes_zero = (
         b_in_uncertainty["ci95_lower"] <= 0.0
@@ -1293,10 +1668,60 @@ def main():
             reasons.append("b_IN=0固定でLOO-CV誤差が悪化する")
         decision = "、".join(reasons) + "ためb_IN自由モデルを採用候補とする。"
 
-    print("5/5 結果を保存", flush=True)
-    interval_rows = make_interval_rows(intervals, free_fit, fixed_fit)
+    b_out_uncertainty = {
+        row["parameter"]: row for row in fixed_uncertainty_rows
+    }["b_OUT"]
+    b_out_interval_includes_zero = (
+        b_out_uncertainty["ci95_lower"] <= 0.0
+        and b_out_uncertainty["ci95_upper"] >= 0.0
+    )
+    b_out_validation_not_worse = (
+        comparison.loc[
+            "b_IN_b_OUT_fixed_zero", "cv_waveform_equal_rmse_deg"
+        ]
+        <= comparison.loc["b_IN_fixed_zero", "cv_waveform_equal_rmse_deg"]
+    )
+    if (
+        adopted_model == "b_IN_fixed_zero"
+        and b_out_interval_includes_zero
+        and b_out_validation_not_worse
+    ):
+        adopted_model = "b_IN_b_OUT_fixed_zero"
+        b_out_decision = (
+            "b_OUTの95%区間が0を含み、両b=0でもLOO-CV誤差が悪化しないため、"
+            "b_OUT=0も採用候補とする。"
+        )
+    else:
+        b_out_reasons = []
+        if adopted_model != "b_IN_fixed_zero":
+            b_out_reasons.append("基準となるb_IN=0モデルが採用候補ではない")
+        if not b_out_interval_includes_zero:
+            b_out_reasons.append("b_IN=0モデルのb_OUT 95%区間が0を含まない")
+        if not b_out_validation_not_worse:
+            b_out_reasons.append("両b=0でLOO-CV誤差が悪化する")
+        b_out_decision = (
+            "、".join(b_out_reasons)
+            + "ためb_OUT=0は採用せず、b_OUTを同定するモデルを維持する。"
+        )
+
+    # 大きい実波形配列は並列フィット終了後に読む。ワーカープロセスへ不要な
+    # 配列を複製せず、同定計算のメモリ使用量とプロセス生成負荷を抑える。
+    waveform_records, waveform_input_paths = read_waveform_plot_inputs(
+        arguments.data_root / arguments.date,
+        selection_path,
+        waveforms,
+    )
+    input_paths.extend(waveform_input_paths)
+
+    print("6/6 結果を保存", flush=True)
+    model_fits = {
+        "b_IN_free": free_fit,
+        "b_IN_fixed_zero": fixed_fit,
+        "b_IN_b_OUT_fixed_zero": no_linear_fit,
+    }
+    interval_rows = make_interval_rows(intervals, model_fits)
     residual_rows = summarize_residuals(
-        interval_rows, "free" if adopted_model == "b_IN_free" else "fixed"
+        interval_rows, MODEL_PREFIXES[adopted_model]
     )
     pd.DataFrame(interval_rows).to_csv(
         output_directory / "interval_predictions.csv", index=False
@@ -1321,12 +1746,25 @@ def main():
         header=",".join(FREE_PARAMETER_NAMES),
         comments=",",
     )
+    np.savetxt(
+        output_directory / "parameter_correlation_b_in_fixed.csv",
+        fixed_correlation,
+        delimiter=",",
+        header=",".join(B_IN_FIXED_PARAMETER_NAMES),
+        comments=",",
+    )
     plot_results(
         interval_rows,
         cv_rows,
         comparison_rows,
         adopted_model,
         output_directory / "rod_damping_identification.png",
+    )
+    plot_waveform_overlays(
+        waveform_records,
+        intervals,
+        model_fits[adopted_model],
+        output_directory / "waveform_fit_overview.png",
     )
     write_report(
         output_directory / "ROD_DAMPING_REPORT.md",
@@ -1338,6 +1776,7 @@ def main():
         robust_scale_deg,
         adopted_model,
         decision,
+        b_out_decision,
     )
     settings = {
         "stage": 4,
@@ -1366,8 +1805,12 @@ def main():
         "parameter_scales": scales,
         "adopted_model_candidate": adopted_model,
         "decision": decision,
+        "b_out_zero_decision": b_out_decision,
+        "waveform_overview_columns": WAVEFORM_OVERVIEW_COLUMNS,
+        "waveform_trajectory_subdivisions_per_half_cycle": WAVEFORM_TRAJECTORY_SUBDIVISIONS,
+        "waveform_overlay_definition": "measured centered waveform overlaid with exact-ODE half-cycle fits reset at every measured starting peak",
         "input_sha256": {
-            str(path.relative_to(REPOSITORY_ROOT)): file_sha256(path)
+            repository_input_key(path): file_sha256(path)
             for path in input_paths
         },
     }

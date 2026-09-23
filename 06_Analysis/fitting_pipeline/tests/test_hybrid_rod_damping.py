@@ -17,6 +17,7 @@ from run_hybrid_rod_damping_identification import build_intervals
 from run_hybrid_rod_damping_identification import fit_model
 from run_hybrid_rod_damping_identification import fit_model_gauss_newton
 from run_hybrid_rod_damping_identification import parameter_scales
+from run_hybrid_rod_damping_identification import solve_interval_trajectory
 from run_hybrid_rod_damping_identification import solve_interval_with_sensitivities
 
 
@@ -93,6 +94,31 @@ class HybridRodDampingTest(unittest.TestCase):
             self.assertAlmostEqual(
                 result[sensitivity_name] / finite_difference, 1.0, delta=2.0e-4
             )
+
+    def test_plot_trajectory_ends_at_same_turning_point(self):
+        interval = self.make_interval()
+        physical = {
+            "b_IN": 3.0e-5,
+            "b_OUT": 4.0e-5,
+            "c_rod": 2.0e-6,
+            "tau_IN": 7.0e-5,
+            "tau_OUT": 8.0e-5,
+        }
+        trajectory_time, trajectory_angle = solve_interval_trajectory(
+            interval, physical
+        )
+        augmented = solve_interval_with_sensitivities(interval, physical)
+        self.assertEqual(len(trajectory_time), 61)
+        self.assertAlmostEqual(
+            trajectory_time[-1],
+            augmented["predicted_half_period_s"],
+            delta=1.0e-10,
+        )
+        self.assertAlmostEqual(
+            trajectory_angle[-1],
+            augmented["predicted_next_angle_rad"],
+            delta=1.0e-10,
+        )
 
     def test_interval_selection_excludes_ball_and_below_four_degrees(self):
         turning = pd.DataFrame(
