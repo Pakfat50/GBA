@@ -1,4 +1,4 @@
-"""ハイブリッド同定用の厳密な頂点間非線形ソルバー。
+"""ハイブリッド同定用の頂点間非線形ソルバー。
 
 実測頂点 ``(theta, theta_dot) = (A_n, 0)`` を初期状態とし、次の
 速度ゼロ交差まで運動方程式を積分する。散逸仕事も状態として同時積分し、
@@ -11,10 +11,12 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 
-DEFAULT_RTOL = 1.0e-9
-DEFAULT_ANGLE_SPEED_ATOL = 1.0e-12
-DEFAULT_ENERGY_ATOL = 1.0e-14
-DEFAULT_MAX_STEP_FRACTION = 1.0 / 80.0
+# Stage 3の全360条件で厳密基準解と比較し、次頂点角0.01 deg、半周期0.1 ms、
+# 正規化エネルギー閉合1e-4の受入基準を満たす最も粗い検証済み設定。
+DEFAULT_RTOL = 1.0e-4
+DEFAULT_ANGLE_SPEED_ATOL = 1.0e-7
+DEFAULT_ENERGY_ATOL = 1.0e-11
+DEFAULT_MAX_STEP_FRACTION = 1.0 / 5.0
 DEFAULT_MAX_PERIODS = 2.0
 
 
@@ -93,7 +95,7 @@ def solve_next_turning_point(
     max_step_fraction=DEFAULT_MAX_STEP_FRACTION,
     max_periods=DEFAULT_MAX_PERIODS,
 ):
-    """初期頂点から次の折返し頂点まで厳密に数値積分する。
+    """初期頂点から次の折返し頂点まで数値積分する。
 
     第3状態は散逸仕事の累積値である。速度イベントの向きを初期角の符号と
     逆向きに指定することで、時刻0の速度ゼロをイベントとして誤検出しない。

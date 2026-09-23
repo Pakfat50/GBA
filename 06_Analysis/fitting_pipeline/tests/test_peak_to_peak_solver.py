@@ -11,6 +11,10 @@ MODULE_DIRECTORY = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(MODULE_DIRECTORY))
 
 from peak_to_peak_solver import conservative_half_period_s
+from peak_to_peak_solver import DEFAULT_ANGLE_SPEED_ATOL
+from peak_to_peak_solver import DEFAULT_ENERGY_ATOL
+from peak_to_peak_solver import DEFAULT_MAX_STEP_FRACTION
+from peak_to_peak_solver import DEFAULT_RTOL
 from peak_to_peak_solver import solve_next_turning_point
 
 
@@ -40,9 +44,9 @@ class PeakToPeakSolverTest(unittest.TestCase):
                     np.deg2rad(angle_deg), self.inertia, self.restoring
                 )
                 self.assertAlmostEqual(
-                    np.rad2deg(result["next_angle_rad"]), -angle_deg, delta=1.0e-8
+                    np.rad2deg(result["next_angle_rad"]), -angle_deg, delta=1.0e-2
                 )
-                self.assertAlmostEqual(result["half_period_s"], exact_time, delta=1.0e-9)
+                self.assertAlmostEqual(result["half_period_s"], exact_time, delta=1.0e-4)
 
     def test_event_direction_alternates_for_both_initial_signs(self):
         positive = self.solve(45.0, 3.8e-5, 1.2e-5, 8.0e-5)
@@ -58,7 +62,7 @@ class PeakToPeakSolverTest(unittest.TestCase):
             "initial_energy_j"
         ]
         self.assertGreater(result["mechanical_loss_j"], 0.0)
-        self.assertLess(relative_closure, 1.0e-9)
+        self.assertLess(relative_closure, 1.0e-4)
 
     def test_default_solution_matches_strict_reference(self):
         default = self.solve(60.0, 3.8e-5, 1.2e-5, 8.0e-5)
@@ -74,9 +78,29 @@ class PeakToPeakSolverTest(unittest.TestCase):
         )
         self.assertLess(
             abs(np.rad2deg(default["next_angle_rad"] - reference["next_angle_rad"])),
-            1.0e-7,
+            1.0e-2,
         )
-        self.assertLess(abs(default["half_period_s"] - reference["half_period_s"]), 1.0e-8)
+        self.assertLess(
+            abs(default["half_period_s"] - reference["half_period_s"]), 1.0e-4
+        )
+
+    def test_default_uses_fewer_evaluations_than_legacy_settings(self):
+        default = self.solve(60.0, 3.8e-5, 1.2e-5, 8.0e-5)
+        legacy = self.solve(
+            60.0,
+            3.8e-5,
+            1.2e-5,
+            8.0e-5,
+            rtol=1.0e-9,
+            angle_speed_atol=1.0e-12,
+            energy_atol=1.0e-14,
+            max_step_fraction=1.0 / 80.0,
+        )
+        self.assertLess(default["function_evaluations"], legacy["function_evaluations"])
+        self.assertEqual(DEFAULT_RTOL, 1.0e-4)
+        self.assertEqual(DEFAULT_ANGLE_SPEED_ATOL, 1.0e-7)
+        self.assertEqual(DEFAULT_ENERGY_ATOL, 1.0e-11)
+        self.assertEqual(DEFAULT_MAX_STEP_FRACTION, 1.0 / 5.0)
 
     def test_invalid_physical_parameters_are_rejected(self):
         with self.assertRaises(ValueError):

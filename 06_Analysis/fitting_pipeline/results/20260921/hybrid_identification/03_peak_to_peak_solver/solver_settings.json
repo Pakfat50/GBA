@@ -16,6 +16,12 @@
   ],
   "friction_epsilon_deg_s": 0.5,
   "default": {
+    "rtol": 0.0001,
+    "angle_speed_atol": 1e-07,
+    "energy_atol": 1e-11,
+    "max_step_period_fraction": 0.2
+  },
+  "legacy_default": {
     "rtol": 1e-09,
     "angle_speed_atol": 1e-12,
     "energy_atol": 1e-14,
@@ -28,10 +34,10 @@
     "max_step_period_fraction": 0.0015625
   },
   "step_convergence_fractions": [
-    0.05,
-    0.025,
-    0.0125,
-    0.00625
+    0.5,
+    0.2,
+    0.1,
+    0.05
   ],
   "synthetic_damping_cases": [
     {
@@ -54,11 +60,21 @@
     }
   ],
   "acceptance_limits": {
-    "peak_error_deg": 1e-07,
-    "time_error_s": 1e-08,
-    "normalized_energy_closure": 1e-09,
-    "conservative_peak_error_deg": 1e-08,
-    "conservative_time_error_s": 1e-09
+    "peak_error_deg": 0.01,
+    "time_error_s": 0.0001,
+    "normalized_energy_closure": 0.0001,
+    "conservative_peak_error_deg": 0.01,
+    "conservative_time_error_s": 0.0001
+  },
+  "acceptance_basis": {
+    "peak_error": "0.01 deg is about 2% of the approximately 0.49 deg Stage 4 one-half-cycle RMSE",
+    "time_error": "0.0001 s is 1% of the 0.01 s logger sampling interval",
+    "normalized_energy_closure": "1e-4 limits the diagnostic closure error to 0.01% without making the energy state dominate the ODE step size"
+  },
+  "performance": {
+    "legacy_mean_function_evaluations": 693.9333333333333,
+    "default_mean_function_evaluations": 172.73333333333332,
+    "total_function_evaluation_speedup": 4.017367811655731
   },
   "stage2_input_sha256": "fffb3a412f4160b40f41c0db415cbddad001155104073ad60c30498bff1932f1",
   "validation_case_count": 360,

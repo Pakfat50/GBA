@@ -1,4 +1,4 @@
-"""ハイブリッド同定Stage 3: 厳密な頂点間非線形ソルバーを検証する。
+"""ハイブリッド同定Stage 3: 頂点間非線形ソルバーを検証する。
 
 Stage 2で固定した全形態のI、Kを使用するが、実データへの減衰係数フィットは
 行わない。保存系の解析解、厳密基準解、エネルギー収支、最大刻み依存性を
@@ -18,6 +18,10 @@ import numpy as np
 import pandas as pd
 
 from peak_to_peak_solver import conservative_half_period_s
+from peak_to_peak_solver import DEFAULT_ANGLE_SPEED_ATOL
+from peak_to_peak_solver import DEFAULT_ENERGY_ATOL
+from peak_to_peak_solver import DEFAULT_MAX_STEP_FRACTION
+from peak_to_peak_solver import DEFAULT_RTOL
 from peak_to_peak_solver import solve_next_turning_point
 
 
@@ -26,9 +30,12 @@ REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 DEFAULT_RESULT_ROOT = SCRIPT_DIRECTORY / "results"
 INITIAL_ANGLES_DEG = [-60.0, -45.0, -30.0, -15.0, -5.0, 5.0, 15.0, 30.0, 45.0, 60.0]
 FRICTION_EPSILON_DEG_S = 0.5
-DEFAULT_MAX_STEP_FRACTION = 1.0 / 80.0
 REFERENCE_MAX_STEP_FRACTION = 1.0 / 640.0
-STEP_FRACTIONS = [1.0 / 20.0, 1.0 / 40.0, 1.0 / 80.0, 1.0 / 160.0]
+STEP_FRACTIONS = [1.0 / 2.0, 1.0 / 5.0, 1.0 / 10.0, 1.0 / 20.0]
+LEGACY_RTOL = 1.0e-9
+LEGACY_ANGLE_SPEED_ATOL = 1.0e-12
+LEGACY_ENERGY_ATOL = 1.0e-14
+LEGACY_MAX_STEP_FRACTION = 1.0 / 80.0
 
 # Stage 3の数値試験専用値。物理係数の採用値ではなく、Stage 4～5でも固定しない。
 SYNTHETIC_DAMPING_CASES = [
@@ -52,11 +59,13 @@ SYNTHETIC_DAMPING_CASES = [
     },
 ]
 
-PEAK_ERROR_LIMIT_DEG = 1.0e-7
-TIME_ERROR_LIMIT_S = 1.0e-8
-ENERGY_CLOSURE_LIMIT = 1.0e-9
-CONSERVATIVE_PEAK_LIMIT_DEG = 1.0e-8
-CONSERVATIVE_TIME_LIMIT_S = 1.0e-9
+# Stage 4で観測した約0.49 degの1半周期先RMSEに対し、数値誤差を約2%以下へ
+# 制限する。時間は10 ms計測周期の1%、エネルギー閉合は0.01%を上限とする。
+PEAK_ERROR_LIMIT_DEG = 1.0e-2
+TIME_ERROR_LIMIT_S = 1.0e-4
+ENERGY_CLOSURE_LIMIT = 1.0e-4
+CONSERVATIVE_PEAK_LIMIT_DEG = PEAK_ERROR_LIMIT_DEG
+CONSERVATIVE_TIME_LIMIT_S = TIME_ERROR_LIMIT_S
 
 
 def parse_arguments():
@@ -88,17 +97,42 @@ def save_figure(figure, output_path, dpi=150):
     temporary_path.replace(output_path)
 
 
-def solve_case(parameter_row, angle_deg, damping_case, reference=False, max_step_fraction=None):
+def solve_case(
+    parameter_row,
+    angle_deg,
+    damping_case,
+    reference=False,
+    legacy=False,
+    max_step_fraction=None,
+):
+    if reference and legacy:
+        raise ValueError("referenceとlegacyは同時に指定できません")
     if max_step_fraction is None:
-        max_step_fraction = (
-            REFERENCE_MAX_STEP_FRACTION if reference else DEFAULT_MAX_STEP_FRACTION
-        )
-    settings = {
-        "rtol": 1.0e-12 if reference else 1.0e-9,
-        "angle_speed_atol": 1.0e-14 if reference else 1.0e-12,
-        "energy_atol": 1.0e-16 if reference else 1.0e-14,
-        "max_step_fraction": max_step_fraction,
-    }
+        if reference:
+            max_step_fraction = REFERENCE_MAX_STEP_FRACTION
+        elif legacy:
+            max_step_fraction = LEGACY_MAX_STEP_FRACTION
+        else:
+            max_step_fraction = DEFAULT_MAX_STEP_FRACTION
+    if reference:
+        settings = {
+            "rtol": 1.0e-12,
+            "angle_speed_atol": 1.0e-14,
+            "energy_atol": 1.0e-16,
+        }
+    elif legacy:
+        settings = {
+            "rtol": LEGACY_RTOL,
+            "angle_speed_atol": LEGACY_ANGLE_SPEED_ATOL,
+            "energy_atol": LEGACY_ENERGY_ATOL,
+        }
+    else:
+        settings = {
+            "rtol": DEFAULT_RTOL,
+            "angle_speed_atol": DEFAULT_ANGLE_SPEED_ATOL,
+            "energy_atol": DEFAULT_ENERGY_ATOL,
+        }
+    settings["max_step_fraction"] = max_step_fraction
     return solve_next_turning_point(
         np.deg2rad(angle_deg),
         float(parameter_row["inertia_kg_m2"]),
@@ -119,6 +153,9 @@ def build_validation_cases(parameters):
                 result = solve_case(parameter_row, angle_deg, damping_case)
                 reference = solve_case(
                     parameter_row, angle_deg, damping_case, reference=True
+                )
+                legacy = solve_case(
+                    parameter_row, angle_deg, damping_case, legacy=True
                 )
                 peak_error_deg = float(
                     np.rad2deg(
@@ -195,6 +232,16 @@ def build_validation_cases(parameters):
                         "conservative_time_error_s": conservative_time_error_s,
                         "next_peak_direction_ok": direction_ok,
                         "function_evaluations": result["function_evaluations"],
+                        "legacy_function_evaluations": legacy[
+                            "function_evaluations"
+                        ],
+                        "reference_function_evaluations": reference[
+                            "function_evaluations"
+                        ],
+                        "evaluation_speedup_vs_legacy": float(
+                            legacy["function_evaluations"]
+                            / result["function_evaluations"]
+                        ),
                         "passed": int(passed),
                     }
                 )
@@ -203,45 +250,59 @@ def build_validation_cases(parameters):
 
 def build_step_convergence(parameters):
     rows = []
-    stress_case = SYNTHETIC_DAMPING_CASES[-1]
     for unused_index, parameter_row in parameters.iterrows():
-        reference = solve_case(
-            parameter_row,
-            60.0,
-            stress_case,
-            reference=True,
-            max_step_fraction=REFERENCE_MAX_STEP_FRACTION,
-        )
-        for fraction in STEP_FRACTIONS:
-            result = solve_case(
-                parameter_row,
-                60.0,
-                stress_case,
-                max_step_fraction=fraction,
-            )
-            rows.append(
-                {
-                    "axis": parameter_row["axis"],
-                    "configuration": parameter_row["configuration"],
-                    "synthetic_case": stress_case["case"],
-                    "initial_angle_deg": 60.0,
-                    "max_step_period_fraction": fraction,
-                    "steps_per_small_angle_period": int(round(1.0 / fraction)),
-                    "peak_error_deg": float(
+        for damping_case in SYNTHETIC_DAMPING_CASES:
+            for angle_deg in INITIAL_ANGLES_DEG:
+                reference = solve_case(
+                    parameter_row,
+                    angle_deg,
+                    damping_case,
+                    reference=True,
+                    max_step_fraction=REFERENCE_MAX_STEP_FRACTION,
+                )
+                for fraction in STEP_FRACTIONS:
+                    result = solve_case(
+                        parameter_row,
+                        angle_deg,
+                        damping_case,
+                        max_step_fraction=fraction,
+                    )
+                    peak_error_deg = float(
                         np.rad2deg(
-                            result["next_angle_rad"] - reference["next_angle_rad"]
+                            result["next_angle_rad"]
+                            - reference["next_angle_rad"]
                         )
-                    ),
-                    "time_error_s": float(
+                    )
+                    time_error_s = float(
                         result["half_period_s"] - reference["half_period_s"]
-                    ),
-                    "normalized_energy_closure": float(
+                    )
+                    normalized_closure = float(
                         abs(result["energy_closure_error_j"])
                         / result["initial_energy_j"]
-                    ),
-                    "function_evaluations": result["function_evaluations"],
-                }
-            )
+                    )
+                    rows.append(
+                        {
+                            "axis": parameter_row["axis"],
+                            "configuration": parameter_row["configuration"],
+                            "synthetic_case": damping_case["case"],
+                            "initial_angle_deg": angle_deg,
+                            "max_step_period_fraction": fraction,
+                            "steps_per_small_angle_period": int(
+                                round(1.0 / fraction)
+                            ),
+                            "peak_error_deg": peak_error_deg,
+                            "time_error_s": time_error_s,
+                            "normalized_energy_closure": normalized_closure,
+                            "function_evaluations": result[
+                                "function_evaluations"
+                            ],
+                            "passed": int(
+                                abs(peak_error_deg) <= PEAK_ERROR_LIMIT_DEG
+                                and abs(time_error_s) <= TIME_ERROR_LIMIT_S
+                                and normalized_closure <= ENERGY_CLOSURE_LIMIT
+                            ),
+                        }
+                    )
     return rows
 
 
@@ -314,6 +375,10 @@ def plot_validation(validation_rows, convergence_rows, output_path):
     axes[1, 1].set_xlabel("maximum steps per small-angle period")
     axes[1, 1].set_ylabel("maximum peak error [deg]", color="#9467bd")
     second_axis.set_ylabel("maximum time error [us]", color="#ff7f0e")
+    axes[1, 1].axhline(PEAK_ERROR_LIMIT_DEG, color="#9467bd", linestyle=":")
+    second_axis.axhline(
+        TIME_ERROR_LIMIT_S * 1.0e6, color="#ff7f0e", linestyle=":"
+    )
     axes[1, 1].grid(True, which="both", alpha=0.3)
     figure.suptitle("Stage 3 peak-to-peak nonlinear solver validation")
     figure.tight_layout()
@@ -325,11 +390,32 @@ def write_report(output_path, validation_rows, convergence_rows):
     convergence = pd.DataFrame(convergence_rows)
     failed = validation[validation["passed"] == 0]
     conservative = validation[validation["synthetic_case"] == "conservative"]
+    evaluation_speedup = float(
+        validation["legacy_function_evaluations"].sum()
+        / validation["function_evaluations"].sum()
+    )
     default_convergence = convergence[
-        convergence["steps_per_small_angle_period"] == 80
+        convergence["steps_per_small_angle_period"]
+        == int(round(1.0 / DEFAULT_MAX_STEP_FRACTION))
     ]
+    coarser_convergence = convergence[
+        convergence["steps_per_small_angle_period"]
+        < int(round(1.0 / DEFAULT_MAX_STEP_FRACTION))
+    ]
+    convergence_summary = (
+        convergence.groupby("steps_per_small_angle_period")
+        .agg(
+            case_count=("passed", "size"),
+            failed_count=("passed", lambda values: int((values == 0).sum())),
+            peak_error_deg=("peak_error_deg", lambda values: np.max(np.abs(values))),
+            time_error_s=("time_error_s", lambda values: np.max(np.abs(values))),
+            normalized_energy_closure=("normalized_energy_closure", "max"),
+            mean_function_evaluations=("function_evaluations", "mean"),
+        )
+        .sort_index()
+    )
     lines = [
-        "# Stage 3: 厳密な頂点間非線形ソルバー",
+        "# Stage 3: 計測精度に合わせた頂点間非線形ソルバー",
         "",
         "## 結論",
         "",
@@ -337,6 +423,7 @@ def write_report(output_path, validation_rows, convergence_rows):
         f"合格{len(validation) - len(failed)}件、不合格{len(failed)}件となった。",
         "実測頂点を初期状態として次の速度ゼロ交差まで積分するソルバーは、Stage 4の",
         "1半周期先頂点残差の計算に使用できる数値精度を満たした。",
+        f"従来設定に対する関数評価回数は全条件合計で1/{evaluation_speedup:.2f}となった。",
         "本Stageでは実データへのb、c、tauのフィットは行っていない。",
         "ここで報告する誤差は、理想・合成波形に対する通常解、厳密基準解、解析解の差であり、",
         "実測波形に対するモデル誤差ではない。",
@@ -352,27 +439,17 @@ def write_report(output_path, validation_rows, convergence_rows):
         "イベントとして検出する。速度イベントの向きを指定するため、時刻0の速度ゼロを",
         "次の頂点として誤検出しない。散逸仕事も第3状態として同時積分した。",
         "",
-        "## Stage 4の目的関数との関係",
+        "## Stage 4との関係",
         "",
-        "各半周期で個別のb、c、tauを求めるのではない。実測頂点A_nから共有係数で",
-        "次頂点を予測し、半周期ごとに次の残差を生成する。",
+        "実測頂点A_nから候補係数で次頂点を予測し、半周期ごとに次の残差を生成する。",
         "",
         "```math",
         "r_{r,n}=\\hat A_{r,n+1}-A_{r,n+1}",
         "```",
         "",
-        "Stage 4では、球なし全波形の残差を使い、c_rodは両軸共通、bとtauは軸別の",
-        "共有係数として同時に求める。最小化するのは符号付き残差の単純和ではない。",
-        "正負残差の相殺と半周期数の多い波形による支配を避けるため、各波形の総重みを",
-        "等しくしたロバスト損失を使う。",
-        "",
-        "```math",
-        "J=\\frac{1}{N_{wave}}\\sum_r\\frac{1}{N_r}\\sum_n",
-        "\\rho\\left(\\frac{r_{r,n}}{\\sigma_A}\\right)",
-        "```",
-        "",
-        "したがって、概念的には全r_nを小さくする同定だが、r_nの単純和を最小化する",
-        "方法ではない。各半周期の開始時に実測頂点へ戻すため、前区間の誤差は累積しない。",
+        "Stage 4の係数集約・最適化方法は別途見直すが、どの方法でもODE評価が必要な場合は",
+        "本Stageで検証した高速設定を使用する。各半周期の開始時に実測頂点へ戻すため、",
+        "1半周期先評価では前区間の誤差は累積しない。",
         "解放直後の最初の半周期はStage 1で除外済みであり、その方針を維持する。",
         "",
         "## 合成試験条件",
@@ -380,7 +457,8 @@ def write_report(output_path, validation_rows, convergence_rows):
         "- I、K: Stage 2のIN/OUT、BALL/SP00～SP04の全12組",
         "- 初期角: ±5、±15、±30、±45、±60 deg",
         "- 減衰条件: 保存系、synthetic_rod、synthetic_sphereの3条件",
-        "- 通常解: DOP853、rtol=1e-9、角度・角速度atol=1e-12、最大刻み=T0/80",
+        "- 通常解: DOP853、rtol=1e-4、角度・角速度atol=1e-7、エネルギーatol=1e-11、最大刻み=T0/5",
+        "- 従来解: DOP853、rtol=1e-9、角度・角速度atol=1e-12、エネルギーatol=1e-14、最大刻み=T0/80",
         "- 基準解: DOP853、rtol=1e-12、角度・角速度atol=1e-14、最大刻み=T0/640",
         "- epsilon: 0.5 deg/s",
         "",
@@ -393,9 +471,12 @@ def write_report(output_path, validation_rows, convergence_rows):
         "|---|---|---|",
         "| epsilon=0.5 deg/s | 摩擦のtanh連続化 | 速度ゼロの不連続を数値的に避けつつ、摩擦が0.5 deg/sで76%、1.0 deg/sで96%、1.5 deg/sで99.5%となり、平滑化を低速域へ限定する初期値。従来モデルから継承した数値正則化値で、実測同定値ではない。まずこの値でStage 4を実施する。 |",
         "| 頂点振幅4 deg以上 | Stage 4以降の減衰同定 | 停止直前の固着、頂点検出、中心誤差の影響を避ける従来解析からの初期下限。Stage 2のK範囲では4 deg時の復元トルクは約0.82～1.56 mN mで、従来の暫定tau約0.09 mN mの約9～18倍。本Stageでは使用せず、Stage 4で適用する。 |",
-        "| 最大刻みT0/80 | 通常解 | T0/20、T0/40、T0/80、T0/160を基準解と比較し、T0/80で次頂点角・半周期誤差が受入上限より十分小さいことを確認した。 |",
-        "| 最大刻みT0/640 | 基準解 | 通常解の8倍細かい最大刻みと1000倍厳しい相対許容誤差を使う比較基準。保存系では楕円積分解析解とも一致することを確認した。 |",
-        "| rtol=1e-9、角度・角速度atol=1e-12、エネルギーatol=1e-14 | 通常解 | 次頂点角1e-7 deg、半周期1e-8 s、正規化エネルギー閉合1e-9という受入上限に対して、それぞれ約830倍、約240倍、約3200倍の余裕を確認した設定。 |",
+        "| 次頂点角誤差上限0.01 deg | 通常解 | Stage 4で観測した1半周期先RMSE約0.49 degの約2%に数値誤差を制限する。計測・モデル誤差より十分小さく、過剰精度を避ける。 |",
+        "| 半周期誤差上限0.0001 s | 通常解 | ロガーの10 ms計測周期の1%に数値誤差を制限する。 |",
+        "| 正規化エネルギー閉合上限1e-4 | 通常解 | 散逸仕事の数値診断を0.01%以内で閉じる。係数同定の主評価は次頂点角であり、エネルギー状態だけが過剰に刻みを細かくしない上限とする。 |",
+        "| 最大刻みT0/5 | 通常解 | T0/2、T0/5、T0/10、T0/20を全360条件で基準解と比較し、T0/2より細かい候補のうち最も粗く、全受入基準を満たす設定。 |",
+        "| rtol=1e-4、角度・角速度atol=1e-7、エネルギーatol=1e-11 | 通常解 | 全12組、3減衰条件、±5～±60 degの360条件で上記3基準を満たし、従来設定から関数評価回数を削減できる組合せ。エネルギーatol=1e-10ではT0/10の低振幅4条件で閉合基準を超えたため、1e-11を採用した。 |",
+        "| 最大刻みT0/640、rtol=1e-12 | 基準解 | 通常解より十分厳しい独立比較基準。保存系では楕円積分解析解とも一致することを確認する。 |",
         "| 探索上限2T0 | 次頂点イベント | 通常の次頂点は概ね0.5～0.6T0で現れるため3倍以上の探索余裕を持たせ、次頂点が現れない病的条件は明示的に失敗させる。 |",
         "",
         "今後新たな固定数値を導入する場合は、数値、適用範囲、導出根拠、実測値か",
@@ -412,10 +493,31 @@ def write_report(output_path, validation_rows, convergence_rows):
         f"| 保存系の次頂点角解析誤差 [deg] | {conservative['conservative_peak_error_deg'].abs().max():.3e} | {CONSERVATIVE_PEAK_LIMIT_DEG:.1e} |",
         f"| 保存系の楕円積分半周期誤差 [s] | {conservative['conservative_time_error_s'].abs().max():.3e} | {CONSERVATIVE_TIME_LIMIT_S:.1e} |",
         "",
-        "最大刻みT0/80の負荷試験では、全12組の60 deg条件について基準解に対する",
+        "### 速度比較",
+        "",
+        "| 指標 | 値 |",
+        "|---|---:|",
+        f"| 関数評価回数平均（従来） | {validation['legacy_function_evaluations'].mean():.1f} |",
+        f"| 関数評価回数平均（新設定） | {validation['function_evaluations'].mean():.1f} |",
+        f"| 関数評価回数による高速化倍率 | {evaluation_speedup:.2f} |",
+        "",
+        "### 最大刻み幅の感度",
+        "",
+        "| 最大刻み | 不合格/全条件 | 次頂点角誤差最大 [deg] | 半周期誤差最大 [s] | 正規化エネルギー閉合最大 | 関数評価回数平均 |",
+        "|---|---:|---:|---:|---:|---:|",
+        *[
+            f"| T0/{int(steps)} | {int(row['failed_count'])}/{int(row['case_count'])} | "
+            f"{row['peak_error_deg']:.3e} | {row['time_error_s']:.3e} | "
+            f"{row['normalized_energy_closure']:.3e} | {row['mean_function_evaluations']:.1f} |"
+            for steps, row in convergence_summary.iterrows()
+        ],
+        "",
+        "最大刻みT0/5の全360条件試験では、基準解に対する",
         f"次頂点角誤差最大{default_convergence['peak_error_deg'].abs().max():.3e} deg、",
-        f"半周期誤差最大{default_convergence['time_error_s'].abs().max():.3e} sであった。",
-        "T0/20、T0/40、T0/80、T0/160の全結果をstep_convergence.csvへ保存した。",
+        f"半周期誤差最大{default_convergence['time_error_s'].abs().max():.3e} s、",
+        f"正規化エネルギー閉合最大{default_convergence['normalized_energy_closure'].max():.3e}であった。",
+        f"これより粗いT0/2では{int((coarser_convergence['passed'] == 0).sum())}/{len(coarser_convergence)}件が不合格となった。",
+        "T0/2、T0/5、T0/10、T0/20の全結果をstep_convergence.csvへ保存した。",
         "これらは理想・合成波形に対する数値解の整合性確認であり、実測波形との",
         "一致度やb、c、tauの物理的妥当性を示す値ではない。",
         "",
@@ -425,7 +527,8 @@ def write_report(output_path, validation_rows, convergence_rows):
         "2. 保存系の半周期が完全楕円積分による厳密値と一致すること。",
         "3. 減衰系でも次頂点の向きと速度ゼロイベントが正しく検出されること。",
         "4. 初期・終端の力学的エネルギー差と積分した散逸仕事が閉じること。",
-        "5. 通常設定が厳密基準解と一致し、最大刻みへの依存が許容範囲内であること。",
+        "5. 通常設定が計測精度由来の受入基準内で基準解と一致すること。",
+        "6. 従来設定より関数評価回数が減少すること。",
         "",
         "## 既知の制約",
         "",
@@ -436,9 +539,8 @@ def write_report(output_path, validation_rows, convergence_rows):
         "",
         "## Stage 4へ持ち越す事項",
         "",
-        "- 球なし全波形について各実測頂点から1半周期先角度を予測する。",
-        "- 波形ごとの総重みを等しくし、c_rod、b_IN、b_OUT、tau_IN、tau_OUTを共有同定する。",
-        "- b_IN自由モデルとb_IN=0固定モデルを同じ評価条件で比較する。",
+        "- 係数最適化方法の見直し後、本Stageの高速設定をODEによる最終検証へ使用する。",
+        "- 厳密基準設定は収束確認専用とし、反復最適化には使用しない。",
         "",
         "## 実行コマンド",
         "",
@@ -499,10 +601,16 @@ def main():
         "initial_angles_deg": INITIAL_ANGLES_DEG,
         "friction_epsilon_deg_s": FRICTION_EPSILON_DEG_S,
         "default": {
-            "rtol": 1.0e-9,
-            "angle_speed_atol": 1.0e-12,
-            "energy_atol": 1.0e-14,
+            "rtol": DEFAULT_RTOL,
+            "angle_speed_atol": DEFAULT_ANGLE_SPEED_ATOL,
+            "energy_atol": DEFAULT_ENERGY_ATOL,
             "max_step_period_fraction": DEFAULT_MAX_STEP_FRACTION,
+        },
+        "legacy_default": {
+            "rtol": LEGACY_RTOL,
+            "angle_speed_atol": LEGACY_ANGLE_SPEED_ATOL,
+            "energy_atol": LEGACY_ENERGY_ATOL,
+            "max_step_period_fraction": LEGACY_MAX_STEP_FRACTION,
         },
         "reference": {
             "rtol": 1.0e-12,
@@ -519,6 +627,23 @@ def main():
             "conservative_peak_error_deg": CONSERVATIVE_PEAK_LIMIT_DEG,
             "conservative_time_error_s": CONSERVATIVE_TIME_LIMIT_S,
         },
+        "acceptance_basis": {
+            "peak_error": "0.01 deg is about 2% of the approximately 0.49 deg Stage 4 one-half-cycle RMSE",
+            "time_error": "0.0001 s is 1% of the 0.01 s logger sampling interval",
+            "normalized_energy_closure": "1e-4 limits the diagnostic closure error to 0.01% without making the energy state dominate the ODE step size",
+        },
+        "performance": {
+            "legacy_mean_function_evaluations": float(
+                validation_table["legacy_function_evaluations"].mean()
+            ),
+            "default_mean_function_evaluations": float(
+                validation_table["function_evaluations"].mean()
+            ),
+            "total_function_evaluation_speedup": float(
+                validation_table["legacy_function_evaluations"].sum()
+                / validation_table["function_evaluations"].sum()
+            ),
+        },
         "stage2_input_sha256": file_sha256(stage2_path),
         "validation_case_count": len(validation_rows),
         "passed_case_count": int(validation_table["passed"].sum()),
@@ -530,6 +655,11 @@ def main():
     if not bool(validation_table["passed"].all()):
         failed = validation_table[validation_table["passed"] == 0]
         raise RuntimeError("Stage 3の合成試験に不合格があります: " + str(len(failed)))
+    if not (
+        validation_table["function_evaluations"].sum()
+        < validation_table["legacy_function_evaluations"].sum()
+    ):
+        raise RuntimeError("新設定で関数評価回数が削減されていません")
     print("結果: " + str(output_directory))
 
 
