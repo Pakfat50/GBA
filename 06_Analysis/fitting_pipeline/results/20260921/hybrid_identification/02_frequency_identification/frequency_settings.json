@@ -20,7 +20,7 @@
   "waveform_aggregation": "median of selected corrected K/I period samples",
   "configuration_aggregation": "arithmetic mean of waveform medians",
   "spacer_parameter_method": "shared I0 and K0 with known delta I and delta K",
-  "ball_parameter_method": "known gravity restoring and effective I = K / measured K-over-I",
+  "ball_parameter_method": "base I0 and K0 plus increments calculated from measured ball mass and geometry; measured period used only for validation",
   "input_sha256": {
     "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/turning_points.csv": "ee9eb9efdbcaf1cfdea10e4e6744cc5ce6337d692521bc44568280240adc1289",
     "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/waveform_preprocessing.csv": "780122f90bfb5ffe586632de2addd5bcec3ef564a53f862dc4616ff73ddcf0c7",

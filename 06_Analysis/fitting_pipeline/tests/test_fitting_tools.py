@@ -31,6 +31,7 @@ from fitting_tools import simulate_forced_motion
 from fitting_tools import simulate_normalized_decay
 from fitting_tools import split_free_decay
 from run_hybrid_frequency_identification import derive_stable_period_selection
+from run_hybrid_frequency_identification import identify_inertia_and_restoring
 
 
 class FittingToolsTest(unittest.TestCase):
@@ -266,6 +267,57 @@ class FittingToolsTest(unittest.TestCase):
         self.assertEqual(
             selected[-1]["selection_result"],
             "outside high-amplitude reference tolerance",
+        )
+
+    def test_ball_inertia_and_restoring_use_mass_geometry_not_measured_period(self):
+        base_inertia = 0.00050
+        base_restoring = 0.0200
+        rows = []
+        for level in range(5):
+            delta_inertia = level * 0.000035
+            delta_restoring = -level * 0.0016
+            rows.append(
+                {
+                    "axis": "IN",
+                    "configuration": "SP" + str(level).zfill(2),
+                    "use_for_calibration": 1,
+                    "k_over_i_mean_per_s2": (
+                        base_restoring + delta_restoring
+                    )
+                    / (base_inertia + delta_inertia),
+                    "k_over_i_uncertainty_per_s2": 0.01,
+                    "delta_inertia_kg_m2": delta_inertia,
+                    "delta_restoring_n_m_per_rad": delta_restoring,
+                }
+            )
+        ball_delta_inertia = 0.00012
+        ball_delta_restoring = -0.0040
+        rows.append(
+            {
+                "axis": "IN",
+                "configuration": "BALL",
+                "use_for_calibration": 0,
+                "k_over_i_mean_per_s2": 1.0,
+                "k_over_i_uncertainty_per_s2": 0.01,
+                "delta_inertia_kg_m2": ball_delta_inertia,
+                "delta_restoring_n_m_per_rad": ball_delta_restoring,
+            }
+        )
+        unused_base, unused_checked, parameters = identify_inertia_and_restoring(
+            rows
+        )
+        ball = next(row for row in parameters if row["configuration"] == "BALL")
+        self.assertAlmostEqual(
+            ball["inertia_kg_m2"], base_inertia + ball_delta_inertia, delta=1e-8
+        )
+        self.assertAlmostEqual(
+            ball["restoring_n_m_per_rad"],
+            base_restoring + ball_delta_restoring,
+            delta=1e-7,
+        )
+        self.assertEqual(
+            ball["identification_method"],
+            "base plus measured ball mass and geometry",
         )
 
     def test_quadratic_turning_point_recovers_subsample_vertex(self):

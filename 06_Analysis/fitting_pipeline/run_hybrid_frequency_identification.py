@@ -470,8 +470,7 @@ def identify_inertia_and_restoring(configuration_rows):
             restoring = gravity_restoring
             method = "base plus known spacer increments"
             if row["configuration"] == "BALL":
-                inertia = gravity_restoring / measured_q
-                method = "known gravity restoring divided by measured K/I"
+                method = "base plus measured ball mass and geometry"
             model_q = restoring / inertia
             q_residual = model_q - measured_q
             period_residual = (
@@ -789,9 +788,12 @@ def write_report(
         directions["relative_direction_difference_percent"].abs().argmax()
     ]
     calibration_only = configurations[configurations["use_for_calibration"] == 1]
+    ball_validation = configurations[
+        configurations["configuration"] == "BALL"
+    ].set_index("axis")
     method_labels = {
         "base plus known spacer increments": "基準値と既知スペーサ増分の和",
-        "known gravity restoring divided by measured K/I": "既知の重力復元係数を実測K/Iで除算",
+        "base plus measured ball mass and geometry": "基準値と実測球質量・形状による増分の和",
     }
     lines = [
         "# Stage 2: 非線形周期によるI、K同定",
@@ -805,7 +807,8 @@ def write_report(
         f"さらに個別周期の偏差が±{STABILITY_TOLERANCE_PERCENT:.0f}%以内のものだけを同定に使用した。",
         "波形全体へのフィッティングによる `I`、`K` の調整は行っていない。",
         "SP00～SP04は既知の追加慣性・追加復元力を使って軸別の基準 `I0`、`K0` を同時同定し、",
-        "BALLは既知の重力復元力を実測 `K/I` で割って実効慣性を求めた。",
+        "BALLも実波形の周期を係数決定には使わず、基準値に実測球質量・形状から計算した",
+        "慣性増分と復元力増分を加えて `I`、`K` を決定した。BALLの実測周期は検証にだけ使用する。",
         "",
         "## period_amplitude_diagnostics.pngの説明",
         "",
@@ -898,11 +901,22 @@ def write_report(
             "",
             "### BALLの決定方法を選んだ理由",
             "",
-            "BALLは一つの形態しかないため、周期だけでは `K/I` の比しか得られず、`I` と `K` を独立には決められない。",
-            "重力復元係数 `K` は質量・重心位置・重力加速度から直接計算でき、空気の付加慣性は重力復元力を変えない。",
-            "一方、球が押しのける空気の付加慣性は動的な `I` に現れる。このため、物理的に直接決められる `K` を固定し、",
-            "実測 `K/I` から `I=K/(K/I)` を求める。幾何学的 `I` を固定して `K` を逆算すると、付加慣性を誤って",
-            "重力復元係数へ配分することになるため採用しない。今後、既知水平力による静的K測定で独立検証する。",
+            "球なし形態から基準 `I0`、`K0` が既に得られているため、BALLでは実測した球質量、球中心位置、",
+            "球重心まわりの慣性から `Delta I_ball`、`Delta K_ball` を計算し、",
+            "`I=I0+Delta I_ball`、`K=K0+Delta K_ball` とする。これによりBALLの実波形に含まれる",
+            "空気抵抗、摩擦、付加慣性などを `I`、`K` へ混入させない。",
+            "BALLの実測周期から得た `K/I` は係数決定には使わず、質量・形状モデルとの差を確認する検証値として残す。",
+            "空気の付加慣性が無視できない場合はモデル残差として現れるが、この段階では実波形に合わせて吸収しない。",
+            "",
+            "### BALL実測周期による検証",
+            "",
+            f"- IN: 計算K/Iは実測より{ball_validation.loc['IN', 'k_over_i_relative_residual_percent']:.3f}%大きく、"
+            f"小振幅換算周期は{abs(1000.0 * ball_validation.loc['IN', 'small_angle_period_residual_s']):.2f} ms短い。",
+            f"- OUT: 計算K/Iは実測より{ball_validation.loc['OUT', 'k_over_i_relative_residual_percent']:.3f}%大きく、"
+            f"小振幅換算周期は{abs(1000.0 * ball_validation.loc['OUT', 'small_angle_period_residual_s']):.2f} ms短い。",
+            "",
+            "この差は空気の付加慣性、減衰による周期変化、質量・位置測定誤差などを含む検証残差であり、",
+            "Stage 2ではI、Kの計算値を実波形へ合わせて修正しない。",
             "",
             "## 残差の要約",
             "",
@@ -937,12 +951,12 @@ def write_report(
             "周期残差だけを目的として `I`、`K` を更新し、減衰係数を再確認する。この交互確認を収束まで行う。",
             "これにより `I,K` と `b,c,tau` を同時に自由フィットして相互に誤配分することを避ける。",
             "",
-            "## Stage 2のレビュー事項",
+            "## Stage 2のレビュー状況",
             "",
-            f"1. 偏差率から得た共通下限{common_cutoff:.0f} deg、個別偏差±1%以内の{len(used_periods)}周期を採用するか。",
-            "2. SP00～SP04の既知増分から求めた軸別I0、K0を採用するか。",
-            "3. 空気の付加慣性をIへ配分するため、BALLのKは重力モデル、Iは実測K/Iから求めるか。",
-            "4. 減衰同定後、減衰係数固定の周期残差だけでI、Kを再確認する反復方針を採用するか。",
+            f"1. 承認済み: 偏差率から得た共通下限{common_cutoff:.0f} deg、個別偏差±1%以内の{len(used_periods)}周期を採用する。",
+            "2. 承認済み: SP00～SP04の既知増分から求めた軸別I0、K0を採用する。",
+            "3. 修正済み: BALLのI、Kは球なし基準値と実測球質量・形状だけから計算し、実測周期は検証にだけ使用する。",
+            "4. 承認済み: 減衰同定後、減衰係数固定の周期残差だけでI、Kを再確認する。実施は必要性を確認して判断する。",
             "",
             "## 持ち越し事項",
             "",
@@ -1042,7 +1056,7 @@ def main():
         "waveform_aggregation": "median of selected corrected K/I period samples",
         "configuration_aggregation": "arithmetic mean of waveform medians",
         "spacer_parameter_method": "shared I0 and K0 with known delta I and delta K",
-        "ball_parameter_method": "known gravity restoring and effective I = K / measured K-over-I",
+        "ball_parameter_method": "base I0 and K0 plus increments calculated from measured ball mass and geometry; measured period used only for validation",
         "input_sha256": {
             str(path.relative_to(REPOSITORY_ROOT)): file_sha256(path)
             for path in input_paths
