@@ -1,0 +1,45 @@
+{
+  "stage": 4,
+  "date": "20260921",
+  "minimum_amplitude_deg": 4.0,
+  "friction_epsilon_deg_s": 0.5,
+  "maximum_step_period_fraction": 0.0125,
+  "maximum_search_periods": 2.0,
+  "robust_loss": "sqrt(1 + z^2) - 1",
+  "robust_scale_method": "1.482602218505602 * MAD of exact-ODE residual at explicit-energy initial estimate",
+  "robust_scale_deg": 0.49516716955050044,
+  "waveform_weighting": "equal total weight per waveform",
+  "full_fit_max_iterations": 80,
+  "cross_validation_max_iterations": 8,
+  "cross_validation_optimizer": "one-step robust Gauss-Newton influence update from full-data optimum; held waveform evaluated with exact ODE",
+  "cross_validation_exact_validation_optimizer": "bounded iteratively reweighted Gauss-Newton with exact ODE sensitivities",
+  "cross_validation_step_tolerance": 1e-06,
+  "cross_validation_objective_relative_tolerance": 1e-08,
+  "cross_validation_line_search_steps": 6,
+  "cross_validation_linearization_validation_folds_per_model": 2,
+  "cross_validation_rmse_relative_tolerance": 0.01,
+  "workers": 8,
+  "waveforms": 34,
+  "intervals": 1794,
+  "initial_energy_parameters": {
+    "b_IN": 1.2730600541321963e-08,
+    "b_OUT": 1.5467216026584726e-05,
+    "c_rod": 2.5883075391407855e-06,
+    "tau_IN": 8.517032975576787e-05,
+    "tau_OUT": 0.0001159186733044996
+  },
+  "parameter_scales": {
+    "b_IN": 1.5467216026584726e-05,
+    "b_OUT": 1.5467216026584726e-05,
+    "c_rod": 2.5883075391407855e-06,
+    "tau_IN": 0.0001159186733044996,
+    "tau_OUT": 0.0001159186733044996
+  },
+  "adopted_model_candidate": "b_IN_fixed_zero",
+  "decision": "95%区間が0を含み、固定モデルのLOO-CV誤差が悪化しないためb_IN=0を採用候補とする。",
+  "input_sha256": {
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/turning_points.csv": "7f046f7dd6a62e3f255427b63d2750720db3f8679875763c973ee0e23ac2d758",
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/waveform_preprocessing.csv": "7276d4c4e5062b3cf34a411c4e81aab005577eb85aeb41ad4f655039ee61bdbc",
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/02_frequency_identification/identified_inertia_restoring.csv": "fffb3a412f4160b40f41c0db415cbddad001155104073ad60c30498bff1932f1"
+  }
+}
