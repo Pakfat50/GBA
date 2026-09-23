@@ -30,6 +30,7 @@ from fitting_tools import refine_turning_point_quadratic
 from fitting_tools import simulate_forced_motion
 from fitting_tools import simulate_normalized_decay
 from fitting_tools import split_free_decay
+from run_hybrid_frequency_identification import derive_stable_period_selection
 
 
 class FittingToolsTest(unittest.TestCase):
@@ -230,6 +231,42 @@ class FittingToolsTest(unittest.TestCase):
         self.assertGreater(len(samples), 2)
         self.assertGreater(samples[0]["finite_amplitude_correction_ratio"], 1.1)
         self.assertAlmostEqual(samples[0]["k_over_i_per_s2"], truth[0], delta=0.1)
+
+    def test_period_selection_uses_deviation_derived_common_cutoff(self):
+        rows = []
+        profiles = {
+            "IN": {5: 2.0, 10: 1.5, 15: 1.2, 20: 1.1, 25: 0.5, 30: 0.4, 35: 0.3},
+            "OUT": {5: 2.0, 10: 1.5, 15: 0.5, 20: 0.4, 25: 0.3, 30: 0.2, 35: 0.2},
+        }
+        for axis, profile in profiles.items():
+            for amplitude_bin, deviation in profile.items():
+                for sample_number in range(10):
+                    rows.append(
+                        {
+                            "axis": axis,
+                            "representative_amplitude_deg": amplitude_bin + 2.0,
+                            "relative_deviation_from_high_amplitude_reference_percent": deviation,
+                            "sample_number": sample_number,
+                        }
+                    )
+        rows.append(
+            {
+                "axis": "OUT",
+                "representative_amplitude_deg": 32.0,
+                "relative_deviation_from_high_amplitude_reference_percent": 2.0,
+                "sample_number": 10,
+            }
+        )
+        selected, unused_stability, cutoffs, common = derive_stable_period_selection(
+            rows
+        )
+        self.assertEqual(cutoffs, {"IN": 25.0, "OUT": 15.0})
+        self.assertEqual(common, 25.0)
+        self.assertEqual(selected[-1]["used_for_identification"], 0)
+        self.assertEqual(
+            selected[-1]["selection_result"],
+            "outside high-amplitude reference tolerance",
+        )
 
     def test_quadratic_turning_point_recovers_subsample_vertex(self):
         time_s = np.array([0.8, 1.0, 1.2])
