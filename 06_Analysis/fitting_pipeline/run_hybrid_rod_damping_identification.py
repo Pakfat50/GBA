@@ -1,2168 +1,1 @@
-"""ãƒã‚¤ãƒ–ãƒªãƒƒãƒ‰åŒå®šStage 4: çƒãªã—æ³¢å½¢ã‹ã‚‰ãƒ­ãƒƒãƒ‰æ¸›è¡°ã‚’åŒå®šã™ã‚‹ã€‚
-
-Stage 1ã§ç¢ºå®šã—ãŸé ‚ç‚¹ã¨Stage 2ã§å›ºå®šã—ãŸIã€Kã‚’å…¥åŠ›ã«ã—ã€Stage 3ã®
-é ‚ç‚¹é–“éç·šå½¢ODEã¨åŒã˜é‹å‹•æ–¹ç¨‹å¼ã‚’ç”¨ã„ã‚‹ã€‚æ³¢å½¢ã”ã¨ã«bã€cã€tauã‚’åŒå®šã—ã€
-cã¯å…¨æ³¢å½¢ã€bã¨tauã¯è»¸å†…ã®ãƒ­ãƒã‚¹ãƒˆä»£è¡¨å€¤ã¸é›†ç´„ã™ã‚‹ã€‚
-"""
-
-import argparse
-import hashlib
-import json
-import math
-import multiprocessing
-import os
-from pathlib import Path
-
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-import pandas as pd
-from scipy.integrate import solve_ivp
-from scipy.optimize import lsq_linear, minimize
-from scipy.special import ellipe, ellipk
-
-from peak_to_peak_solver import DEFAULT_ANGLE_SPEED_ATOL
-from peak_to_peak_solver import DEFAULT_MAX_STEP_FRACTION
-from peak_to_peak_solver import DEFAULT_RTOL
-
-
-SCRIPT_DIRECTORY = Path(__file__).resolve().parent
-REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
-DEFAULT_RESULT_ROOT = SCRIPT_DIRECTORY / "results"
-MINIMUM_AMPLITUDE_DEG = 4.0
-FRICTION_EPSILON_DEG_S = 0.5
-MAX_STEP_PERIOD_FRACTION = DEFAULT_MAX_STEP_FRACTION
-MAXIMUM_SEARCH_PERIODS = 2.0
-MAD_GAUSSIAN_SCALE = 1.482602218505602
-CONFIDENCE_Z_95 = 1.959963984540054
-RESIDUAL_AMPLITUDE_BIN_DEG = 5.0
-DEFAULT_WORKERS = max(1, min(8, (os.cpu_count() or 2) - 1))
-FULL_FIT_MAX_ITERATIONS = 20
-CROSS_VALIDATION_MAX_ITERATIONS = 8
-CROSS_VALIDATION_STEP_TOLERANCE = 1.0e-6
-CROSS_VALIDATION_OBJECTIVE_TOLERANCE = 1.0e-8
-CROSS_VALIDATION_LINE_SEARCH_STEPS = 6
-CV_LINEARIZATION_VALIDATION_FOLDS = 2
-CV_RMSE_RELATIVE_TOLERANCE = 0.01
-# 34æ³¢å½¢ã‚’æ¨ª4åˆ—ã«ã™ã‚‹ã¨9è¡Œã¨ãªã‚Šã€å„ãƒ‘ãƒãƒ«ã®æ³¢å½¢ã¨å‡¡ä¾‹ã‚’åˆ¤èª­ã§ãã‚‹ç¸¦æ¨ªæ¯”ã«ãªã‚‹ã€‚
-WAVEFORM_OVERVIEW_COLUMNS = 4
-# Stage 3ã®è§’åº¦è¨±å®¹èª¤å·®0.01 degã‚ˆã‚Šååˆ†ç´°ã‹ã„å€¤ã‚’ä¿å­˜ã—ã¤ã¤ã€æˆæœç‰©ã‚’è»½é‡åŒ–ã™ã‚‹ã€‚
-CSV_FLOAT_FORMAT = "%.10g"
-# è¡¨ç¤ºæ›²ç·šã ã‘ã®åˆ»ã¿ã€‚åŠå‘¨æœŸã‚’60åˆ†å‰²ã—ã€ODEã®æœ€å¤§åˆ»ã¿T0/80ã¨åŒç¨‹åº¦ä»¥ä¸Šã®æç”»å¯†åº¦ã«ã™ã‚‹ã€‚
-WAVEFORM_TRAJECTORY_SUBDIVISIONS = 60
-
-FREE_PARAMETER_NAMES = ["b_IN", "b_OUT", "c_rod", "tau_IN", "tau_OUT"]
-B_IN_FIXED_PARAMETER_NAMES = ["b_OUT", "c_rod", "tau_IN", "tau_OUT"]
-NO_LINEAR_PARAMETER_NAMES = ["c_rod", "tau_IN", "tau_OUT"]
-FIXED_PARAMETER_NAMES = B_IN_FIXED_PARAMETER_NAMES
-MODEL_PREFIXES = {
-    "b_IN_free": "free",
-    "b_IN_fixed_zero": "fixed",
-    "b_IN_b_OUT_fixed_zero": "no_linear",
-}
-
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(
-        description="ãƒã‚¤ãƒ–ãƒªãƒƒãƒ‰åŒå®šStage 4: çƒãªã—å…±æœ‰æ¸›è¡°ä¿‚æ•°åŒå®š"
-    )
-    parser.add_argument("--date", required=True, help="è©¦é¨“æ—¥ã€‚ä¾‹: 20260921")
-    parser.add_argument("--result-root", type=Path, default=DEFAULT_RESULT_ROOT)
-    parser.add_argument(
-        "--data-root",
-        type=Path,
-        default=REPOSITORY_ROOT / "04_Data" / "05_Fitting",
-        help="å®Ÿæ³¢å½¢ãƒ­ã‚°ã®ãƒ«ãƒ¼ãƒˆã€‚é…ä¸‹ã«è©¦é¨“æ—¥ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚’ç½®ã",
-    )
-    parser.add_argument(
-        "--waveform-selection",
-        type=Path,
-        default=None,
-        help="waveform_selection.csvã€‚çœç•¥æ™‚ã¯çµæœãƒ«ãƒ¼ãƒˆå†…ã®ãƒ¬ãƒ“ãƒ¥ãƒ¼æ¸ˆã¿è¡¨ã‚’ä½¿ã†",
-    )
-    parser.add_argument("--workers", type=int, default=DEFAULT_WORKERS)
-    return parser.parse_args()
-
-
-def file_sha256(path):
-    digest = hashlib.sha256()
-    with path.open("rb") as source:
-        while True:
-            block = source.read(1024 * 1024)
-            if not block:
-                break
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def repository_input_key(path):
-    """å¤–éƒ¨ä½œæ¥­ã‚³ãƒ”ãƒ¼ã§ã‚‚ãƒªãƒã‚¸ãƒˆãƒªå†…ã¨åŒã˜å…¥åŠ›ã‚­ãƒ¼ã‚’è¿”ã™ã€‚"""
-
-    path = Path(path).resolve()
-    try:
-        return str(path.relative_to(REPOSITORY_ROOT.resolve()))
-    except ValueError:
-        parts = path.parts
-        for anchor in ["04_Data", "06_Analysis"]:
-            if anchor in parts:
-                return str(Path(*parts[parts.index(anchor) :]))
-    return path.name
-
-
-def save_figure(figure, output_path, dpi=150):
-    temporary_path = output_path.with_name(
-        output_path.stem + ".tmp" + output_path.suffix
-    )
-    figure.savefig(temporary_path, dpi=dpi)
-    plt.close(figure)
-    temporary_path.replace(output_path)
-
-
-def read_inputs(parent_result):
-    stage1 = parent_result / "hybrid_identification" / "01_preprocessing"
-    stage2 = parent_result / "hybrid_identification" / "02_frequency_identification"
-    turning_path = stage1 / "turning_points.csv"
-    waveform_path = stage1 / "waveform_preprocessing.csv"
-    parameter_path = stage2 / "identified_inertia_restoring.csv"
-    for path in [turning_path, waveform_path, parameter_path]:
-        if not path.exists():
-            raise FileNotFoundError("Stage 4ã®å…¥åŠ›ãŒã‚ã‚Šã¾ã›ã‚“: " + str(path))
-    turning = pd.read_csv(turning_path)
-    waveforms = pd.read_csv(waveform_path)
-    parameters = pd.read_csv(parameter_path)
-    return turning, waveforms, parameters, [turning_path, waveform_path, parameter_path]
-
-
-def read_waveform_plot_inputs(date_directory, selection_path, waveform_summary):
-    """34æ³¢å½¢ã®å®Ÿæ¸¬ãƒ­ã‚°ã¨ã€Stage 1ã§æ¡ç”¨ã—ãŸä¸­å¿ƒãƒ»åŒºé–“ã‚’èª­ã¿è¾¼ã‚€ã€‚"""
-
-    if not selection_path.exists():
-        raise FileNotFoundError("æ³¢å½¢æ¡å¦è¡¨ãŒã‚ã‚Šã¾ã›ã‚“: " + str(selection_path))
-    selection = pd.read_csv(selection_path, encoding="utf-8-sig")
-    required = {
-        "segment_id",
-        "data_file",
-        "axis",
-        "angle_column",
-        "configuration",
-        "direction",
-        "repetition",
-        "start_index",
-        "end_index",
-        "use_for_fitting",
-        "review_status",
-    }
-    missing = sorted(required - set(selection.columns))
-    if missing:
-        raise ValueError("æ³¢å½¢æ¡å¦è¡¨ã®åˆ—ãŒä¸è¶³ã—ã¦ã„ã¾ã™: " + ", ".join(missing))
-    if not (selection["review_status"].astype(str).str.upper() == "APPROVED").all():
-        raise ValueError("æ³¢å½¢æ¡å¦è¡¨ã«æœªæ‰¿èªè¡ŒãŒã‚ã‚Šã¾ã™")
-
-    summary = waveform_summary.set_index("segment_id")
-    selected = selection[
-        (pd.to_numeric(selection["use_for_fitting"], errors="raise") == 1)
-        & (selection["configuration"].astype(str).str.upper() != "BALL")
-    ].copy()
-    cache = {}
-    records = []
-    input_paths = [selection_path]
-    for unused_index, row in selected.iterrows():
-        segment_id = str(row["segment_id"])
-        if segment_id not in summary.index:
-            raise ValueError(segment_id + " ã®Stage 1æ³¢å½¢æƒ…å ±ãŒã‚ã‚Šã¾ã›ã‚“")
-        data_path = date_directory / str(row["data_file"])
-        if data_path not in cache:
-            if not data_path.exists():
-                raise FileNotFoundError("å®Ÿæ³¢å½¢ãƒ­ã‚°ãŒã‚ã‚Šã¾ã›ã‚“: " + str(data_path))
-            cache[data_path] = pd.read_csv(data_path)
-            input_paths.append(data_path)
-        complete = cache[data_path]
-        angle_column = str(row["angle_column"])
-        if "systime[ms]" not in complete or angle_column not in complete:
-            raise ValueError(str(data_path) + " ã«æ™‚åˆ»ã¾ãŸã¯è§’åº¦åˆ—ãŒã‚ã‚Šã¾ã›ã‚“")
-        time_ms = pd.to_numeric(complete["systime[ms]"], errors="coerce")
-        angle_deg = pd.to_numeric(complete[angle_column], errors="coerce")
-        valid = np.isfinite(time_ms.to_numpy()) & np.isfinite(angle_deg.to_numpy())
-        complete_time_s = time_ms.to_numpy(dtype=float)[valid] / 1000.0
-        complete_angle_deg = angle_deg.to_numpy(dtype=float)[valid]
-        complete_angle_deg = (complete_angle_deg + 180.0) % 360.0 - 180.0
-        start = int(row["start_index"])
-        end = int(row["end_index"]) + 1
-        center_deg = float(summary.loc[segment_id, "envelope_center_deg"])
-        records.append(
-            {
-                "segment_id": segment_id,
-                "axis": str(row["axis"]).strip().upper(),
-                "configuration": str(row["configuration"]).strip().upper(),
-                "direction": str(row["direction"]).strip().upper(),
-                "repetition": int(row["repetition"]),
-                "time_s": complete_time_s[start:end],
-                "centered_angle_deg": complete_angle_deg[start:end] - center_deg,
-            }
-        )
-    if len(records) != 34:
-        raise ValueError("çƒãªã—æ¡ç”¨æ³¢å½¢ãŒ34ä»¶ã§ã¯ã‚ã‚Šã¾ã›ã‚“: " + str(len(records)))
-    return records, input_paths
-
-
-def build_intervals(turning, parameters, minimum_amplitude_deg=MINIMUM_AMPLITUDE_DEG):
-    """çƒãªã—æ³¢å½¢ã‹ã‚‰åŒå®šã«ä½¿ã†é€£ç¶šé ‚ç‚¹å¯¾ã‚’ä½œã‚‹ã€‚"""
-
-    parameter_index = parameters.set_index(["axis", "configuration"])
-    rows = []
-    # ä¸æ¡ç”¨é ‚ç‚¹ã‚‚æ™‚ç³»åˆ—ä¸Šã¯æ®‹ã—ã€ãã®å‰å¾Œã‚’èª¤ã£ã¦ä¸€ã¤ã®åŠå‘¨æœŸã¨ã—ã¦
-    # æ¥ç¶šã—ãªã„ã€‚é€£ç¶šã™ã‚‹ä¸¡ç«¯ãŒæ¡ç”¨å¯èƒ½ãªå ´åˆã ã‘åŒºé–“ã¸è¿½åŠ ã™ã‚‹ã€‚
-    selected = turning[turning["configuration"] != "BALL"]
-    for segment_id, group in selected.groupby("segment_id", sort=False):
-        group = group.sort_values("peak_number").reset_index(drop=True)
-        initial = np.flatnonzero(group["is_initial_peak"].to_numpy(dtype=int) == 1)
-        if len(initial) != 1:
-            raise ValueError(segment_id + " ã®æœ€åˆã®æ¡ç”¨é ‚ç‚¹ãŒä¸€æ„ã§ã¯ã‚ã‚Šã¾ã›ã‚“")
-        group = group.iloc[int(initial[0]) :].reset_index(drop=True)
-        axis = str(group.loc[0, "axis"])
-        configuration = str(group.loc[0, "configuration"])
-        physical = parameter_index.loc[(axis, configuration)]
-        for index in range(len(group) - 1):
-            first = group.iloc[index]
-            last = group.iloc[index + 1]
-            if not (
-                int(first["eligible_for_later_stages"]) == 1
-                and int(last["eligible_for_later_stages"]) == 1
-            ):
-                continue
-            if min(float(first["amplitude_deg"]), float(last["amplitude_deg"])) < minimum_amplitude_deg:
-                continue
-            start_angle_deg = float(first["centered_peak_angle_deg"])
-            measured_next_angle_deg = float(last["centered_peak_angle_deg"])
-            if start_angle_deg * measured_next_angle_deg >= 0.0:
-                raise ValueError(segment_id + " ã®é€£ç¶šé ‚ç‚¹ã®ç¬¦å·ãŒäº¤äº’ã§ã¯ã‚ã‚Šã¾ã›ã‚“")
-            rows.append(
-                {
-                    "interval_id": segment_id + "_H" + str(index + 1).zfill(3),
-                    "segment_id": segment_id,
-                    "axis": axis,
-                    "configuration": configuration,
-                    "direction": str(group.loc[0, "direction"]),
-                    "interval_number": index + 1,
-                    "start_peak_number": int(first["peak_number"]),
-                    "end_peak_number": int(last["peak_number"]),
-                    "start_time_s": float(first["peak_time_s"]),
-                    "end_time_s": float(last["peak_time_s"]),
-                    "measured_half_period_s": float(last["peak_time_s"] - first["peak_time_s"]),
-                    "start_angle_rad": float(np.deg2rad(start_angle_deg)),
-                    "measured_next_angle_rad": float(np.deg2rad(measured_next_angle_deg)),
-                    "start_angle_deg": start_angle_deg,
-                    "measured_next_angle_deg": measured_next_angle_deg,
-                    "start_amplitude_deg": abs(start_angle_deg),
-                    "end_amplitude_deg": abs(measured_next_angle_deg),
-                    "transition": "+to-" if start_angle_deg > 0.0 else "-to+",
-                    "inertia_kg_m2": float(physical["inertia_kg_m2"]),
-                    "restoring_n_m_per_rad": float(physical["restoring_n_m_per_rad"]),
-                }
-            )
-    if not rows:
-        raise ValueError("Stage 4ã«ä½¿ç”¨ã§ãã‚‹é ‚ç‚¹é–“éš”ãŒã‚ã‚Šã¾ã›ã‚“")
-    counts = pd.Series([row["segment_id"] for row in rows]).value_counts().to_dict()
-    for row in rows:
-        row["waveform_interval_count"] = int(counts[row["segment_id"]])
-    return rows
-
-
-def _physical_parameters(
-    parameter_names,
-    scaled_values,
-    scales,
-    fixed_physical=None,
-):
-    values = {name: 0.0 for name in FREE_PARAMETER_NAMES}
-    if fixed_physical is not None:
-        for name, value in fixed_physical.items():
-            values[name] = float(value)
-    for index, name in enumerate(parameter_names):
-        values[name] = float(scaled_values[index] * scales[name])
-    return values
-
-
-def _local_coefficients(interval, physical):
-    axis = interval["axis"]
-    return (
-        physical["b_" + axis],
-        physical["c_rod"],
-        physical["tau_" + axis],
-    )
-
-
-def solve_interval_with_sensitivities(interval, physical):
-    """1åŠå‘¨æœŸã‚’ç©åˆ†ã—ã€æ¬¡é ‚ç‚¹è§’ã®bã€cã€tauæ„Ÿåº¦ã‚‚è¿”ã™ã€‚"""
-
-    inertia = interval["inertia_kg_m2"]
-    restoring = interval["restoring_n_m_per_rad"]
-    initial_angle = interval["start_angle_rad"]
-    damping, quadratic, friction = _local_coefficients(interval, physical)
-    epsilon = np.deg2rad(FRICTION_EPSILON_DEG_S)
-    small_period = 2.0 * math.pi * math.sqrt(inertia / restoring)
-
-    def differential_equation(unused_time, state):
-        angle = state[0]
-        speed = state[1]
-        tanh_speed = np.tanh(speed / epsilon)
-        acceleration = -restoring * np.sin(angle)
-        acceleration -= damping * speed
-        acceleration -= quadratic * abs(speed) * speed
-        acceleration -= friction * tanh_speed
-        acceleration /= inertia
-
-        state_jacobian_10 = -restoring * np.cos(angle) / inertia
-        state_jacobian_11 = -damping - 2.0 * quadratic * abs(speed)
-        state_jacobian_11 -= friction * (1.0 - tanh_speed**2) / epsilon
-        state_jacobian_11 /= inertia
-        parameter_forcing = [
-            -speed / inertia,
-            -abs(speed) * speed / inertia,
-            -tanh_speed / inertia,
-        ]
-        derivative = [speed, acceleration]
-        for parameter_index in range(3):
-            angle_sensitivity = state[2 + 2 * parameter_index]
-            speed_sensitivity = state[3 + 2 * parameter_index]
-            derivative.append(speed_sensitivity)
-            derivative.append(
-                state_jacobian_10 * angle_sensitivity
-                + state_jacobian_11 * speed_sensitivity
-                + parameter_forcing[parameter_index]
-            )
-        return derivative
-
-    def next_turning_event(unused_time, state):
-        return state[1]
-
-    next_turning_event.terminal = True
-    next_turning_event.direction = 1.0 if initial_angle > 0.0 else -1.0
-    solution = solve_ivp(
-        differential_equation,
-        (0.0, MAXIMUM_SEARCH_PERIODS * small_period),
-        [initial_angle, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-        method="DOP853",
-        events=next_turning_event,
-        rtol=DEFAULT_RTOL,
-        atol=[DEFAULT_ANGLE_SPEED_ATOL] * 8,
-        max_step=MAX_STEP_PERIOD_FRACTION * small_period,
-    )
-    if not solution.success or len(solution.t_events[0]) != 1:
-        raise RuntimeError(interval["interval_id"] + " ã®æ¬¡é ‚ç‚¹ã‚’æ¤œå‡ºã§ãã¾ã›ã‚“")
-    event_state = solution.y_events[0][0]
-    return {
-        "predicted_next_angle_rad": float(event_state[0]),
-        "predicted_half_period_s": float(solution.t_events[0][0]),
-        "sensitivity_b": float(event_state[2]),
-        "sensitivity_c": float(event_state[4]),
-        "sensitivity_tau": float(event_state[6]),
-        "function_evaluations": int(solution.nfev),
-    }
-
-
-def solve_interval_trajectory(
-    interval,
-    physical,
-    sample_count=WAVEFORM_TRAJECTORY_SUBDIVISIONS + 1,
-):
-    """å®Ÿæ¸¬é ‚ç‚¹ã‹ã‚‰äºˆæ¸¬æ¬¡é ‚ç‚¹ã¾ã§ã®ãƒ•ã‚£ãƒƒãƒˆæ›²ç·šã‚’è¿”ã™ã€‚"""
-
-    inertia = interval["inertia_kg_m2"]
-    restoring = interval["restoring_n_m_per_rad"]
-    initial_angle = interval["start_angle_rad"]
-    damping, quadratic, friction = _local_coefficients(interval, physical)
-    epsilon = np.deg2rad(FRICTION_EPSILON_DEG_S)
-    small_period = 2.0 * math.pi * math.sqrt(inertia / restoring)
-
-    def differential_equation(unused_time, state):
-        angle, speed = state
-        acceleration = -restoring * np.sin(angle)
-        acceleration -= damping * speed
-        acceleration -= quadratic * abs(speed) * speed
-        acceleration -= friction * np.tanh(speed / epsilon)
-        return [speed, acceleration / inertia]
-
-    def next_turning_event(unused_time, state):
-        return state[1]
-
-    next_turning_event.terminal = True
-    next_turning_event.direction = 1.0 if initial_angle > 0.0 else -1.0
-    solution = solve_ivp(
-        differential_equation,
-        (0.0, MAXIMUM_SEARCH_PERIODS * small_period),
-        [initial_angle, 0.0],
-        method="DOP853",
-        events=next_turning_event,
-        dense_output=True,
-        rtol=DEFAULT_RTOL,
-        atol=[DEFAULT_ANGLE_SPEED_ATOL, DEFAULT_ANGLE_SPEED_ATOL],
-        max_step=MAX_STEP_PERIOD_FRACTION * small_period,
-    )
-    if not solution.success or len(solution.t_events[0]) != 1:
-        raise RuntimeError(interval["interval_id"] + " ã®è»Œè·¡çµ‚ç«¯ã‚’æ¤œå‡ºã§ãã¾ã›ã‚“")
-    event_time = float(solution.t_events[0][0])
-    relative_time = np.linspace(0.0, event_time, int(sample_count))
-    angle = solution.sol(relative_time)[0]
-    return relative_time, angle
-
-
-def _solve_task(task):
-    interval, physical = task
-    return solve_interval_with_sensitivities(interval, physical)
-
-
-def evaluate_intervals(intervals, physical, pool=None):
-    tasks = [(interval, physical) for interval in intervals]
-    if pool is None:
-        results = [_solve_task(task) for task in tasks]
-    else:
-        chunk_size = max(1, len(tasks) // (pool._processes * 8))
-        results = pool.map(_solve_task, tasks, chunksize=chunk_size)
-    residual = np.asarray(
-        [
-            result["predicted_next_angle_rad"] - interval["measured_next_angle_rad"]
-            for interval, result in zip(intervals, results)
-        ],
-        dtype=float,
-    )
-    return results, residual
-
-
-def explicit_energy_basis(amplitude_rad, inertia, restoring):
-    amplitude = abs(float(amplitude_rad))
-    omega_zero = np.sqrt(restoring / inertia)
-    parameter = np.sin(0.5 * amplitude) ** 2
-    first_kind = ellipk(parameter)
-    second_kind = ellipe(parameter)
-    return np.asarray(
-        [
-            8.0 * omega_zero * (second_kind - (1.0 - parameter) * first_kind),
-            4.0 * omega_zero**2 * (np.sin(amplitude) - amplitude * np.cos(amplitude)),
-            2.0 * amplitude,
-        ],
-        dtype=float,
-    )
-
-
-def initial_energy_fit(intervals, parameter_names):
-    matrix = []
-    target = []
-    for interval in intervals:
-        basis = explicit_energy_basis(
-            interval["start_angle_rad"],
-            interval["inertia_kg_m2"],
-            interval["restoring_n_m_per_rad"],
-        )
-        row = np.zeros(len(parameter_names), dtype=float)
-        axis = interval["axis"]
-        for index, name in enumerate(parameter_names):
-            if name == "b_" + axis:
-                row[index] = basis[0]
-            elif name == "c_rod":
-                row[index] = basis[1]
-            elif name == "tau_" + axis:
-                row[index] = basis[2]
-        start_energy = interval["restoring_n_m_per_rad"] * (
-            1.0 - np.cos(interval["start_angle_rad"])
-        )
-        end_energy = interval["restoring_n_m_per_rad"] * (
-            1.0 - np.cos(interval["measured_next_angle_rad"])
-        )
-        weight = 1.0 / np.sqrt(interval["waveform_interval_count"])
-        matrix.append(row * weight)
-        target.append((start_energy - end_energy) * weight)
-    result = lsq_linear(np.asarray(matrix), np.asarray(target), bounds=(0.0, np.inf))
-    return {name: float(result.x[index]) for index, name in enumerate(parameter_names)}
-
-
-def energy_fit_with_fixed_c(intervals, parameter_names, common_c):
-    """cã‚’å›ºå®šã—ã€å®Ÿæ¸¬é ‚ç‚¹é–“ã®ã‚¨ãƒãƒ«ã‚®ãƒ¼æå¤±ã‹ã‚‰æ®‹ã‚Šã®ä¿‚æ•°ã‚’æ±‚ã‚ã‚‹ã€‚"""
-
-    matrix = []
-    target = []
-    for interval in intervals:
-        basis = explicit_energy_basis(
-            interval["start_angle_rad"],
-            interval["inertia_kg_m2"],
-            interval["restoring_n_m_per_rad"],
-        )
-        row = np.zeros(len(parameter_names), dtype=float)
-        axis = interval["axis"]
-        for index, name in enumerate(parameter_names):
-            if name == "b_" + axis:
-                row[index] = basis[0]
-            elif name == "tau_" + axis:
-                row[index] = basis[2]
-        start_energy = interval["restoring_n_m_per_rad"] * (
-            1.0 - np.cos(interval["start_angle_rad"])
-        )
-        end_energy = interval["restoring_n_m_per_rad"] * (
-            1.0 - np.cos(interval["measured_next_angle_rad"])
-        )
-        weight = 1.0 / np.sqrt(interval["waveform_interval_count"])
-        matrix.append(row * weight)
-        target.append((start_energy - end_energy - common_c * basis[1]) * weight)
-    result = lsq_linear(np.asarray(matrix), np.asarray(target), bounds=(0.0, np.inf))
-    return {name: float(result.x[index]) for index, name in enumerate(parameter_names)}
-
-
-def parameter_scales(initial_free):
-    b_scale = max(initial_free["b_IN"], initial_free["b_OUT"])
-    tau_scale = max(initial_free["tau_IN"], initial_free["tau_OUT"])
-    c_scale = initial_free["c_rod"]
-    if min(b_scale, c_scale, tau_scale) <= 0.0:
-        raise ValueError("é™½ã‚¨ãƒãƒ«ã‚®ãƒ¼åˆæœŸå€¤ã‹ã‚‰æ­£ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿å°ºåº¦ã‚’ä½œã‚Œã¾ã›ã‚“")
-    return {
-        "b_IN": b_scale,
-        "b_OUT": b_scale,
-        "c_rod": c_scale,
-        "tau_IN": tau_scale,
-        "tau_OUT": tau_scale,
-    }
-
-
-def robust_scale_from_initial(residual_rad):
-    residual_deg = np.rad2deg(np.asarray(residual_rad, dtype=float))
-    median = float(np.median(residual_deg))
-    mad = float(np.median(np.abs(residual_deg - median)))
-    scale_deg = MAD_GAUSSIAN_SCALE * mad
-    if not np.isfinite(scale_deg) or scale_deg <= 0.0:
-        raise ValueError("åˆæœŸæ®‹å·®ã‹ã‚‰ãƒ­ãƒã‚¹ãƒˆå°ºåº¦ã‚’æ±ºå®šã§ãã¾ã›ã‚“")
-    return scale_deg
-
-
-def objective_and_gradient(
-    scaled_values,
-    parameter_names,
-    scales,
-    intervals,
-    robust_scale_rad,
-    pool,
-    fixed_physical=None,
-):
-    physical = _physical_parameters(
-        parameter_names, scaled_values, scales, fixed_physical
-    )
-    results, residual = evaluate_intervals(intervals, physical, pool)
-    z_value = residual / robust_scale_rad
-    rho_value = np.sqrt(1.0 + z_value**2) - 1.0
-    psi_value = z_value / np.sqrt(1.0 + z_value**2)
-    waveform_count = len({interval["segment_id"] for interval in intervals})
-    objective = 0.0
-    gradient_physical = {name: 0.0 for name in parameter_names}
-    for index, (interval, result) in enumerate(zip(intervals, results)):
-        weight = 1.0 / (
-            waveform_count * interval["waveform_interval_count"]
-        )
-        objective += weight * rho_value[index]
-        common = weight * psi_value[index] / robust_scale_rad
-        axis = interval["axis"]
-        for name in parameter_names:
-            if name == "b_" + axis:
-                gradient_physical[name] += common * result["sensitivity_b"]
-            elif name == "c_rod":
-                gradient_physical[name] += common * result["sensitivity_c"]
-            elif name == "tau_" + axis:
-                gradient_physical[name] += common * result["sensitivity_tau"]
-    gradient_scaled = np.asarray(
-        [gradient_physical[name] * scales[name] for name in parameter_names],
-        dtype=float,
-    )
-    return float(objective), gradient_scaled
-
-
-def fit_model(
-    intervals,
-    parameter_names,
-    scales,
-    robust_scale_deg,
-    initial_physical,
-    pool=None,
-    max_iterations=FULL_FIT_MAX_ITERATIONS,
-    fixed_physical=None,
-):
-    initial_scaled = np.asarray(
-        [initial_physical.get(name, 0.0) / scales[name] for name in parameter_names],
-        dtype=float,
-    )
-    evaluation_count = 0
-
-    def evaluate(scaled_values):
-        nonlocal evaluation_count
-        evaluation_count += 1
-        return objective_and_gradient(
-            scaled_values,
-            parameter_names,
-            scales,
-            intervals,
-            np.deg2rad(robust_scale_deg),
-            pool,
-            fixed_physical,
-        )
-
-    result = minimize(
-        evaluate,
-        initial_scaled,
-        method="L-BFGS-B",
-        jac=True,
-        bounds=[(0.0, None)] * len(parameter_names),
-        options={
-            "maxiter": max_iterations,
-            "ftol": 1.0e-12,
-            "gtol": 1.0e-8,
-            "maxls": 30,
-        },
-    )
-    physical = _physical_parameters(
-        parameter_names, result.x, scales, fixed_physical
-    )
-    predictions, residual = evaluate_intervals(intervals, physical, pool)
-    return {
-        "success": bool(result.success),
-        "message": str(result.message),
-        "objective": float(result.fun),
-        "iterations": int(result.nit),
-        "evaluations": int(evaluation_count),
-        "gradient_max_abs": float(np.max(np.abs(result.jac))),
-        "parameters": physical,
-        "predictions": predictions,
-        "residual_rad": residual,
-    }
-
-
-def _objective_value(intervals, residual, robust_scale_rad):
-    z_value = residual / robust_scale_rad
-    rho_value = np.sqrt(1.0 + z_value**2) - 1.0
-    waveform_count = len({interval["segment_id"] for interval in intervals})
-    return float(
-        sum(
-            rho_value[index]
-            / (waveform_count * interval["waveform_interval_count"])
-            for index, interval in enumerate(intervals)
-        )
-    )
-
-
-def fit_model_gauss_newton(
-    intervals,
-    parameter_names,
-    scales,
-    robust_scale_deg,
-    initial_physical,
-    pool=None,
-    max_iterations=CROSS_VALIDATION_MAX_ITERATIONS,
-    fixed_physical=None,
-):
-    """æ„Ÿåº¦æ–¹ç¨‹å¼ã‚’ä½¿ã†å¢ƒç•Œä»˜ããƒ­ãƒã‚¹ãƒˆGauss-Newtonå†åŒå®šã€‚"""
-
-    scaled_values = np.asarray(
-        [initial_physical.get(name, 0.0) / scales[name] for name in parameter_names],
-        dtype=float,
-    )
-    robust_scale_rad = np.deg2rad(robust_scale_deg)
-    evaluation_count = 0
-    converged = False
-    message = "maximum iterations reached"
-    results = None
-    residual = None
-    iteration = 0
-
-    for iteration in range(1, max_iterations + 1):
-        physical = _physical_parameters(
-            parameter_names, scaled_values, scales, fixed_physical
-        )
-        results, residual = evaluate_intervals(intervals, physical, pool)
-        evaluation_count += 1
-        objective = _objective_value(intervals, residual, robust_scale_rad)
-        z_value = residual / robust_scale_rad
-        robust_weight = 1.0 / np.sqrt(1.0 + z_value**2)
-        waveform_count = len({row["segment_id"] for row in intervals})
-        jacobian = np.zeros((len(intervals), len(parameter_names)), dtype=float)
-        target = np.zeros(len(intervals), dtype=float)
-        for row_index, (interval, prediction) in enumerate(zip(intervals, results)):
-            weight = math.sqrt(
-                robust_weight[row_index]
-                / (waveform_count * interval["waveform_interval_count"])
-            )
-            target[row_index] = -weight * residual[row_index] / robust_scale_rad
-            axis = interval["axis"]
-            for column, name in enumerate(parameter_names):
-                sensitivity = 0.0
-                if name == "b_" + axis:
-                    sensitivity = prediction["sensitivity_b"]
-                elif name == "c_rod":
-                    sensitivity = prediction["sensitivity_c"]
-                elif name == "tau_" + axis:
-                    sensitivity = prediction["sensitivity_tau"]
-                jacobian[row_index, column] = (
-                    weight * sensitivity * scales[name] / robust_scale_rad
-                )
-        step_result = lsq_linear(
-            jacobian,
-            target,
-            bounds=(-scaled_values, np.full(len(parameter_names), np.inf)),
-            lsmr_tol="auto",
-        )
-        full_step = step_result.x
-        if np.max(np.abs(full_step)) <= CROSS_VALIDATION_STEP_TOLERANCE:
-            converged = True
-            message = "scaled Gauss-Newton step below tolerance"
-            break
-
-        accepted = False
-        for line_search_index in range(CROSS_VALIDATION_LINE_SEARCH_STEPS):
-            factor = 0.5**line_search_index
-            trial_scaled = np.maximum(0.0, scaled_values + factor * full_step)
-            trial_physical = _physical_parameters(
-                parameter_names, trial_scaled, scales, fixed_physical
-            )
-            trial_results, trial_residual = evaluate_intervals(
-                intervals, trial_physical, pool
-            )
-            evaluation_count += 1
-            trial_objective = _objective_value(
-                intervals, trial_residual, robust_scale_rad
-            )
-            if trial_objective < objective:
-                scaled_values = trial_scaled
-                results = trial_results
-                residual = trial_residual
-                accepted = True
-                relative_change = (objective - trial_objective) / max(
-                    abs(objective), np.finfo(float).eps
-                )
-                if relative_change <= CROSS_VALIDATION_OBJECTIVE_TOLERANCE:
-                    converged = True
-                    message = "relative objective change below tolerance"
-                break
-        if not accepted:
-            converged = True
-            message = "line search found no improving step"
-            break
-        if converged:
-            break
-
-    physical = _physical_parameters(
-        parameter_names, scaled_values, scales, fixed_physical
-    )
-    results, residual = evaluate_intervals(intervals, physical, pool)
-    evaluation_count += 1
-    objective = _objective_value(intervals, residual, robust_scale_rad)
-    return {
-        "success": bool(converged),
-        "message": message,
-        "objective": objective,
-        "iterations": int(iteration),
-        "evaluations": int(evaluation_count),
-        "gradient_max_abs": np.nan,
-        "parameters": physical,
-        "predictions": results,
-        "residual_rad": residual,
-    }
-
-
-def model_metrics(intervals, fit):
-    table = pd.DataFrame(
-        {
-            "segment_id": [row["segment_id"] for row in intervals],
-            "residual_deg": np.rad2deg(fit["residual_rad"]),
-        }
-    )
-    waveform_rmse = table.groupby("segment_id")["residual_deg"].apply(
-        lambda values: float(np.sqrt(np.mean(values.to_numpy() ** 2)))
-    )
-    return {
-        "interval_rmse_deg": float(np.sqrt(np.mean(table["residual_deg"] ** 2))),
-        "waveform_equal_rmse_deg": float(
-            np.sqrt(np.mean(waveform_rmse.to_numpy() ** 2))
-        ),
-        "waveform_rmse_mean_deg": float(waveform_rmse.mean()),
-        "waveform_rmse_median_deg": float(waveform_rmse.median()),
-        "waveform_rmse_max_deg": float(waveform_rmse.max()),
-    }
-
-
-def fit_waveforms_then_aggregate(
-    intervals,
-    b_is_free,
-    pool=None,
-):
-    """é ‚ç‚¹é–“ã‚¨ãƒãƒ«ã‚®ãƒ¼å¼ã§æ³¢å½¢åˆ¥ä¿‚æ•°ã‚’æ±‚ã‚ã€ä¸­å¤®å€¤ã¸é›†ç´„ã™ã‚‹ã€‚"""
-
-    grouped = list(pd.DataFrame(intervals).groupby("segment_id", sort=False))
-    first_pass = []
-    for segment_id, unused_group in grouped:
-        local = [row for row in intervals if row["segment_id"] == segment_id]
-        axis = local[0]["axis"]
-        names = (["b_" + axis] if b_is_free else []) + [
-            "c_rod",
-            "tau_" + axis,
-        ]
-        parameters = initial_energy_fit(local, names)
-        physical = {name: 0.0 for name in FREE_PARAMETER_NAMES}
-        physical.update(parameters)
-        unused_predictions, residual = evaluate_intervals(local, physical, pool)
-        first_pass.append(
-            {
-                "segment_id": segment_id,
-                "axis": axis,
-                "configuration": local[0]["configuration"],
-                "direction": local[0]["direction"],
-                "interval_count": len(local),
-                "first_b": physical["b_" + axis],
-                "first_c": physical["c_rod"],
-                "first_tau": physical["tau_" + axis],
-                "first_rmse_deg": float(
-                    np.sqrt(np.mean(np.rad2deg(residual) ** 2))
-                ),
-                "intervals": local,
-            }
-        )
-
-    common_c = float(np.median([row["first_c"] for row in first_pass]))
-    output_rows = []
-    for row in first_pass:
-        axis = row["axis"]
-        names = (["b_" + axis] if b_is_free else []) + ["tau_" + axis]
-        refit = energy_fit_with_fixed_c(row["intervals"], names, common_c)
-        physical = {name: 0.0 for name in FREE_PARAMETER_NAMES}
-        physical.update(refit)
-        physical["c_rod"] = common_c
-        unused_predictions, residual = evaluate_intervals(
-            row["intervals"], physical, pool
-        )
-        output_rows.append(
-            {
-                "segment_id": row["segment_id"],
-                "axis": axis,
-                "configuration": row["configuration"],
-                "direction": row["direction"],
-                "interval_count": row["interval_count"],
-                "first_b": row["first_b"],
-                "first_c": row["first_c"],
-                "first_tau": row["first_tau"],
-                "first_rmse_deg": row["first_rmse_deg"],
-                "common_c": common_c,
-                "refit_b": physical["b_" + axis],
-                "refit_tau": physical["tau_" + axis],
-                "refit_rmse_deg": float(
-                    np.sqrt(np.mean(np.rad2deg(residual) ** 2))
-                ),
-                "first_linear_solves": 1,
-                "refit_linear_solves": 1,
-            }
-        )
-
-    table = pd.DataFrame(output_rows)
-    physical = {
-        "b_IN": 0.0,
-        "b_OUT": 0.0,
-        "c_rod": common_c,
-        "tau_IN": float(table.loc[table["axis"] == "IN", "refit_tau"].median()),
-        "tau_OUT": float(table.loc[table["axis"] == "OUT", "refit_tau"].median()),
-    }
-    if b_is_free:
-        physical["b_IN"] = float(
-            table.loc[table["axis"] == "IN", "refit_b"].median()
-        )
-        physical["b_OUT"] = float(
-            table.loc[table["axis"] == "OUT", "refit_b"].median()
-        )
-    predictions, residual = evaluate_intervals(intervals, physical, pool)
-    fit = {
-        "success": True,
-        "message": "individual nonnegative energy fits aggregated by medians",
-        "objective": float(np.mean(residual**2)),
-        "iterations": 0,
-        "evaluations": int(
-            table["first_linear_solves"].sum() + table["refit_linear_solves"].sum()
-        ),
-        "gradient_max_abs": np.nan,
-        "parameters": physical,
-        "predictions": predictions,
-        "residual_rad": residual,
-    }
-    return {"fit": fit, "waveform_parameters": table, "common_c": common_c}
-
-
-def solve_continuous_waveform(record, segment_intervals, physical):
-    """æœ€åˆã®æ¡ç”¨é ‚ç‚¹ã‹ã‚‰æœ€å¾Œã¾ã§ã€å®Ÿæ¸¬å€¤ã¸æˆ»ã•ãšé€£ç¶šç©åˆ†ã™ã‚‹ã€‚"""
-
-    start_time = segment_intervals[0]["start_time_s"]
-    end_time = segment_intervals[-1]["end_time_s"]
-    measured_mask = (record["time_s"] >= start_time) & (
-        record["time_s"] <= end_time
-    )
-    relative_time = record["time_s"][measured_mask] - start_time
-    measured_angle_deg = record["centered_angle_deg"][measured_mask]
-    if len(relative_time) < 2:
-        raise ValueError(record["segment_id"] + " ã®é€£ç¶šæ¯”è¼ƒã‚µãƒ³ãƒ—ãƒ«ãŒä¸è¶³ã—ã¦ã„ã¾ã™")
-    interval = segment_intervals[0]
-    inertia = interval["inertia_kg_m2"]
-    restoring = interval["restoring_n_m_per_rad"]
-    damping, quadratic, friction = _local_coefficients(interval, physical)
-    epsilon = np.deg2rad(FRICTION_EPSILON_DEG_S)
-    small_period = 2.0 * math.pi * math.sqrt(inertia / restoring)
-
-    def differential_equation(unused_time, state):
-        angle, speed = state
-        acceleration = -restoring * np.sin(angle)
-        acceleration -= damping * speed
-        acceleration -= quadratic * abs(speed) * speed
-        acceleration -= friction * np.tanh(speed / epsilon)
-        return [speed, acceleration / inertia]
-
-    solution = solve_ivp(
-        differential_equation,
-        (0.0, float(relative_time[-1])),
-        [interval["start_angle_rad"], 0.0],
-        method="DOP853",
-        t_eval=relative_time,
-        rtol=DEFAULT_RTOL,
-        atol=[DEFAULT_ANGLE_SPEED_ATOL, DEFAULT_ANGLE_SPEED_ATOL],
-        max_step=MAX_STEP_PERIOD_FRACTION * small_period,
-    )
-    if not solution.success or len(solution.t) != len(relative_time):
-        raise RuntimeError(record["segment_id"] + " ã®é€£ç¶šç©åˆ†ã«å¤±æ•—ã—ã¾ã—ãŸ")
-    predicted_angle_deg = np.rad2deg(solution.y[0])
-    residual_deg = predicted_angle_deg - measured_angle_deg
-    return {
-        "time_s": relative_time,
-        "measured_angle_deg": measured_angle_deg,
-        "predicted_angle_deg": predicted_angle_deg,
-        "rmse_deg": float(np.sqrt(np.mean(residual_deg**2))),
-        "mae_deg": float(np.mean(np.abs(residual_deg))),
-        "maximum_abs_error_deg": float(np.max(np.abs(residual_deg))),
-        "endpoint_error_deg": float(residual_deg[-1]),
-    }
-
-
-def evaluate_and_plot_continuous_waveforms(
-    waveform_records,
-    intervals,
-    physical,
-    model_label,
-    output_path,
-):
-    """34æ³¢å½¢ã®é€£ç¶šç©åˆ†æ¯”è¼ƒå›³ã¨æ³¢å½¢åˆ¥èª¤å·®ã‚’ä½œã‚‹ã€‚"""
-
-    records = sorted(
-        waveform_records,
-        key=lambda item: (
-            item["axis"],
-            item["configuration"],
-            item["direction"],
-            item["repetition"],
-        ),
-    )
-    by_segment = {}
-    for interval in intervals:
-        by_segment.setdefault(interval["segment_id"], []).append(interval)
-    column_count = WAVEFORM_OVERVIEW_COLUMNS
-    row_count = int(math.ceil(len(records) / column_count))
-    figure, axes = plt.subplots(
-        row_count,
-        column_count,
-        figsize=(6.0 * column_count, 3.0 * row_count),
-        squeeze=False,
-    )
-    rows = []
-    for plot_number, record in enumerate(records):
-        segment_intervals = sorted(
-            by_segment[record["segment_id"]], key=lambda row: row["interval_number"]
-        )
-        comparison = solve_continuous_waveform(
-            record, segment_intervals, physical
-        )
-        axis = axes.flat[plot_number]
-        axis.plot(
-            comparison["time_s"],
-            comparison["measured_angle_deg"],
-            color="0.55",
-            linewidth=0.65,
-            label="measured" if plot_number == 0 else None,
-        )
-        axis.plot(
-            comparison["time_s"],
-            comparison["predicted_angle_deg"],
-            color="#d95f02",
-            linewidth=1.0,
-            label="continuous prediction" if plot_number == 0 else None,
-        )
-        axis.set_title(
-            record["segment_id"] + f"  RMSE={comparison['rmse_deg']:.2f} deg",
-            fontsize=8,
-        )
-        axis.grid(True, alpha=0.2)
-        axis.tick_params(labelsize=7)
-        rows.append(
-            {
-                "model": model_label,
-                "segment_id": record["segment_id"],
-                "axis": record["axis"],
-                "configuration": record["configuration"],
-                "direction": record["direction"],
-                "repetition": record["repetition"],
-                "samples": len(comparison["time_s"]),
-                "duration_s": float(comparison["time_s"][-1]),
-                "rmse_deg": comparison["rmse_deg"],
-                "mae_deg": comparison["mae_deg"],
-                "maximum_abs_error_deg": comparison["maximum_abs_error_deg"],
-                "endpoint_error_deg": comparison["endpoint_error_deg"],
-            }
-        )
-    for unused_axis in axes.flat[len(records) :]:
-        unused_axis.axis("off")
-    figure.supxlabel("time from first fitted peak [s]")
-    figure.supylabel("centered angle [deg]")
-    handles, labels = axes.flat[0].get_legend_handles_labels()
-    figure.legend(
-        handles,
-        labels,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.989),
-        ncol=2,
-        frameon=False,
-    )
-    figure.suptitle(
-        "Stage 4 continuous waveform comparison: " + model_label,
-        y=0.999,
-    )
-    figure.tight_layout(rect=(0.02, 0.02, 1.0, 0.972))
-    save_figure(figure, output_path, dpi=90)
-    return rows
-
-
-def parameter_uncertainty(intervals, fit, parameter_names, robust_scale_deg):
-    residual = fit["residual_rad"]
-    robust_scale_rad = np.deg2rad(robust_scale_deg)
-    z_value = residual / robust_scale_rad
-    robust_weight = 1.0 / np.sqrt(1.0 + z_value**2)
-    waveform_count = len({row["segment_id"] for row in intervals})
-    jacobian = np.zeros((len(intervals), len(parameter_names)), dtype=float)
-    weighted_residual = np.zeros(len(intervals), dtype=float)
-    for row_index, (interval, prediction) in enumerate(
-        zip(intervals, fit["predictions"])
-    ):
-        base_weight = 1.0 / (
-            waveform_count * interval["waveform_interval_count"]
-        )
-        weight = math.sqrt(base_weight * robust_weight[row_index])
-        weighted_residual[row_index] = weight * residual[row_index]
-        axis = interval["axis"]
-        for column, name in enumerate(parameter_names):
-            if name == "b_" + axis:
-                jacobian[row_index, column] = weight * prediction["sensitivity_b"]
-            elif name == "c_rod":
-                jacobian[row_index, column] = weight * prediction["sensitivity_c"]
-            elif name == "tau_" + axis:
-                jacobian[row_index, column] = weight * prediction["sensitivity_tau"]
-    degrees_of_freedom = max(1, len(intervals) - len(parameter_names))
-    variance = float(np.sum(weighted_residual**2) / degrees_of_freedom)
-    covariance = variance * np.linalg.pinv(jacobian.T @ jacobian)
-    standard_error = np.sqrt(np.maximum(0.0, np.diag(covariance)))
-    denominator = np.outer(standard_error, standard_error)
-    correlation = np.divide(
-        covariance,
-        denominator,
-        out=np.zeros_like(covariance),
-        where=denominator > 0.0,
-    )
-    rows = []
-    for index, name in enumerate(parameter_names):
-        value = fit["parameters"][name]
-        rows.append(
-            {
-                "parameter": name,
-                "value": value,
-                "standard_error": float(standard_error[index]),
-                "ci95_lower": float(value - CONFIDENCE_Z_95 * standard_error[index]),
-                "ci95_upper": float(value + CONFIDENCE_Z_95 * standard_error[index]),
-            }
-        )
-    return rows, correlation
-
-
-def cross_validate_waveforms(
-    intervals,
-    model_name,
-    parameter_names,
-    scales,
-    robust_scale_deg,
-    full_fit,
-    pool,
-):
-    """å…¨ãƒ‡ãƒ¼ã‚¿æœ€é©è§£ã®å³å¯†ãƒ¤ã‚³ãƒ“ã‚¢ãƒ³ã‹ã‚‰ç·šå½¢åŒ–1æ³¢å½¢é™¤å¤–CVã‚’è¡Œã†ã€‚"""
-
-    rows = []
-    segment_ids = list(dict.fromkeys(row["segment_id"] for row in intervals))
-    full_scaled = np.asarray(
-        [full_fit["parameters"][name] / scales[name] for name in parameter_names],
-        dtype=float,
-    )
-    robust_scale_rad = np.deg2rad(robust_scale_deg)
-    for fold_number, held_segment in enumerate(segment_ids, start=1):
-        training_indices = [
-            index
-            for index, row in enumerate(intervals)
-            if row["segment_id"] != held_segment
-        ]
-        held = [row for row in intervals if row["segment_id"] == held_segment]
-        training_waveform_count = len(segment_ids) - 1
-        jacobian = np.zeros((len(training_indices), len(parameter_names)), dtype=float)
-        target = np.zeros(len(training_indices), dtype=float)
-        for matrix_row, interval_index in enumerate(training_indices):
-            interval = intervals[interval_index]
-            prediction = full_fit["predictions"][interval_index]
-            residual_value = full_fit["residual_rad"][interval_index]
-            z_value = residual_value / robust_scale_rad
-            robust_weight = 1.0 / np.sqrt(1.0 + z_value**2)
-            weight = math.sqrt(
-                robust_weight
-                / (training_waveform_count * interval["waveform_interval_count"])
-            )
-            target[matrix_row] = -weight * residual_value / robust_scale_rad
-            axis = interval["axis"]
-            for column, name in enumerate(parameter_names):
-                sensitivity = 0.0
-                if name == "b_" + axis:
-                    sensitivity = prediction["sensitivity_b"]
-                elif name == "c_rod":
-                    sensitivity = prediction["sensitivity_c"]
-                elif name == "tau_" + axis:
-                    sensitivity = prediction["sensitivity_tau"]
-                jacobian[matrix_row, column] = (
-                    weight * sensitivity * scales[name] / robust_scale_rad
-                )
-        step_result = lsq_linear(
-            jacobian,
-            target,
-            bounds=(-full_scaled, np.full(len(parameter_names), np.inf)),
-            lsmr_tol="auto",
-        )
-        updated_scaled = np.maximum(0.0, full_scaled + step_result.x)
-        updated_physical = _physical_parameters(
-            parameter_names, updated_scaled, scales
-        )
-        predictions, residual = evaluate_intervals(held, updated_physical, pool)
-        residual_deg = np.rad2deg(residual)
-        rows.append(
-            {
-                "model": model_name,
-                "held_segment_id": held_segment,
-                "axis": held[0]["axis"],
-                "configuration": held[0]["configuration"],
-                "direction": held[0]["direction"],
-                "held_intervals": len(held),
-                "rmse_deg": float(np.sqrt(np.mean(residual_deg**2))),
-                "mean_residual_deg": float(np.mean(residual_deg)),
-                "maximum_abs_residual_deg": float(np.max(np.abs(residual_deg))),
-                "refit_method": "one-step robust Gauss-Newton influence update",
-                "scaled_step_norm": float(np.linalg.norm(step_result.x)),
-                "fit_success": int(step_result.success),
-                "fit_iterations": 1,
-                **{name: updated_physical[name] for name in FREE_PARAMETER_NAMES},
-            }
-        )
-    return rows
-
-
-def validate_linearized_cross_validation(
-    intervals,
-    cv_rows,
-    model_name,
-    parameter_names,
-    scales,
-    robust_scale_deg,
-    full_fit,
-    pool,
-):
-    """å½±éŸ¿é‡æœ€å¤§ã®LOOã‚±ãƒ¼ã‚¹ã‚’å®Œå…¨å†åŒå®šã—ã€ç·šå½¢åŒ–è¿‘ä¼¼ã‚’æ¤œè¨¼ã™ã‚‹ã€‚"""
-
-    candidates = sorted(
-        [row for row in cv_rows if row["model"] == model_name],
-        key=lambda row: row["scaled_step_norm"],
-        reverse=True,
-    )[:CV_LINEARIZATION_VALIDATION_FOLDS]
-    validation_rows = []
-    for number, approximate in enumerate(candidates, start=1):
-        held_segment = approximate["held_segment_id"]
-        print(
-            "CVè¿‘ä¼¼æ¤œè¨¼ "
-            + model_name
-            + " "
-            + str(number)
-            + "/"
-            + str(len(candidates))
-            + " "
-            + held_segment,
-            flush=True,
-        )
-        training = [row for row in intervals if row["segment_id"] != held_segment]
-        held = [row for row in intervals if row["segment_id"] == held_segment]
-        exact_fit = fit_model_gauss_newton(
-            training,
-            parameter_names,
-            scales,
-            robust_scale_deg,
-            full_fit["parameters"],
-            pool,
-            max_iterations=CROSS_VALIDATION_MAX_ITERATIONS,
-        )
-        unused_predictions, exact_residual = evaluate_intervals(
-            held, exact_fit["parameters"], pool
-        )
-        exact_rmse = float(
-            np.sqrt(np.mean(np.rad2deg(exact_residual) ** 2))
-        )
-        rmse_relative_difference = abs(exact_rmse - approximate["rmse_deg"]) / max(
-            exact_rmse, np.finfo(float).eps
-        )
-        scaled_parameter_difference = max(
-            abs(exact_fit["parameters"][name] - approximate[name]) / scales[name]
-            for name in parameter_names
-        )
-        passed = (
-            exact_fit["success"]
-            and rmse_relative_difference <= CV_RMSE_RELATIVE_TOLERANCE
-        )
-        validation_rows.append(
-            {
-                "model": model_name,
-                "held_segment_id": held_segment,
-                "selection_reason": "largest scaled influence-step norm",
-                "approximate_rmse_deg": approximate["rmse_deg"],
-                "exact_refit_rmse_deg": exact_rmse,
-                "rmse_relative_difference": rmse_relative_difference,
-                "maximum_scaled_parameter_difference": scaled_parameter_difference,
-                "exact_fit_success": int(exact_fit["success"]),
-                "exact_fit_iterations": exact_fit["iterations"],
-                "passed": int(passed),
-            }
-        )
-    return validation_rows
-
-
-def make_interval_rows(intervals, model_fits):
-    rows = []
-    for index, interval in enumerate(intervals):
-        row = dict(interval)
-        for model_name, fit in model_fits.items():
-            prefix = MODEL_PREFIXES[model_name]
-            prediction = fit["predictions"][index]
-            predicted_deg = float(np.rad2deg(prediction["predicted_next_angle_rad"]))
-            row[prefix + "_predicted_next_angle_deg"] = predicted_deg
-            row[prefix + "_residual_deg"] = (
-                predicted_deg - interval["measured_next_angle_deg"]
-            )
-            row[prefix + "_amplitude_residual_deg"] = (
-                abs(predicted_deg) - abs(interval["measured_next_angle_deg"])
-            )
-            row[prefix + "_predicted_half_period_s"] = prediction[
-                "predicted_half_period_s"
-            ]
-            row[prefix + "_half_period_residual_s"] = (
-                prediction["predicted_half_period_s"]
-                - interval["measured_half_period_s"]
-            )
-        row["amplitude_bin_lower_deg"] = (
-            math.floor(interval["start_amplitude_deg"] / RESIDUAL_AMPLITUDE_BIN_DEG)
-            * RESIDUAL_AMPLITUDE_BIN_DEG
-        )
-        rows.append(row)
-    return rows
-
-
-def summarize_residuals(interval_rows, adopted_model):
-    table = pd.DataFrame(interval_rows)
-    residual_column = adopted_model + "_residual_deg"
-    amplitude_residual_column = adopted_model + "_amplitude_residual_deg"
-    rows = []
-    groupings = {
-        "axis_configuration": ["axis", "configuration"],
-        "axis_transition": ["axis", "transition"],
-        "axis_amplitude_bin": ["axis", "amplitude_bin_lower_deg"],
-    }
-    for grouping, columns in groupings.items():
-        for keys, group in table.groupby(columns, sort=True):
-            if not isinstance(keys, tuple):
-                keys = (keys,)
-            residual = group[residual_column].to_numpy(dtype=float)
-            amplitude_residual = group[amplitude_residual_column].to_numpy(
-                dtype=float
-            )
-            row = {
-                "grouping": grouping,
-                "samples": len(group),
-                "mean_residual_deg": float(np.mean(residual)),
-                "mean_amplitude_residual_deg": float(
-                    np.mean(amplitude_residual)
-                ),
-                "rmse_deg": float(np.sqrt(np.mean(residual**2))),
-                "maximum_abs_residual_deg": float(np.max(np.abs(residual))),
-                "amplitude_residual_vs_start_amplitude_correlation": float(
-                    np.corrcoef(
-                        group["start_amplitude_deg"].to_numpy(dtype=float),
-                        amplitude_residual,
-                    )[0, 1]
-                ),
-            }
-            for column, value in zip(columns, keys):
-                row[column] = value
-            rows.append(row)
-    return rows
-
-
-def plot_results(interval_rows, cv_rows, comparison_rows, adopted_model, output_path):
-    table = pd.DataFrame(interval_rows)
-    cv = pd.DataFrame(cv_rows)
-    comparison = pd.DataFrame(comparison_rows).set_index("model")
-    adopted_prefix = MODEL_PREFIXES[adopted_model]
-    residual_column = adopted_prefix + "_amplitude_residual_deg"
-    prediction_column = adopted_prefix + "_predicted_next_angle_deg"
-    figure, axes = plt.subplots(2, 2, figsize=(13, 9))
-    colors = {"IN": "#1f77b4", "OUT": "#d62728"}
-    for axis, group in table.groupby("axis"):
-        axes[0, 0].scatter(
-            group["measured_next_angle_deg"],
-            group[prediction_column],
-            s=8,
-            alpha=0.35,
-            color=colors[axis],
-            label=axis,
-        )
-        axes[0, 1].scatter(
-            group["start_amplitude_deg"],
-            group[residual_column],
-            s=8,
-            alpha=0.35,
-            color=colors[axis],
-            label=axis,
-        )
-    limit = float(
-        max(
-            table["measured_next_angle_deg"].abs().max(),
-            table[prediction_column].abs().max(),
-        )
-    )
-    axes[0, 0].plot([-limit, limit], [-limit, limit], "k--", linewidth=1)
-    axes[0, 0].set_xlabel("measured next peak [deg]")
-    axes[0, 0].set_ylabel("predicted next peak [deg]")
-    axes[0, 0].legend()
-    axes[0, 1].axhline(0.0, color="black", linewidth=1)
-    axes[0, 1].set_xlabel("start amplitude [deg]")
-    axes[0, 1].set_ylabel("next-peak amplitude residual [deg]")
-    axes[0, 1].legend()
-    box_data = [
-        cv[cv["model"] == model]["rmse_deg"].to_numpy(dtype=float)
-        for model in MODEL_PREFIXES
-    ]
-    axes[1, 0].boxplot(
-        box_data,
-        tick_labels=["both b free", "b_IN=0", "both b=0"],
-    )
-    axes[1, 0].set_ylabel("leave-one-waveform-out RMSE [deg]")
-    axes[1, 0].grid(True, axis="y", alpha=0.3)
-    names = ["training", "LOO-CV"]
-    x_value = np.arange(len(names))
-    width = 0.25
-    for offset, model in zip([-1.0, 0.0, 1.0], MODEL_PREFIXES):
-        values = [
-            comparison.loc[model, "waveform_equal_rmse_deg"],
-            comparison.loc[model, "cv_waveform_equal_rmse_deg"],
-        ]
-        axes[1, 1].bar(
-            x_value + offset * width,
-            values,
-            width,
-            label=model,
-        )
-    axes[1, 1].set_xticks(x_value, names)
-    axes[1, 1].set_ylabel("waveform-equal RMSE [deg]")
-    axes[1, 1].legend(fontsize=8)
-    axes[1, 1].grid(True, axis="y", alpha=0.3)
-    figure.suptitle("Stage 4 shared rod damping identification: " + adopted_model)
-    figure.tight_layout()
-    save_figure(figure, output_path)
-
-
-def plot_waveform_overlays(
-    waveform_records,
-    intervals,
-    adopted_fit,
-    output_path,
-):
-    """å…¨34æ³¢å½¢ã¸åŒºé–“åˆ¥ãƒ•ã‚£ãƒƒãƒˆæ›²ç·šã¨å®Ÿæ³¢å½¢ã‚’é‡ã­ã¦è¡¨ç¤ºã™ã‚‹ã€‚"""
-
-    records = sorted(
-        waveform_records,
-        key=lambda item: (
-            item["axis"],
-            item["configuration"],
-            item["direction"],
-            item["repetition"],
-        ),
-    )
-    interval_indices = {}
-    for index, interval in enumerate(intervals):
-        interval_indices.setdefault(interval["segment_id"], []).append(index)
-    column_count = WAVEFORM_OVERVIEW_COLUMNS
-    row_count = int(math.ceil(len(records) / column_count))
-    figure, axes = plt.subplots(
-        row_count,
-        column_count,
-        figsize=(6.0 * column_count, 3.0 * row_count),
-        squeeze=False,
-    )
-    for plot_number, record in enumerate(records):
-        axis = axes.flat[plot_number]
-        indices = interval_indices[record["segment_id"]]
-        segment_intervals = [intervals[index] for index in indices]
-        time_origin = segment_intervals[0]["start_time_s"]
-        final_time = segment_intervals[-1]["end_time_s"]
-        measured_mask = (record["time_s"] >= time_origin) & (
-            record["time_s"] <= final_time
-        )
-        axis.plot(
-            record["time_s"][measured_mask] - time_origin,
-            record["centered_angle_deg"][measured_mask],
-            color="0.55",
-            linewidth=0.65,
-            label="measured waveform" if plot_number == 0 else None,
-            zorder=1,
-        )
-        predicted_times = []
-        predicted_angles = []
-        measured_peak_times = [segment_intervals[0]["start_time_s"] - time_origin]
-        measured_peak_angles = [segment_intervals[0]["start_angle_deg"]]
-        for interval_index in indices:
-            interval = intervals[interval_index]
-            relative_time, angle_rad = solve_interval_trajectory(
-                interval, adopted_fit["parameters"]
-            )
-            axis.plot(
-                interval["start_time_s"] - time_origin + relative_time,
-                np.rad2deg(angle_rad),
-                color="#d95f02",
-                linewidth=1.05,
-                alpha=0.92,
-                label="interval fit" if plot_number == 0 and interval_index == indices[0] else None,
-                zorder=2,
-            )
-            prediction = adopted_fit["predictions"][interval_index]
-            predicted_times.append(
-                interval["start_time_s"]
-                - time_origin
-                + prediction["predicted_half_period_s"]
-            )
-            predicted_angles.append(
-                np.rad2deg(prediction["predicted_next_angle_rad"])
-            )
-            measured_peak_times.append(interval["end_time_s"] - time_origin)
-            measured_peak_angles.append(interval["measured_next_angle_deg"])
-        axis.scatter(
-            measured_peak_times,
-            measured_peak_angles,
-            s=9,
-            color="#1b1b1b",
-            label="measured peaks" if plot_number == 0 else None,
-            zorder=3,
-        )
-        axis.scatter(
-            predicted_times,
-            predicted_angles,
-            s=12,
-            marker="x",
-            linewidths=0.8,
-            color="#d95f02",
-            label="predicted peaks" if plot_number == 0 else None,
-            zorder=4,
-        )
-        residual_deg = np.rad2deg(adopted_fit["residual_rad"][indices])
-        rmse_deg = float(np.sqrt(np.mean(residual_deg**2)))
-        axis.set_title(record["segment_id"] + f"  RMSE={rmse_deg:.3f} deg", fontsize=8)
-        axis.set_xlim(0.0, final_time - time_origin)
-        axis.grid(True, alpha=0.2)
-        axis.tick_params(labelsize=7)
-    for unused_axis in axes.flat[len(records) :]:
-        unused_axis.axis("off")
-    figure.supxlabel("time from first fitted peak [s]")
-    figure.supylabel("centered angle [deg]")
-    handles, labels = axes.flat[0].get_legend_handles_labels()
-    figure.legend(
-        handles,
-        labels,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.989),
-        ncol=4,
-        frameon=False,
-    )
-    figure.suptitle(
-        "Stage 4 measured waveforms and interval-reset fits (34 no-ball records)",
-        y=0.999,
-    )
-    figure.tight_layout(rect=(0.02, 0.02, 1.0, 0.972))
-    save_figure(figure, output_path)
-
-
-def plot_revised_results(
-    free_waveforms,
-    zero_waveforms,
-    comparison_rows,
-    continuous_rows,
-    output_path,
-):
-    """æ³¢å½¢åˆ¥ä¿‚æ•°åˆ†å¸ƒã¨äºŒã¤ã®ä»£è¡¨ãƒ¢ãƒ‡ãƒ«ã®èª¤å·®ã‚’è¡¨ç¤ºã™ã‚‹ã€‚"""
-
-    free = pd.DataFrame(free_waveforms)
-    zero = pd.DataFrame(zero_waveforms)
-    comparison = pd.DataFrame(comparison_rows).set_index("model")
-    continuous = pd.DataFrame(continuous_rows)
-    figure, axes = plt.subplots(2, 2, figsize=(13, 9))
-    x_free = np.arange(len(free))
-    axes[0, 0].scatter(x_free, free["first_c"], s=18, label="b free")
-    axes[0, 0].scatter(
-        np.arange(len(zero)), zero["first_c"], s=18, label="both b=0"
-    )
-    axes[0, 0].axhline(free["common_c"].iloc[0], color="#1f77b4", linestyle="--")
-    axes[0, 0].axhline(zero["common_c"].iloc[0], color="#ff7f0e", linestyle="--")
-    axes[0, 0].set_ylabel("individual c [N m s^2/rad^2]")
-    axes[0, 0].set_xlabel("waveform index")
-    axes[0, 0].legend()
-    axes[0, 0].grid(True, alpha=0.25)
-
-    for axis_name, color in [("IN", "#1f77b4"), ("OUT", "#d62728")]:
-        values = free.loc[free["axis"] == axis_name, "refit_b"]
-        axes[0, 1].scatter(
-            np.arange(len(values)), values, s=20, color=color, label=axis_name
-        )
-        axes[0, 1].axhline(values.median(), color=color, linestyle="--")
-    axes[0, 1].set_ylabel("individual b after common-c refit [N m s/rad]")
-    axes[0, 1].set_xlabel("waveform index within axis")
-    axes[0, 1].legend()
-    axes[0, 1].grid(True, alpha=0.25)
-
-    tau_data = []
-    tau_labels = []
-    for model_label, table in [("b free", free), ("both b=0", zero)]:
-        for axis_name in ["IN", "OUT"]:
-            tau_data.append(table.loc[table["axis"] == axis_name, "refit_tau"])
-            tau_labels.append(model_label + "\n" + axis_name)
-    axes[1, 0].boxplot(tau_data, tick_labels=tau_labels)
-    axes[1, 0].set_ylabel("individual tau after common-c refit [N m]")
-    axes[1, 0].grid(True, axis="y", alpha=0.25)
-
-    model_order = ["b_free", "b_zero"]
-    interval_rmse = [
-        comparison.loc[model, "waveform_equal_rmse_deg"] for model in model_order
-    ]
-    continuous_rmse = [
-        float(
-            np.sqrt(
-                np.mean(
-                    continuous.loc[continuous["model"] == model, "rmse_deg"] ** 2
-                )
-            )
-        )
-        for model in model_order
-    ]
-    x_value = np.arange(2)
-    axes[1, 1].bar(x_value - 0.18, interval_rmse, 0.36, label="one-half-cycle")
-    axes[1, 1].bar(x_value + 0.18, continuous_rmse, 0.36, label="continuous")
-    axes[1, 1].set_xticks(x_value, ["b free", "both b=0"])
-    axes[1, 1].set_ylabel("waveform-equal RMSE [deg]")
-    axes[1, 1].legend()
-    axes[1, 1].grid(True, axis="y", alpha=0.25)
-    figure.suptitle("Stage 4 individual-waveform damping identification")
-    figure.tight_layout()
-    save_figure(figure, output_path)
-
-
-def write_revised_report(
-    output_path,
-    interval_count,
-    comparison_rows,
-    free_waveforms,
-    zero_waveforms,
-    continuous_rows,
-):
-    comparison = pd.DataFrame(comparison_rows).set_index("model")
-    free = pd.DataFrame(free_waveforms)
-    zero = pd.DataFrame(zero_waveforms)
-    continuous = pd.DataFrame(continuous_rows)
-
-    def continuous_metrics(model):
-        values = continuous[continuous["model"] == model]
-        return {
-            "waveform_equal_rmse_deg": float(
-                np.sqrt(np.mean(values["rmse_deg"].to_numpy() ** 2))
-            ),
-            "median_rmse_deg": float(values["rmse_deg"].median()),
-            "maximum_rmse_deg": float(values["rmse_deg"].max()),
-        }
-
-    continuous_by_model = {
-        model: continuous_metrics(model) for model in ["b_free", "b_zero"]
-    }
-    lines = [
-        "# Stage 4: æ³¢å½¢åˆ¥ãƒ­ãƒƒãƒ‰æ¸›è¡°ä¿‚æ•°ã®åŒå®š",
-        "",
-        "## çµè«–",
-        "",
-        f"æ‰¿èªæ¸ˆã¿çƒãªã—34æ³¢å½¢ã€{interval_count}åŠå‘¨æœŸã‚’ä½¿ç”¨ã—ãŸã€‚å…¨æ³¢å½¢ã‚’ä¸€ã¤ã®",
-        "æœ€é©åŒ–å•é¡Œã¨ã—ã¦åŒæ™‚ã«è§£ãæ–¹æ³•ã‚’å»ƒæ­¢ã—ã€å„æ³¢å½¢ã‚’ç‹¬ç«‹ã«ãƒ•ã‚£ãƒƒãƒˆã—ãŸå¾Œã€",
-        "cã‚’å…¨æ³¢å½¢ã®ä¸­å¤®å€¤ã€bã¨tauã‚’è»¸åˆ¥ä¸­å¤®å€¤ã¨ã—ã¦é›†ç´„ã—ãŸã€‚",
-        "b_INã¨b_OUTã‚’ã¨ã‚‚ã«åŒå®šã™ã‚‹bè‡ªç”±ãƒ¢ãƒ‡ãƒ«ã¨ã€ä¸¡è»¸ã¨ã‚‚b=0ã¨ã™ã‚‹ãƒ¢ãƒ‡ãƒ«ã‚’æ¯”è¼ƒã—ãŸã€‚",
-        "ãƒ¢ãƒ‡ãƒ«æ¡å¦ã¯æœ¬ãƒ¬ãƒãƒ¼ãƒˆã®åˆ†å‰²ç©åˆ†çµæœã¨é€£ç¶šç©åˆ†çµæœã‚’ãƒ¬ãƒ“ãƒ¥ãƒ¼ã—ãŸå¾Œã«ç¢ºå®šã™ã‚‹ã€‚",
-        "",
-        "## ä¿®æ­£å¾Œã®åŒå®šæ‰‹é †",
-        "",
-        "1. æ³¢å½¢ã”ã¨ã«ã€å…¨åŠå‘¨æœŸã§å…±é€šã®bã€cã€tauã‚’åŒå®šã™ã‚‹ã€‚b=0ãƒ¢ãƒ‡ãƒ«ã§ã¯cã€tauã ã‘ã‚’åŒå®šã™ã‚‹ã€‚",
-        "2. 34å€‹ã®æ³¢å½¢åˆ¥cã®ä¸­å¤®å€¤ã‚’å…±é€šcã¨ã™ã‚‹ã€‚ä¸­å¤®å€¤ã¯å°‘æ•°ã®ç•°å¸¸æ³¢å½¢ã«å·¦å³ã•ã‚Œã«ããã€è¿½åŠ ã®é–¾å€¤ã‚’å¿…è¦ã¨ã—ãªã„ãŸã‚æ¡ç”¨ã—ãŸã€‚",
-        "3. å…±é€šcã‚’å›ºå®šã—ã€æ³¢å½¢ã”ã¨ã«bã€tauã‚’å†åŒå®šã™ã‚‹ã€‚b=0ãƒ¢ãƒ‡ãƒ«ã§ã¯tauã ã‘ã‚’å†åŒå®šã™ã‚‹ã€‚",
-        "4. å†åŒå®šã—ãŸbã€tauã®è»¸åˆ¥ä¸­å¤®å€¤ã‚’ã€INã€OUTãã‚Œãã‚Œã®ä»£è¡¨ä¿‚æ•°ã¨ã™ã‚‹ã€‚",
-        "5. ä»£è¡¨ä¿‚æ•°ã§å…¨åŠå‘¨æœŸã®1ã‚¹ãƒ†ãƒƒãƒ—äºˆæ¸¬ã‚’å†è¨ˆç®—ã™ã‚‹ã€‚",
-        "6. åŒã˜ä»£è¡¨ä¿‚æ•°ã‚’å›ºå®šã—ã€å„æ³¢å½¢ã®æœ€åˆã®æœ‰åŠ¹é ‚ç‚¹ã‹ã‚‰æœ€å¾Œã¾ã§ãƒªã‚»ãƒƒãƒˆãªã—ã§é€£ç¶šç©åˆ†ã™ã‚‹ã€‚",
-        "",
-        "æ³¢å½¢åˆ¥ä¿‚æ•°ã¯ã€å®Ÿæ¸¬ã—ãŸéš£æ¥é ‚ç‚¹ã®ã‚¨ãƒãƒ«ã‚®ãƒ¼å·®ã‚’bã€cã€tauã®æ•£é€¸ä»•äº‹åŸºåº•ã¸",
-        "å½“ã¦ã¯ã‚ã‚‹éè² ç·šå½¢æœ€å°äºŒä¹—ã§æ±‚ã‚ã‚‹ã€‚ã—ãŸãŒã£ã¦åå¾©ODEæœ€é©åŒ–ã¯è¡Œã‚ãšã€",
-        "å„æ³¢å½¢ã®ä¿‚æ•°ã¯ä¸€å›ã®ç·šå½¢æ±‚è§£ã§å¾—ã‚‰ã‚Œã‚‹ã€‚ODEã¯é›†ç´„å¾Œã®ä»£è¡¨ä¿‚æ•°ã«ã‚ˆã‚‹",
-        "1åŠå‘¨æœŸå…ˆäºˆæ¸¬ã¨é€£ç¶šæ³¢å½¢æ¤œè¨¼ã«ã ã‘ä½¿ç”¨ã™ã‚‹ã€‚",
-        "",
-        "```math",
-        "\\Delta E_n \\simeq b B_b(A_n)+c B_c(A_n)+\\tau B_\\tau(A_n)",
-        "```",
-        "",
-        "```math",
-        "B_b=8\\omega_0[E(m)-(1-m)K(m)],\\quad",
-        "B_c=4\\omega_0^2(\\sin A-A\\cos A),\\quad",
-        "B_\\tau=2A",
-        "```",
-        "",
-        "ã“ã“ã§Aã¯å§‹ç‚¹æŒ¯å¹…ã€m=sin^2(A/2)ã€omega_0=sqrt(K/I)ã€K(m)ã€E(m)ã¯å®Œå…¨æ¥•å††ç©åˆ†ã§ã‚ã‚‹ã€‚",
-        "æ•£é€¸ä»•äº‹åŸºåº•ã¯ä¿å­˜ç³»è»Œé“ã‚’ç”¨ã„ã‚‹è¿‘ä¼¼ãªã®ã§ã€é›†ç´„ã—ãŸä»£è¡¨ä¿‚æ•°ã¯Stage 3ã®éç·šå½¢ODEã§",
-        "å…¨åŠå‘¨æœŸã‚’å†è¨ˆç®—ã—ã€è¿‘ä¼¼ã«ã‚ˆã‚‹ä¿‚æ•°å°å‡ºå¾Œã‚‚æ¬¡é ‚ç‚¹äºˆæ¸¬èª¤å·®ãŒè¨±å®¹ã§ãã‚‹ã‹ã‚’ç¢ºèªã™ã‚‹ã€‚",
-        "",
-        "## å…±é€šå€¤ã¨æ³¢å½¢åˆ¥å€¤",
-        "",
-        "| æ®µéš | b | c | tau |",
-        "|---|---|---|---|",
-        "| æ³¢å½¢åˆ¥1æ¬¡åŒå®š | åŒä¸€æ³¢å½¢å†…ã§å…±é€š | åŒä¸€æ³¢å½¢å†…ã§å…±é€š | åŒä¸€æ³¢å½¢å†…ã§å…±é€š |",
-        "| cå…±é€šåŒ–å¾Œã®å†åŒå®š | æ³¢å½¢ã”ã¨ã«å†åŒå®š | å…¨34æ³¢å½¢ã§å…±é€š | æ³¢å½¢ã”ã¨ã«å†åŒå®š |",
-        "| æœ€çµ‚ä»£è¡¨ãƒ¢ãƒ‡ãƒ« | è»¸åˆ¥ä¸­å¤®å€¤ | å…¨34æ³¢å½¢ã®ä¸­å¤®å€¤ | è»¸åˆ¥ä¸­å¤®å€¤ |",
-        "",
-        "åŠå‘¨æœŸã”ã¨ã«ç•°ãªã‚‹bã€cã€tauã‚’è¨­å®šã™ã‚‹ã“ã¨ã¯ãªã„ã€‚å„åŠå‘¨æœŸã§å®Ÿæ¸¬é ‚ç‚¹ã¸æˆ»ã™ã®ã¯",
-        "çŠ¶æ…‹ã ã‘ã§ã‚ã‚Šã€åŒã˜æ³¢å½¢å†…ã®ä¿‚æ•°ã¯å…±é€šã§ã‚ã‚‹ã€‚",
-        "",
-        "## ä»£è¡¨ä¿‚æ•°",
-        "",
-        "| ãƒ¢ãƒ‡ãƒ« | b_IN | b_OUT | c_rod | tau_IN | tau_OUT |",
-        "|---|---:|---:|---:|---:|---:|",
-    ]
-    for model in ["b_free", "b_zero"]:
-        row = comparison.loc[model]
-        lines.append(
-            f"| {model} | {row['b_IN']:.9e} | {row['b_OUT']:.9e} | "
-            f"{row['c_rod']:.9e} | {row['tau_IN']:.9e} | {row['tau_OUT']:.9e} |"
-        )
-    lines.extend(
-        [
-            "",
-            "## åˆ†å‰²ç©åˆ†ã¨é€£ç¶šç©åˆ†ã®èª¤å·®",
-            "",
-            "| ãƒ¢ãƒ‡ãƒ« | 1åŠå‘¨æœŸå…ˆãƒ»æ³¢å½¢ç­‰é‡ã¿RMSE [deg] | 1åŠå‘¨æœŸå…ˆãƒ»æœ€å¤§æ³¢å½¢RMSE [deg] | é€£ç¶šæ³¢å½¢ãƒ»æ³¢å½¢ç­‰é‡ã¿RMSE [deg] | é€£ç¶šæ³¢å½¢ãƒ»ä¸­å¤®å€¤ [deg] | é€£ç¶šæ³¢å½¢ãƒ»æœ€å¤§å€¤ [deg] |",
-            "|---|---:|---:|---:|---:|---:|",
-        ]
-    )
-    for model in ["b_free", "b_zero"]:
-        row = comparison.loc[model]
-        continuous_row = continuous_by_model[model]
-        lines.append(
-            f"| {model} | {row['waveform_equal_rmse_deg']:.6f} | "
-            f"{row['waveform_rmse_max_deg']:.6f} | "
-            f"{continuous_row['waveform_equal_rmse_deg']:.6f} | "
-            f"{continuous_row['median_rmse_deg']:.6f} | "
-            f"{continuous_row['maximum_rmse_deg']:.6f} |"
-        )
-    lines.extend(
-        [
-            "",
-            "1åŠå‘¨æœŸå…ˆèª¤å·®ã¯ã€å„åŒºé–“ã‚’å®Ÿæ¸¬é ‚ç‚¹ã‹ã‚‰é–‹å§‹ã™ã‚‹ãŸã‚æ¸›è¡°å‰‡ã®å±€æ‰€çš„ãªé©åˆæ€§ã‚’ç¤ºã™ã€‚",
-            "é€£ç¶šæ³¢å½¢èª¤å·®ã¯ã€æœ€åˆã®é ‚ç‚¹ã ã‘ã‚’åˆæœŸå€¤ã¨ã—ã€ä»¥å¾Œã¯å®Ÿæ¸¬å€¤ã¸æˆ»ã•ãªã„ãŸã‚ã€",
-            "æŒ¯å¹…ã€å‘¨æœŸã€ä½ç›¸ãŠã‚ˆã³å°ã•ãªç³»çµ±èª¤å·®ã®ç´¯ç©ã‚’å«ã‚€ã€‚é€£ç¶šèª¤å·®ã ã‘ã§bã€cã€tauã‚’",
-            "å†èª¿æ•´ã™ã‚‹ã¨Iã€Kã‚„åˆæœŸæ¡ä»¶ã®èª¤å·®ã¾ã§æ¸›è¡°ä¿‚æ•°ã¸æ··å…¥ã™ã‚‹ãŸã‚ã€æœ¬Stageã§ã¯",
-            "åŒå®šã«ã¯ç”¨ã„ãšã€åŒå®šå¾Œã®ãƒ¢ãƒ‡ãƒ«å¦¥å½“æ€§ç¢ºèªã«ç”¨ã„ã‚‹ã€‚",
-            "",
-            "## é€£ç¶šæ³¢å½¢ã®æ¯”è¼ƒ",
-            "",
-            "### bè‡ªç”±ãƒ¢ãƒ‡ãƒ«",
-            "",
-            "![bè‡ªç”±ãƒ¢ãƒ‡ãƒ«ã®34æ³¢å½¢é€£ç¶šæ¯”è¼ƒ](continuous_waveform_comparison_b_free.jpg)",
-            "",
-            "### ä¸¡è»¸b=0ãƒ¢ãƒ‡ãƒ«",
-            "",
-            "![ä¸¡è»¸b=0ãƒ¢ãƒ‡ãƒ«ã®34æ³¢å½¢é€£ç¶šæ¯”è¼ƒ](continuous_waveform_comparison_b_zero.jpg)",
-            "",
-            "å„æ©™ç·šã¯æœ€åˆã®æœ‰åŠ¹é ‚ç‚¹ã‹ã‚‰æœ€å¾Œã¾ã§ãƒªã‚»ãƒƒãƒˆã›ãšã«ç©åˆ†ã—ãŸäºˆæ¸¬æ³¢å½¢ã€ç°ç·šã¯",
-            "ä¸­å¿ƒè£œæ­£å¾Œã®å®Ÿæ¸¬æ³¢å½¢ã§ã‚ã‚‹ã€‚å„ãƒ‘ãƒãƒ«ã®RMSEã¯ã€ãã®æ³¢å½¢ã®å…¨è¡¨ç¤ºã‚µãƒ³ãƒ—ãƒ«ã«",
-            "å¯¾ã™ã‚‹è§’åº¦RMSEã§ã‚ã‚‹ã€‚",
-            "",
-            "## æ³¢å½¢åˆ¥ä¿‚æ•°ã®åˆ†å¸ƒ",
-            "",
-            "![æ³¢å½¢åˆ¥ä¿‚æ•°ã¨èª¤å·®ã®æ¦‚è¦](rod_damping_identification.png)",
-            "",
-            f"bè‡ªç”±ãƒ¢ãƒ‡ãƒ«ã®æ³¢å½¢åˆ¥cç¯„å›²ã¯{free['first_c'].min():.3e}ï½{free['first_c'].max():.3e}ã€",
-            f"ä¸¡è»¸b=0ãƒ¢ãƒ‡ãƒ«ã§ã¯{zero['first_c'].min():.3e}ï½{zero['first_c'].max():.3e}ã§ã‚ã‚‹ã€‚",
-            "å…¨æ³¢å½¢ã®å€‹åˆ¥ä¿‚æ•°ã€å…±é€šcå›ºå®šå¾Œã®å†åŒå®šå€¤ã€ç·šå½¢æ±‚è§£å›æ•°ãŠã‚ˆã³èª¤å·®ã¯",
-            "waveform_parameters.csvã¸ä¿å­˜ã—ãŸã€‚",
-            "",
-            "## å›ºå®šæ•°å€¤ã¨æ ¹æ‹ ",
-            "",
-            "| æ•°å€¤ | æ ¹æ‹  |",
-            "|---|---|",
-            "| epsilon=0.5 deg/s | Stage 3ãƒ¬ãƒ“ãƒ¥ãƒ¼ã§æ‰¿èªã—ãŸæ‘©æ“¦é€£ç¶šåŒ–ã®åˆæœŸå€¤ã€‚ |",
-            "| æŒ¯å¹…ä¸‹é™4 deg | åœæ­¢ç›´å‰ã®å›ºç€ã€é ‚ç‚¹æ¤œå‡ºã€ä¸­å¿ƒèª¤å·®ã®å½±éŸ¿ã‚’é¿ã‘ã‚‹ãŸã‚Stage 3ã§æ‰¿èªã—ãŸä¸‹é™ã€‚ |",
-            "| Stage 3é«˜é€ŸODEè¨­å®š | å…¨360åˆæˆæ¡ä»¶ã§ç²¾åº¦åŸºæº–ã‚’æº€ãŸã—ã€å¾“æ¥è¨­å®šã‚ˆã‚Šé–¢æ•°è©•ä¾¡å›æ•°ãŒç´„4å€å°‘ãªã„ãŸã‚æ¡ç”¨ã—ãŸã€‚ |",
-            "| cãŠã‚ˆã³è»¸åˆ¥bã€tauã®ä¸­å¤®å€¤ | å¤–ã‚Œæ³¢å½¢ã®å½±éŸ¿ã‚’æŠ‘ãˆã€é™¤å¤–é–¾å€¤ã¨ã„ã†æ–°ãŸãªãƒã‚¸ãƒƒã‚¯ãƒŠãƒ³ãƒãƒ¼ã‚’å°å…¥ã—ãªã„ä»£è¡¨å€¤ã€‚ |",
-            "| æ³¢å½¢åˆ¥ä¿‚æ•°ã®éè² ç·šå½¢æœ€å°äºŒä¹— | é ‚ç‚¹é–“ã®å®Ÿæ¸¬ã‚¨ãƒãƒ«ã‚®ãƒ¼æå¤±ã‚’bã€cã€tauã®æ•£é€¸ä»•äº‹åŸºåº•ã§è¡¨ã›ã‚‹ãŸã‚æ¡ç”¨ã—ãŸã€‚è² ã®æ¸›è¡°ä¿‚æ•°ã¯ç‰©ç†çš„ã«ä¸æ¡ç”¨ãªã®ã§ä¸‹é™ã‚’0ã¨ã™ã‚‹ã€‚åå¾©ODEè©•ä¾¡ã‚’å¿…è¦ã¨ã—ãªã„ã€‚ |",
-            "| é€£ç¶šæ¯”è¼ƒã®ç¯„å›² | æœ€åˆã®æœ‰åŠ¹é ‚ç‚¹ã‹ã‚‰ã€æŒ¯å¹…4 degä»¥ä¸Šã¨ã—ã¦æ¡ç”¨ã—ãŸæœ€å¾Œã®é ‚ç‚¹ã¾ã§ã€‚åŒå®šåŒºé–“ã¨åŒã˜ç¯„å›²ã§æ¯”è¼ƒã™ã‚‹ã€‚ |",
-            "| æ¦‚è¦å›³4åˆ— | 34æ³¢å½¢ã‚’9è¡Œã«é…ç½®ã—ã€æ³¢å½¢ã¨å‡¡ä¾‹ã‚’åˆ¤èª­ã§ãã‚‹è¡¨ç¤ºå°‚ç”¨è¨­å®šã€‚è§£æå€¤ã«ã¯å½±éŸ¿ã—ãªã„ã€‚ |",
-            "| CSVæœ‰åŠ¹æ•°å­—10æ¡ | Stage 3ã®è§’åº¦è¨±å®¹èª¤å·®0.01 degã‚ˆã‚Šååˆ†ç´°ã‹ã„å€¤ã‚’ä¿æŒã—ã¤ã¤ã€ãƒ¬ãƒ“ãƒ¥ãƒ¼ãƒ»ä¿å­˜ç”¨æˆæœç‰©ã‚’è»½é‡åŒ–ã™ã‚‹ã€‚è§£æå†…éƒ¨ã¯å€ç²¾åº¦ã®ã¾ã¾ã¨ã™ã‚‹ã€‚ |",
-            "",
-            "ä»Šå¾Œæ–°ãŸãªå›ºå®šæ•°å€¤ã‚’å°å…¥ã™ã‚‹å ´åˆã¯ã€é©ç”¨ç¯„å›²ã¨å°å‡ºæ ¹æ‹ ã‚’æœ¬è¡¨ã¾ãŸã¯è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã¸è¨˜éŒ²ã™ã‚‹ã€‚",
-            "",
-            "## å‡ºåŠ›",
-            "",
-            "- [æ³¢å½¢åˆ¥ä¿‚æ•°](waveform_parameters.csv)",
-            "- [å…¨åŠå‘¨æœŸã®äºˆæ¸¬ã¨æ®‹å·®](interval_predictions.csv)",
-            "- [ãƒ¢ãƒ‡ãƒ«æ¯”è¼ƒ](model_comparison.csv)",
-            "- [é€£ç¶šæ³¢å½¢èª¤å·®](continuous_waveform_metrics.csv)",
-            "- [ä¿‚æ•°ãƒ»èª¤å·®æ¦‚è¦å›³](rod_damping_identification.png)",
-            "- [bè‡ªç”±ãƒ¢ãƒ‡ãƒ«ã®34æ³¢å½¢é€£ç¶šæ¯”è¼ƒ](continuous_waveform_comparison_b_free.jpg)",
-            "- [ä¸¡è»¸b=0ãƒ¢ãƒ‡ãƒ«ã®34æ³¢å½¢é€£ç¶šæ¯”è¼ƒ](continuous_waveform_comparison_b_zero.jpg)",
-            "- [å®Ÿè¡Œæ¡ä»¶](stage4_settings.json)",
-        ]
-    )
-    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
-def write_report(
-    output_path,
-    interval_rows,
-    comparison_rows,
-    uncertainty_rows,
-    cv_rows,
-    cv_validation_rows,
-    robust_scale_deg,
-    adopted_model,
-    decision,
-    b_out_decision,
-):
-    intervals = pd.DataFrame(interval_rows)
-    comparison = pd.DataFrame(comparison_rows).set_index("model")
-    uncertainty = pd.DataFrame(uncertainty_rows)
-    free_uncertainty = uncertainty[uncertainty["model"] == "b_IN_free"].set_index(
-        "parameter"
-    )
-    fixed_uncertainty = uncertainty[
-        uncertainty["model"] == "b_IN_fixed_zero"
-    ].set_index("parameter")
-    cv = pd.DataFrame(cv_rows)
-    cv_validation = pd.DataFrame(cv_validation_rows)
-    adopted = comparison.loc[adopted_model]
-    adopted_prefix = MODEL_PREFIXES[adopted_model]
-    amplitude_residual_column = adopted_prefix + "_amplitude_residual_deg"
-    amplitude_correlations = {
-        axis: float(
-            np.corrcoef(
-                group["start_amplitude_deg"], group[amplitude_residual_column]
-            )[0, 1]
-        )
-        for axis, group in intervals.groupby("axis")
-    }
-    transition_amplitude_correlations = {
-        (axis, transition): float(
-            np.corrcoef(
-                group["start_amplitude_deg"], group[amplitude_residual_column]
-            )[0, 1]
-        )
-        for (axis, transition), group in intervals.groupby(["axis", "transition"])
-    }
-    low_amplitude = intervals[intervals["amplitude_bin_lower_deg"] == 0.0]
-    largest_configuration = (
-        intervals.groupby(["axis", "configuration"])[amplitude_residual_column]
-        .apply(lambda values: float(np.sqrt(np.mean(values.to_numpy() ** 2))))
-        .sort_values(ascending=False)
-    )
-    lines = [
-        "# Stage 4: çƒãªã—å…±æœ‰ãƒ­ãƒƒãƒ‰æ¸›è¡°ä¿‚æ•°ã®åŒå®š",
-        "",
-        "## çµè«–",
-        "",
-        f"çƒãªã—34æ³¢å½¢ã€{len(intervals)}åŠå‘¨æœŸã‚’ç”¨ã„ã€Stage 2ã§å›ºå®šã—ãŸIã€Kã¨",
-        "Stage 3ã®å³å¯†ãªé ‚ç‚¹é–“ODEã‹ã‚‰c_rodã€è»¸åˆ¥bã€tauã‚’å…±æœ‰åŒå®šã—ãŸã€‚",
-        "b_INè‡ªç”±ã€b_IN=0ã€ãŠã‚ˆã³æ—¢æ¡ç”¨å€™è£œã‹ã‚‰b_OUTã‚‚0ã«ã—ãŸä¸¡b=0ãƒ¢ãƒ‡ãƒ«ã‚’æ¯”è¼ƒã—ã€",
-        f"æ¡ç”¨å€™è£œã¯`{adopted_model}`ã¨ãªã£ãŸã€‚",
-        "ä¿‚æ•°ã¯æ³¢å½¢åˆ¥ãƒ»åŠå‘¨æœŸåˆ¥ã«ã¯æ±‚ã‚ãšã€å…¨å¯¾è±¡æ³¢å½¢ã§å…±æœ‰ã—ã¦ã„ã‚‹ã€‚",
-        "",
-        "## åŒå®šæ–¹æ³•",
-        "",
-        "å„å®Ÿæ¸¬é ‚ç‚¹(A_n,0)ã‹ã‚‰æ¬¡é ‚ç‚¹ã‚’äºˆæ¸¬ã—ã€r_n=predicted-measuredã‚’è¨ˆç®—ã—ãŸã€‚",
-        "å„æ³¢å½¢ã®ç·é‡ã¿ã‚’ç­‰ã—ãã—ã€æ¬¡ã®soft-L1å‹ãƒ­ãƒã‚¹ãƒˆæå¤±ã‚’æœ€å°åŒ–ã—ãŸã€‚",
-        "",
-        "```math",
-        "J=\\frac{1}{N_{wave}}\\sum_r\\frac{1}{N_r}\\sum_n",
-        "[\\sqrt{1+(r_{r,n}/\\sigma_A)^2}-1]",
-        "```",
-        "",
-        f"æ®‹å·®å°ºåº¦sigma_Aã¯é™½ã‚¨ãƒãƒ«ã‚®ãƒ¼åˆæœŸå€¤ã«ãŠã‘ã‚‹æ®‹å·®ã®MADã‹ã‚‰{robust_scale_deg:.6f} degã¨æ±ºå®šã—ãŸã€‚",
-        "ODEã¨åŒæ™‚ã«bã€cã€tauã«å¯¾ã™ã‚‹æ„Ÿåº¦æ–¹ç¨‹å¼ã‚’ç©åˆ†ã—ã€æœ€é©åŒ–å‹¾é…ã«ä½¿ç”¨ã—ãŸã€‚",
-        "è§£æ”¾ç›´å¾Œã®æœ€åˆã®åŠå‘¨æœŸã¯Stage 1ã§é™¤å¤–æ¸ˆã¿ã§ã‚ã‚Šã€æŒ¯å¹…4 degä»¥ä¸Šã ã‘ã‚’ä½¿ç”¨ã—ãŸã€‚",
-        "1æ³¢å½¢é™¤å¤–äº¤å·®æ¤œè¨¼ã¯å…¨ãƒ‡ãƒ¼ã‚¿æœ€é©è§£ã®å³å¯†ãƒ¤ã‚³ãƒ“ã‚¢ãƒ³ã‹ã‚‰é™¤å¤–å¾Œä¿‚æ•°ã‚’1å›æ›´æ–°ã—ã€",
-        "é™¤å¤–æ³¢å½¢ã ã‘ã‚’æ›´æ–°ä¿‚æ•°ã§å³å¯†ODEå†è¨ˆç®—ã—ãŸã€‚å½±éŸ¿é‡æœ€å¤§ã®2æ³¢å½¢/ãƒ¢ãƒ‡ãƒ«ã¯å­¦ç¿’å´ã‚‚",
-        "å®Œå…¨å†åŒå®šã—ã€ç·šå½¢åŒ–è¿‘ä¼¼ã®èª¤å·®ã‚’åˆ¥é€”ç¢ºèªã—ãŸã€‚",
-        "",
-        "## ãƒ¢ãƒ‡ãƒ«æ¯”è¼ƒ",
-        "",
-        "| ãƒ¢ãƒ‡ãƒ« | å­¦ç¿’ãƒ»æ³¢å½¢ç­‰é‡ã¿RMSE [deg] | LOO-CVãƒ»æ³¢å½¢ç­‰é‡ã¿RMSE [deg] | æœ€å¤§æ³¢å½¢RMSE [deg] |",
-        "|---|---:|---:|---:|",
-    ]
-    for model in MODEL_PREFIXES:
-        row = comparison.loc[model]
-        lines.append(
-            f"| {model} | {row['waveform_equal_rmse_deg']:.6f} | "
-            f"{row['cv_waveform_equal_rmse_deg']:.6f} | {row['waveform_rmse_max_deg']:.6f} |"
-        )
-    lines.extend(
-        [
-            "",
-            "b_IN=0å›ºå®šã®æ¡ç”¨æ¡ä»¶ã¯ã€è‡ªç”±ãƒ¢ãƒ‡ãƒ«ã®b_INã®95%åŒºé–“ãŒ0ã‚’å«ã¿ã€ã‹ã¤å›ºå®šãƒ¢ãƒ‡ãƒ«ã®",
-            "1æ³¢å½¢é™¤å¤–äº¤å·®æ¤œè¨¼èª¤å·®ãŒè‡ªç”±ãƒ¢ãƒ‡ãƒ«ã‚ˆã‚Šæ‚ªåŒ–ã—ãªã„ã“ã¨ã¨ã—ãŸã€‚",
-            f"åˆ¤å®š: {decision}",
-            "",
-            "b_OUT=0ã¯ã€æ—¢æ¡ç”¨å€™è£œã®b_IN=0ã‚’ç¶­æŒã—ã¦ä¸¡è»¸ã®ç·šå½¢ç²˜æ€§ã‚’0ã«ã—ãŸãƒ¢ãƒ‡ãƒ«ã¨ã—ã¦æ¯”è¼ƒã—ãŸã€‚",
-            "æ¡ç”¨æ¡ä»¶ã¯b_IN=0ãƒ¢ãƒ‡ãƒ«ã«ãŠã‘ã‚‹b_OUTã®95%åŒºé–“ãŒ0ã‚’å«ã¿ã€ã‹ã¤ä¸¡b=0ãƒ¢ãƒ‡ãƒ«ã®",
-            "LOO-CVèª¤å·®ãŒb_IN=0ãƒ¢ãƒ‡ãƒ«ã‚ˆã‚Šæ‚ªåŒ–ã—ãªã„ã“ã¨ã§ã‚ã‚‹ã€‚",
-            f"åˆ¤å®š: {b_out_decision}",
-            "",
-            "## æ¡ç”¨å€™è£œä¿‚æ•°",
-            "",
-            "| ä¿‚æ•° | æ¡ç”¨å€™è£œå€¤ | å˜ä½ |",
-            "|---|---:|---|",
-            f"| b_IN | {adopted['b_IN']:.9e} | N m s/rad |",
-            f"| b_OUT | {adopted['b_OUT']:.9e} | N m s/rad |",
-            f"| c_rod | {adopted['c_rod']:.9e} | N m s^2/rad^2 |",
-            f"| tau_IN | {adopted['tau_IN']:.9e} | N m |",
-            f"| tau_OUT | {adopted['tau_OUT']:.9e} | N m |",
-            "",
-            "## b_INè‡ªç”±ãƒ¢ãƒ‡ãƒ«ã®ä¿‚æ•°ãƒ»è¿‘ä¼¼åŒºé–“",
-            "",
-            "| ä¿‚æ•° | å€¤ | æ¨™æº–èª¤å·® | 95%ä¸‹é™ | 95%ä¸Šé™ |",
-            "|---|---:|---:|---:|---:|",
-        ]
-    )
-    for name, row in free_uncertainty.iterrows():
-        lines.append(
-            f"| {name} | {row['value']:.9e} | {row['standard_error']:.3e} | "
-            f"{row['ci95_lower']:.9e} | {row['ci95_upper']:.9e} |"
-        )
-    lines.extend(
-        [
-            "",
-            "ä¸Šè¡¨ã¯b_INè‡ªç”±ãƒ¢ãƒ‡ãƒ«ã®å±€æ‰€ãƒ¤ã‚³ãƒ“ã‚¢ãƒ³ã¨ãƒ­ãƒã‚¹ãƒˆé‡ã¿ã‹ã‚‰æ±‚ã‚ãŸè¿‘ä¼¼åŒºé–“ã§ã‚ã‚‹ã€‚",
-            "å¢ƒç•Œä»˜ãæ¨å®šã®ãŸã‚å³å¯†ãªç¢ºç‡åŒºé–“ã§ã¯ãªãã€b_IN=0æ¯”è¼ƒã®è¨ºæ–­å€¤ã¨ã—ã¦æ‰±ã†ã€‚",
-            "",
-            "## b_IN=0ãƒ¢ãƒ‡ãƒ«ã®ä¿‚æ•°ãƒ»è¿‘ä¼¼åŒºé–“",
-            "",
-            "| ä¿‚æ•° | å€¤ | æ¨™æº–èª¤å·® | 95%ä¸‹é™ | 95%ä¸Šé™ |",
-            "|---|---:|---:|---:|---:|",
-        ]
-    )
-    for name, row in fixed_uncertainty.iterrows():
-        lines.append(
-            f"| {name} | {row['value']:.9e} | {row['standard_error']:.3e} | "
-            f"{row['ci95_lower']:.9e} | {row['ci95_upper']:.9e} |"
-        )
-    lines.extend(
-        [
-            "",
-            "ä¸Šè¡¨ã¯b_OUT=0æ¯”è¼ƒã®è¨ºæ–­å€¤ã§ã‚ã‚Šã€b_INã¯0ã«å›ºå®šã—ã¦ã„ã‚‹ãŸã‚è¡¨ã«å«ã‚ãªã„ã€‚",
-            "",
-            "## å›ºå®šæ•°å€¤ã¨æ ¹æ‹ ",
-            "",
-            "| æ•°å€¤ | æ ¹æ‹  |",
-            "|---|---|",
-            "| epsilon=0.5 deg/s | Stage 3ãƒ¬ãƒ“ãƒ¥ãƒ¼ã§æ‰¿èªã—ãŸæ‘©æ“¦é€£ç¶šåŒ–ã®åˆæœŸå€¤ã€‚ |",
-            "| æŒ¯å¹…ä¸‹é™4 deg | åœæ­¢ç›´å‰ã®å›ºç€ãƒ»é ‚ç‚¹æ¤œå‡ºãƒ»ä¸­å¿ƒèª¤å·®ã‚’é¿ã‘ã‚‹åˆæœŸä¸‹é™ã€‚Stage 2ã®Kç¯„å›²ã§ã¯å¾©å…ƒãƒˆãƒ«ã‚¯ãŒå¾“æ¥æš«å®štauã®ç´„9ï½18å€ã€‚ |",
-            "| MADä¿‚æ•°1.482602... | æ­£è¦åˆ†å¸ƒã§MADã‚’æ¨™æº–åå·®ç›¸å½“ã«ã™ã‚‹ç†è«–å®šæ•°1/Phi^-1(0.75)ã€‚ |",
-            "| soft-L1 | äºŒä¹—æå¤±ã®å±€æ‰€æ„Ÿåº¦ã‚’ç¶­æŒã—ã€å¤–ã‚Œå€¤ã®å½±éŸ¿ã‚’æ¼¸æ¸›ã™ã‚‹æ»‘ã‚‰ã‹ãªãƒ­ãƒã‚¹ãƒˆæå¤±ã€‚ |",
-            "| 95%ä¿‚æ•°1.959964... | æ¨™æº–æ­£è¦åˆ†å¸ƒã®ä¸¡å´95%åˆ†ä½ç‚¹ã€‚ |",
-            "| æŒ¯å¹…è¨ºæ–­å¹…5 deg | Stage 2ã®æŒ¯å¹…å®‰å®šæ€§è¨ºæ–­ã¨åŒã˜åŒºåˆ‡ã‚Šã‚’ä½¿ã„ã€æ®µéšé–“æ¯”è¼ƒã‚’å¯èƒ½ã«ã™ã‚‹ã€‚ |",
-            "| æœ¬åŒå®šæœ€å¤§åå¾©80 | å…±æœ‰ä¿‚æ•°5å¤‰æ•°ã®L-BFGS-BåæŸä¸Šé™ã€‚å®Ÿéš›ã®åå¾©æ•°ã¨æœ€çµ‚å‹¾é…ã‚’ä¿å­˜ã—ã€ä¸Šé™åˆ°é”æ™‚ã¯å¤±æ•—æ‰±ã„ã«ã™ã‚‹ã€‚ |",
-            "| LOOç·šå½¢åŒ–1å›æ›´æ–° | 1æ³¢å½¢ã¯å…¨34æ³¢å½¢ã®ç´„3%ä»¥ä¸‹ã§ã‚ã‚Šã€å…¨ãƒ‡ãƒ¼ã‚¿æœ€é©è§£è¿‘å‚ã®å½±éŸ¿é–¢æ•°è¿‘ä¼¼ã‚’ä½¿ã†ã€‚å…¨é™¤å¤–æ³¢å½¢ã®äºˆæ¸¬ã¯æ›´æ–°ä¿‚æ•°ã§å³å¯†ODEå†è¨ˆç®—ã™ã‚‹ã€‚ |",
-            "| å®Œå…¨å†åŒå®šæ¤œè¨¼2æ³¢å½¢/ãƒ¢ãƒ‡ãƒ« | ç·šå½¢åŒ–æ›´æ–°é‡ãŒæœ€å¤§ã®ã‚±ãƒ¼ã‚¹ã‚’æœ€æ‚ªæ¡ä»¶ã¨ã—ã¦å„ãƒ¢ãƒ‡ãƒ«2ä»¶é¸ã³ã€å­¦ç¿’å´ã‚‚å®Œå…¨å†åŒå®šã—ã¦è¿‘ä¼¼ã‚’æ¤œè¨¼ã™ã‚‹ã€‚ |",
-            "| è¿‘ä¼¼RMSEå·®1% | LOOã®ç›®çš„ã¯æœªä½¿ç”¨æ³¢å½¢ã®äºˆæ¸¬èª¤å·®è©•ä¾¡ãªã®ã§ã€å®Œå…¨å†åŒå®šã¨ã®RMSEå·®ã‚’1%ä»¥å†…ã«åˆ¶é™ã™ã‚‹ã€‚è¶…éæ™‚ã¯ç·šå½¢åŒ–LOOã‚’æ¡ç”¨ã›ãšå‡¦ç†ã‚’å¤±æ•—ã•ã›ã‚‹ã€‚ |",
-            "| LOOä¿‚æ•°å·®ã¯è¨ºæ–­ã®ã¿ | å¼±è­˜åˆ¥ä¿‚æ•°ã®é…åˆ†ãŒå¤‰ã‚ã£ã¦ã‚‚äºˆæ¸¬RMSEãŒå®‰å®šã™ã‚‹å ´åˆãŒã‚ã‚‹ãŸã‚ã€ç„¡æ¬¡å…ƒä¿‚æ•°å·®ã¯CSVã¸ä¿å­˜ã™ã‚‹ãŒLOOåˆå¦ã«ã¯ä½¿ã‚ãªã„ã€‚æœ€çµ‚ä¿‚æ•°ã¯å…¨ãƒ‡ãƒ¼ã‚¿å®Œå…¨æœ€é©åŒ–å€¤ã‚’ä½¿ã†ã€‚ |",
-            "| å®Œå…¨å†åŒå®šæœ€å¤§åå¾©8 | å…¨ãƒ‡ãƒ¼ã‚¿æœ€é©è§£ã‚’åˆæœŸå€¤ã«ã™ã‚‹æ¤œè¨¼ç”¨ãƒ­ãƒã‚¹ãƒˆGauss-Newtonã®ä¸Šé™ã€‚åˆæˆãƒ‡ãƒ¼ã‚¿ã§æ±ç”¨L-BFGS-Bã¨åŒã˜ä¿‚æ•°ã‚’2%ä»¥å†…ã§å›åã™ã‚‹ã“ã¨ã‚‚è‡ªå‹•è©¦é¨“ã™ã‚‹ã€‚ |",
-            "| CVåˆ»ã¿åæŸ1e-6ã€ç›®çš„é–¢æ•°ç›¸å¯¾å¤‰åŒ–1e-8 | ç„¡æ¬¡å…ƒåŒ–ä¿‚æ•°ã®æ›´æ–°é‡ã¨ãƒ­ãƒã‚¹ãƒˆç›®çš„é–¢æ•°ã®äºŒã¤ã®åœæ­¢æ¡ä»¶ã€‚ä¿‚æ•°å°ºåº¦ã¯é™½ã‚¨ãƒãƒ«ã‚®ãƒ¼åˆæœŸå€¤ã‹ã‚‰æ±ºå®šã™ã‚‹ã€‚ |",
-            "| CVãƒ©ã‚¤ãƒ³ã‚µãƒ¼ãƒæœ€å¤§6å› | 1ã€1/2ã€â€¦ã€1/32å€ã®Gauss-Newtonåˆ»ã¿ã‚’è©¦ã—ã€ç›®çš„é–¢æ•°ãŒæ¸›å°‘ã™ã‚‹æœ€å¤§åˆ»ã¿ã‚’æ¡ç”¨ã™ã‚‹ã€‚ |",
-            "| æ³¢å½¢æ¦‚è¦å›³4åˆ— | 34æ³¢å½¢ã‚’9è¡Œã«åã‚ã€å„ãƒ‘ãƒãƒ«ã®æ³¢å½¢ã¨å‡¡ä¾‹ã‚’åˆ¤èª­ã§ãã‚‹ç¸¦æ¨ªæ¯”ã«ã™ã‚‹è¡¨ç¤ºå°‚ç”¨è¨­å®šã€‚è§£æå€¤ã«ã¯å½±éŸ¿ã—ãªã„ã€‚ |",
-            "| åŠå‘¨æœŸè¡¨ç¤º60åˆ†å‰² | ODEã®æœ€å¤§åˆ»ã¿T0/80ã¨åŒç¨‹åº¦ä»¥ä¸Šã®æç”»å¯†åº¦ã§æ»‘ã‚‰ã‹ã«è¡¨ç¤ºã™ã‚‹è¨­å®šã€‚ãƒ•ã‚£ãƒƒãƒˆè¨ˆç®—ã¯é©å¿œåˆ»ã¿ã®å³å¯†ODEã§è¡Œã†ã€‚ |",
-            "",
-            "## 34æ³¢å½¢ã®å®Ÿæ¸¬ãƒ»ãƒ•ã‚£ãƒƒãƒˆé‡ã­åˆã‚ã›",
-            "",
-            "![çƒãªã—34æ³¢å½¢ã®å®Ÿæ¸¬æ³¢å½¢ã¨åŒºé–“åˆ¥ãƒ•ã‚£ãƒƒãƒˆ](waveform_fit_overview.png)",
-            "",
-            "æ©™ç·šã¯æ¡ç”¨å€™è£œä¿‚æ•°ã«ã‚ˆã‚‹ãƒ•ã‚£ãƒƒãƒˆçµæœã€ç°ç·šã¯ä¸­å¿ƒè£œæ­£å¾Œã®å®Ÿæ¸¬æ³¢å½¢ã§ã‚ã‚‹ã€‚",
-            "Stage 4ã®ç›®çš„é–¢æ•°ã«åˆã‚ã›ã€å„æ©™ç·šã¯åŠå‘¨æœŸé–‹å§‹æ™‚ã«å®Ÿæ¸¬é ‚ç‚¹ã¸ãƒªã‚»ãƒƒãƒˆã—ã¦ã„ã‚‹ã€‚",
-            "ã—ãŸãŒã£ã¦ã€ã“ã‚Œã¯1åŠå‘¨æœŸå…ˆãƒ•ã‚£ãƒƒãƒˆã®é‡ã­åˆã‚ã›ã§ã‚ã‚Šã€æœ€åˆã‹ã‚‰æœ€å¾Œã¾ã§è‡ªç”±èµ°è¡Œã•ã›ãŸé€£ç¶šå†ç¾ã§ã¯ãªã„ã€‚",
-            "é»’ç‚¹ã¯å®Ÿæ¸¬é ‚ç‚¹ã€æ©™ã®Ã—å°ã¯äºˆæ¸¬æ¬¡é ‚ç‚¹ã‚’è¡¨ã™ã€‚å„ãƒ‘ãƒãƒ«ã®RMSEã¯æ¬¡é ‚ç‚¹è§’ã®èª¤å·®ã§ã‚ã‚‹ã€‚",
-            "",
-            "## æ®‹å·®ã¨æ¤œè¨¼",
-            "",
-            f"- æ¡ç”¨å€™è£œã®å­¦ç¿’ãƒ»æ³¢å½¢ç­‰é‡ã¿RMSE: {adopted['waveform_equal_rmse_deg']:.6f} deg",
-            f"- æ¡ç”¨å€™è£œã®LOO-CVãƒ»æ³¢å½¢ç­‰é‡ã¿RMSE: {adopted['cv_waveform_equal_rmse_deg']:.6f} deg",
-            f"- LOO-CVæ³¢å½¢æ•°: {len(cv[cv['model'] == adopted_model])}",
-            f"- ç·šå½¢åŒ–LOOè¿‘ä¼¼ã®å®Œå…¨å†åŒå®šæ¤œè¨¼: {int(cv_validation['passed'].sum())}/{len(cv_validation)}ä»¶åˆæ ¼",
-            f"- å®Œå…¨å†åŒå®šã¨ã®RMSEç›¸å¯¾å·®æœ€å¤§: {cv_validation['rmse_relative_difference'].max():.6%}",
-            f"- å®Œå…¨å†åŒå®šã¨ã®ç„¡æ¬¡å…ƒä¿‚æ•°å·®æœ€å¤§: {cv_validation['maximum_scaled_parameter_difference'].max():.6f}ï¼ˆè­˜åˆ¥æ€§è¨ºæ–­å€¤ã€åˆå¦å¯¾è±¡å¤–ï¼‰",
-            f"- å§‹ç‚¹æŒ¯å¹…ã¨æ¬¡é ‚ç‚¹æŒ¯å¹…æ®‹å·®ã®ç›¸é–¢: IN={amplitude_correlations['IN']:.6f}ã€OUT={amplitude_correlations['OUT']:.6f}",
-            "- é·ç§»æ–¹å‘åˆ¥ã®åŒç›¸é–¢: "
-            f"IN +to-={transition_amplitude_correlations[('IN', '+to-')]:.6f}ã€"
-            f"IN -to+={transition_amplitude_correlations[('IN', '-to+')]:.6f}ã€"
-            f"OUT +to-={transition_amplitude_correlations[('OUT', '+to-')]:.6f}ã€"
-            f"OUT -to+={transition_amplitude_correlations[('OUT', '-to+')]:.6f}",
-            f"- è»¸Ã—å½¢æ…‹ã§æœ€å¤§ã®RMSE: {largest_configuration.index[0][0]} {largest_configuration.index[0][1]}ã€{largest_configuration.iloc[0]:.6f} deg",
-            f"- 4ï½5 degå¸¯ã®æ¬¡é ‚ç‚¹æŒ¯å¹…æ®‹å·®å¹³å‡: IN={low_amplitude[low_amplitude['axis'] == 'IN'][amplitude_residual_column].mean():.6f} degã€OUT={low_amplitude[low_amplitude['axis'] == 'OUT'][amplitude_residual_column].mean():.6f} deg",
-            "- è»¸Ã—å½¢æ…‹ã€æ­£è² é·ç§»ã€æŒ¯å¹…å¸¯åˆ¥ã®æ®‹å·®ã‚’residual_summary.csvã¸ä¿å­˜ã—ãŸã€‚",
-            "- è»¸å…¨ä½“ã®ç›¸é–¢ã¯æ­£è² é·ç§»ã§ç›¸æ®ºã•ã‚Œã‚‹ä¸€æ–¹ã€é·ç§»æ–¹å‘åˆ¥ã«ã¯å¼·ã„é€†å‘ãã®æŒ¯å¹…ä¾å­˜ãŒã‚ã‚‹ã€‚å¹³è¡¡ä¸­å¿ƒã€å¾©å…ƒé …ã®æ­£è² éå¯¾ç§°ã€é ‚ç‚¹æŠ½å‡ºã®å½±éŸ¿ã‚’å€™è£œã¨ã—ã¦Stage 6ã§ç¢ºèªã™ã‚‹ã€‚",
-            "- ä¸‹é™ç›´ä¸Šã®4ï½5 degå¸¯ã§ã¯è² ã®æŒ¯å¹…æ®‹å·®ãŒã‚ã‚Šã€ä½æŒ¯å¹…åŸŸã®æ‘©æ“¦ãƒ»é ‚ç‚¹æ¤œå‡ºå½±éŸ¿ã‚’æŒã¡è¶Šã™ã€‚",
-            "- æœ¬Stageã¯1åŠå‘¨æœŸå…ˆäºˆæ¸¬ã®è©•ä¾¡ã§ã‚ã‚Šã€æœ€åˆã®é ‚ç‚¹ã‹ã‚‰çµ‚ç«¯ã¾ã§ã®é€£ç¶šæ³¢å½¢å†ç¾ã¯Stage 6ã§è¡Œã†ã€‚",
-            "",
-            "## Stage 5ã¸æŒã¡è¶Šã™äº‹é …",
-            "",
-            "- æ¡ç”¨ã—ãŸãƒ­ãƒƒãƒ‰ä¿‚æ•°ã‚’åˆæœŸå€¤ã¨ã—ã€BALLã‚’è¿½åŠ ã—ã¦c_sphereã‚’å…±æœ‰åŒå®šã™ã‚‹ã€‚",
-            "- çƒã§éš ã‚Œã‚‹ãƒ­ãƒƒãƒ‰ã®å¯„ä¸ã¯alpha_rod=(129/229)^4ã¨ã—ã¦æ‰±ã†ã€‚",
-            "- æ­£è² é·ç§»ã§é€†å‘ãã¨ãªã‚‹æŒ¯å¹…ä¾å­˜æ®‹å·®ã‚’ã€BALLã§ã‚‚æ–¹å‘åˆ¥ã«åˆ†é›¢ã—ã¦ç›£è¦–ã™ã‚‹ã€‚",
-            "- Stage 5é–‹å§‹å‰ã«æœ¬Stageã®ä¿‚æ•°ã€ãƒ¢ãƒ‡ãƒ«é¸æŠã€æ®‹å·®æ§‹é€ ã®ãƒ¬ãƒ“ãƒ¥ãƒ¼æ‰¿èªã‚’å—ã‘ã‚‹ã€‚",
-            "",
-            "## å®Ÿè¡Œã‚³ãƒãƒ³ãƒ‰",
-            "",
-            "```bash",
-            "python -m unittest discover -s 06_Analysis/fitting_pipeline/tests -p 'test_hybrid_rod_damping.py'",
-            "python 06_Analysis/fitting_pipeline/run_hybrid_rod_damping_identification.py --date 20260921",
-            "```",
-            "",
-            "## å‡ºåŠ›",
-            "",
-            "- [å…¨åŠå‘¨æœŸã®äºˆæ¸¬ã¨æ®‹å·®](interval_predictions.csv)",
-            "- [ãƒ¢ãƒ‡ãƒ«æ¯”è¼ƒ](model_comparison.csv)",
-            "- [ä¿‚æ•°ã¨è¿‘ä¼¼ä¿¡é ¼åŒºé–“](parameter_uncertainty.csv)",
-            "- [b_IN=0ãƒ¢ãƒ‡ãƒ«ã®ä¿‚æ•°ç›¸é–¢](parameter_correlation_b_in_fixed.csv)",
-            "- [1æ³¢å½¢é™¤å¤–äº¤å·®æ¤œè¨¼](leave_one_waveform_out.csv)",
-            "- [ç·šå½¢åŒ–LOOè¿‘ä¼¼ã®å®Œå…¨å†åŒå®šæ¤œè¨¼](cv_approximation_validation.csv)",
-            "- [æ®‹å·®é›†è¨ˆ](residual_summary.csv)",
-            "- [çµæœæ¦‚è¦å›³](rod_damping_identification.png)",
-            "- [34æ³¢å½¢ã®å®Ÿæ¸¬ãƒ»ãƒ•ã‚£ãƒƒãƒˆé‡ã­åˆã‚ã›](waveform_fit_overview.png)",
-            "- [å®Ÿè¡Œæ¡ä»¶](stage4_settings.json)",
-        ]
-    )
-    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
-def main():
-    arguments = parse_arguments()
-    parent_result = arguments.result_root / arguments.date
-    output_directory = (
-        parent_result / "hybrid_identification" / "04_rod_damping_identification"
-    )
-    output_directory.mkdir(parents=True, exist_ok=True)
-    turning, waveforms, parameters, input_paths = read_inputs(parent_result)
-    selection_path = arguments.waveform_selection
-    if selection_path is None:
-        selection_path = parent_result / "waveform_review" / "waveform_selection.csv"
-    intervals = build_intervals(turning, parameters)
-
-    worker_count = max(1, int(arguments.workers))
-    pool = None
-    if worker_count > 1:
-        pool = multiprocessing.Pool(processes=worker_count)
-    try:
-        print("1/4 bè‡ªç”±ãƒ¢ãƒ‡ãƒ«ã‚’æ³¢å½¢åˆ¥åŒå®š", flush=True)
-        free_result = fit_waveforms_then_aggregate(
-            intervals,
-            True,
-            pool,
-        )
-        print("2/4 ä¸¡è»¸b=0ãƒ¢ãƒ‡ãƒ«ã‚’æ³¢å½¢åˆ¥åŒå®š", flush=True)
-        zero_result = fit_waveforms_then_aggregate(
-            intervals,
-            False,
-            pool,
-        )
-    finally:
-        if pool is not None:
-            pool.close()
-            pool.join()
-
-    free_fit = free_result["fit"]
-    zero_fit = zero_result["fit"]
-    comparison_rows = []
-    for model_name, fit in [("b_free", free_fit), ("b_zero", zero_fit)]:
-        comparison_rows.append(
-            {
-                "model": model_name,
-                **model_metrics(intervals, fit),
-                "objective": fit["objective"],
-                "summed_individual_iterations": fit["iterations"],
-                "summed_individual_evaluations": fit["evaluations"],
-                **fit["parameters"],
-            }
-        )
-
-    print("3/4 å®Ÿæ³¢å½¢ã‚’é€£ç¶šç©åˆ†ã§æ¤œè¨¼", flush=True)
-    waveform_records, waveform_input_paths = read_waveform_plot_inputs(
-        arguments.data_root / arguments.date,
-        selection_path,
-        waveforms,
-    )
-    input_paths.extend(waveform_input_paths)
-    continuous_rows = []
-    continuous_rows.extend(
-        evaluate_and_plot_continuous_waveforms(
-            waveform_records,
-            intervals,
-            free_fit["parameters"],
-            "b_free",
-            output_directory / "continuous_waveform_comparison_b_free.jpg",
-        )
-    )
-    continuous_rows.extend(
-        evaluate_and_plot_continuous_waveforms(
-            waveform_records,
-            intervals,
-            zero_fit["parameters"],
-            "b_zero",
-            output_directory / "continuous_waveform_comparison_b_zero.jpg",
-        )
-    )
-    continuous_table = pd.DataFrame(continuous_rows)
-    for row in comparison_rows:
-        model_continuous = continuous_table[
-            continuous_table["model"] == row["model"]
-        ]
-        row["continuous_waveform_equal_rmse_deg"] = float(
-            np.sqrt(np.mean(model_continuous["rmse_deg"] ** 2))
-        )
-        row["continuous_waveform_rmse_median_deg"] = float(
-            model_continuous["rmse_deg"].median()
-        )
-        row["continuous_waveform_rmse_max_deg"] = float(
-            model_continuous["rmse_deg"].max()
-        )
-
-    print("4/4 çµæœã‚’ä¿å­˜", flush=True)
-    model_fits = {
-        "b_IN_free": free_fit,
-        "b_IN_b_OUT_fixed_zero": zero_fit,
-    }
-    interval_rows = make_interval_rows(intervals, model_fits)
-    residual_rows = summarize_residuals(interval_rows, "free")
-    waveform_parameter_rows = []
-    for model_name, table in [
-        ("b_free", free_result["waveform_parameters"]),
-        ("b_zero", zero_result["waveform_parameters"]),
-    ]:
-        for row in table.to_dict("records"):
-            waveform_parameter_rows.append({"model": model_name, **row})
-    pd.DataFrame(interval_rows).to_csv(
-        output_directory / "interval_predictions.csv",
-        index=False,
-        float_format=CSV_FLOAT_FORMAT,
-    )
-    pd.DataFrame(comparison_rows).to_csv(
-        output_directory / "model_comparison.csv", index=False, float_format=CSV_FLOAT_FORMAT
-    )
-    pd.DataFrame(waveform_parameter_rows).to_csv(
-        output_directory / "waveform_parameters.csv",
-        index=False,
-        float_format=CSV_FLOAT_FORMAT,
-    )
-    pd.DataFrame(residual_rows).to_csv(
-        output_directory / "residual_summary.csv", index=False, float_format=CSV_FLOAT_FORMAT
-    )
-    continuous_table.to_csv(
-        output_directory / "continuous_waveform_metrics.csv",
-        index=False,
-        float_format=CSV_FLOAT_FORMAT,
-    )
-    plot_revised_results(
-        free_result["waveform_parameters"],
-        zero_result["waveform_parameters"],
-        comparison_rows,
-        continuous_rows,
-        output_directory / "rod_damping_identification.png",
-    )
-    write_revised_report(
-        output_directory / "ROD_DAMPING_REPORT.md",
-        len(interval_rows),
-        comparison_rows,
-        free_result["waveform_parameters"],
-        zero_result["waveform_parameters"],
-        continuous_rows,
-    )
-    for obsolete_name in [
-        "parameter_uncertainty.csv",
-        "parameter_correlation.csv",
-        "parameter_correlation_b_in_fixed.csv",
-        "leave_one_waveform_out.csv",
-        "cv_approximation_validation.csv",
-        "waveform_fit_overview.png",
-        "continuous_waveform_comparison_b_free.png",
-        "continuous_waveform_comparison_b_zero.png",
-    ]:
-        obsolete_path = output_directory / obsolete_name
-        if obsolete_path.exists():
-            obsolete_path.unlink()
-    settings = {
-        "stage": 4,
-        "date": arguments.date,
-        "minimum_amplitude_deg": MINIMUM_AMPLITUDE_DEG,
-        "friction_epsilon_deg_s": FRICTION_EPSILON_DEG_S,
-        "maximum_step_period_fraction": MAX_STEP_PERIOD_FRACTION,
-        "maximum_search_periods": MAXIMUM_SEARCH_PERIODS,
-        "ode_rtol": DEFAULT_RTOL,
-        "ode_angle_speed_atol": DEFAULT_ANGLE_SPEED_ATOL,
-        "optimization_strategy": "one nonnegative linear energy-loss fit per waveform; median c across 34 waveforms; one linear refit of b and tau with c fixed; axis medians for representative b and tau",
-        "aggregation": "median without outlier threshold",
-        "coefficient_solver": "bounded nonnegative linear least squares on measured peak-to-peak energy loss",
-        "workers": worker_count,
-        "waveforms": len({row["segment_id"] for row in intervals}),
-        "intervals": len(intervals),
-        "model_comparison_objective": "mean squared one-half-cycle next-peak residual in rad^2",
-        "models_for_review": {
-            "b_free": free_fit["parameters"],
-            "b_zero": zero_fit["parameters"],
-        },
-        "model_decision": "pending review of split-integration and continuous-waveform results",
-        "waveform_overview_columns": WAVEFORM_OVERVIEW_COLUMNS,
-        "waveform_trajectory_subdivisions_per_half_cycle": WAVEFORM_TRAJECTORY_SUBDIVISIONS,
-        "continuous_waveform_definition": "integrate from first eligible measured peak with zero speed to final eligible peak without state resets",
-        "continuous_comparison_models": ["b_free", "b_zero"],
-        "csv_float_format": CSV_FLOAT_FORMAT,
-        "input_sha256": {
-            repository_input_key(path): file_sha256(path)
-            for path in input_paths
-        },
-    }
-    (output_directory / "stage4_settings.json").write_text(
-        json.dumps(settings, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    print("çµæœ: " + str(output_directory), flush=True)
-
-
-if __name__ == "__main__":
-    main()
+YªçŠx-®éÜj×¢ëiºÚ+Š§j[h‘éÜ¢éí×M4Ñ:-jZ.¶›­–)Ş³T–”–“CDõCD¶³CDõsCD÷CDôCCDô£U¤4ÓVfS5&…£%VtäFösST4CCDwCDuƒW$ö“V#&“CDtÃCD´£CD÷CCDôCCDô£W&–#d´wsCDµ3U¤4ÓVfCDu£CD´ÃCD446wFDtfå¥4ƒCDvãSd³cVfCDuƒCDvcf43SD³SCDvõS5&…£%Vt×Tô'µv'WUwV×Tô&Â´ô&ãæ¦t”dÃCDµ3U•vÃU—#CDw#CDuƒCD4%S5&…£%VtÒ´ô'&w'ô”Ææw&çÇå£vçCW&Çf¥$U†¦v¦Æ´—¦¦u¦§u—fÆ“U†ÖÇ&æç—fÇd’ö¦wÆæÄ¶¦¦u•F¦v÷f¦t”¦•DF¦t”f£CDwcU–sW·ƒCD÷CCDôCCDô£CDwSST4sd·UsU”6³CDw$7Uv'WUwV×Tô&Â´ôvV¦÷Us–÷Tô&Äôô'ôô'5&†FTô&ôôô&¶Tô6·Uu¤õwV×Tô&Â´ô'V“wTõtv†Tô''TôG&TôF´ôô7VTôF”õ3vò¶–‡õtôô'TöÖ&‡VS„ôô&ÖTô6’´ôvvö”–””´6ÖÇF4s—–D4&†6ÖGu•„§¥¥%„'f6åvtg¦w‡–w%„'f6åväçf&w%„'f6åv%tc%„'f6åv%…g6DvÇv6Ó–¥¥„ç¦sVä6ÖÇF4s—–D4'f7wÖ6Ó—D”„&†Dv‡6t–vsv#4£”d&†Dvt´6ÖÇF4s—–D4'E•…'v$s“$vÆ”6wE•…'v$s“$vÆ”Æåg¥¥6v•vFä––´¶sv#4£”s†D„'6#5'6t—V4†Çv$s“”tg¤”„'6D%„'f6åv&ågF4†¶u•„Öv&ä¶sv#4£”„&†&Õ&†7”&†7”'u¤Ö6Ó—D”„æ¦„#TÆÖÇVDufæ6Ôc¥4'%„'f6åv3#—6FÕff…§t6Õ§–##v3$ç4†·V#4#sVÕVvsv#4£”w‡¦5c—6sVÅ•„—4”s&ÖÇF‡Ä6Õ§–##v3$ç4†·V34&Å“&Æ†$4'%„'f6åu¥w‡6„&ÄÄ4&Æ$w‡4w4´6Õ§–##v4uf†“#—u¥tg%ƒ4çf$…¦Æ6”'%„'f6åu$UduedÕdc”%F¶DÕ%c•ETUde$c”%dS”Ô6Õ§–##v4uf†“#—u¥tg%ƒ4çf$…¦Æ6”'%„'f6åu$UduedÕdc”åf†eS$eTc”uV´dEdVÅFwÖ6Ó—D”„&Å•wFfDs–f4uf†—¦#'ƒ%¥„–vsv#4£”U$e&´eeDe&eVÅ%Dô´6ÄäEV¶Ådc”U5d¤e%VÆ¶u4%•…&ô´c–e¦ÖÇ5¥c–dµ3W•¥„çf$…¦Ä´6·V4tg•¥sS6Ä¤eTS•E5e%VÆÆeV³•d4””däEV¶Ådc”U5d¤e%VÆ·V4tg•¥sS37……U%U¤%eW…Uƒ¤eSdÕdc•5C•T”CuSå55d%Uƒ$¥VµdEdS•5u4d”4§•¥„ã$…'¤–wå5ST¥EedåƒdåTW„¥dedU%c”U%V6u4Æ¤µ&Ä¤¥$¥CVe%d%E5W…FÃ”U%VFeW”””DTååf†eS$eTc•%d¤¥C&e&Ä¤%$¥CFu4$U%U¤%eW…Uƒ%tc•EdUeƒ¥5TåU5S”ô6³%tVÄåeSeSd%V´ä•ƒ$eV¶Å$dÖu4”Æ¤µETdUƒD%edåE5TdõƒäEW„d”CtÕ3CôD“$ÔD—”ÕFsÔES$ÔD”µ”õ&¶ÄU%STE%c–‡¦³”CtÕ3CTåF³Tæ¤ÓTôEäDtåEµVµeE5U%eW†eSDVÅUeU$eƒ¤¥FÃ”U%V6u4Æ¤µ$UduedÕdc•…C¤Å%d¥D”Cv%tcD´DW4”s&–sDÄ4ö#4×U“4#ƒ$çfEsS´6¶v#4–tÖ–¶tÅ4„µ6´µ&ÅdÕDc”u5e&eETe•ƒÅU%d¤%dVÅFÄÖu4”ÔEV³•ES•uW„¥$TeU5S”õƒ%tc”¥dUe5e$¥CUD”CtôEV³•ES•uW„¥$TeU5S”õƒåU%d&edS”Õ%d¤%F´äd”CtÕ3Gu¥3$6´å5CåEƒ¤%DVÄUe$¥CVeC¤µ%TåU5e¤eƒ%DUe5STE%4””DWTÔuWDôEV³•ES•uW„¥$TeU5S”õƒ„¥FµfeSd%V´ä•ƒåU%d%D”CtæwEfÃ”Õ5STed¤¥v´eU5S”õƒ¤%DVÄUe$¥CVe&³”Õ$dÖu4”6´åuƒ¤åSfeVµdÕe$¥fµfedS”Õ%d¤%F´äd”CtÔ3GtÕö¤”DÓW$ö“V#&“CDµ3W—äõt–Â´ô'´ô&ÖTô6’´ô'Fæöõ—¦¦v¦¦v&¦v÷&¦t”†Æ´•F¦sT†¦sC6¦sgf¦vv×3dÆÇfÆ¦v¦Æƒd†·f÷f¦wÆÆ”µF÷6¦vf¦u“6¦v÷fçT¶&×·&×#UF¦vf¦v&¦v÷f¦t””µceu%U¥V³eC¤eVÅ¤¥%fFe”ÕeSõW”””E´—”%FDtfå¥4£CDwSd¶U3V'Ód¶—ƒVcSd·³V&WTÔ3GtÕ4&µ¥vf¦vö¦¦v÷&Æ¥”†Æ”–&çDÄF¦u—f¦u•FÆtµF¦wÆ·cS6Ç%¦¦¦u¦f¦vF¦vF¦t”†Ö”¤FÖç¦æ–æ¦wÆ÷Ss7ƒBöÆ¤¦&¦u¦æ¦v÷f¦t””µåuƒ¤ÕCeUƒ¥V³%d4””4–ÄÆ¤Wu§””´—”Föö¦çÇ&ÖÓtÆçCW&¦vF¦u¤†¦vvÆ”Çf¦v"ö¦t”ÆÆ¥—&Æ¶¦Öä¢ö¦w“$Ôõt–‡Ut§7Tô&Â´ôuS”U&Tô''V6tõv·µt—R´ô'ctÇ¦wsCDvóU¤4ÓSf”ÃV'ÓTÇVÃTÆ”³CDwSVòµSU3sV´sV'ÓCDw#CDu£CD´ÃCD446ÆD%fµduC¤åƒ%5We%VÆÆeSd5$VÅu5dä¥CUD”Ctæ¤´6”ÖsU–sW·ƒCD÷CCDôCCDô£V÷ƒU—#CDwSST4sd·UsU”6³CD43CDöÓCDóƒCD³#Sd³cd·ãW&”“CDróCDwSV³CW$õcCDµ5SæÆ¥¦¦·e“6¦vf·cS6Ö¤”†¦u¦æ¦v÷f¦t””µVÅ5ƒ$eFÄä¥dfÆe3FeEDÖu4„Æ¤—”å%5d¦e$fÄõS¥•u5däECä¥dfÆeTTfeW”””DWTôDfÄÅETµV³”Uƒ%5VFe”e&µ¤¥ÄeFÅu4„Æ¤”µV³”Uƒ$¥SedUe5ƒu4tÆ¤tå5C&eed%%d¦eDUdõ#$•ƒu4tÆ¤—”õ5C&eDS•…%d¦eDUdõ#$•ƒu4tÆ¤4ÔU4UeVµeU5Tä%Dc•5C&e”””6t´”4t”Td¥VÃ”U%SUE5e%¥ƒD…ƒ¤6”t”4”d¥$c”UV´d…ƒå%U¤u5Tä¥%SUT6”t”4”d¥$c”U5Tdå%e$eVÃ”ä6”t”4d”FwTÔöt”4t¶”õV³”UƒeTUe5ƒ„eF¶EU4c”ä¶–ó”76uV³”Uƒ…ce5ƒ„eF¶EU4c”ä¶–óµ÷6wuVµdeƒ$%V´då%e$eVÃ”õSeW”””g6•–Ã”¥F”—4”4¦•ƒ•ed4—4”4¦¥ƒ4§e¤4—4”4£•…fe5SF”Ä4–Dtcƒ•ed4¦D6´¦e5SVe&¶Å•%U&eTTe5SedUe5ƒT%EUeD”Cuw”¦•ƒ•ed4—4”4¦¥ƒ4§e¤4—4”4£•…fe5SF”Ä4–Dtcƒ•ed4¦D6³Uƒ„¥Fµd%VÃ•d¤%EUeU%d¦eF´då%dÖu4&$–Ôæf6Ó–´–—vt–å&†Ec”¥F”—4”4£•…feCeT–Ãµ&¶Å•%U&eTTe5SedUe5ƒT%EUeD”CuÃ”¥FÃ”u5f„e$c•d¤%EUeU%d¦eF´då%dÔµES”U%W†eTd¤e&¶Å•%dÖu4#t6”t”4•–Ã”¥FÃ–Ö6ÕfÄ–¦öt–Õ§•¥uV”Äöt”4t–Ô¦e5SVe¦ÖÃE¥u&fVÕg–'”“d”4¦Ö††Å¤4—46”t”4•–Ã”¥FÃ–•ƒ•edc–Ö††Å¤c“e¥„§d–¦öt–ÓWeƒ'‡&Õf†6”—46”t”4–Dv†Æ#4¦ÆDvÆ¥•w†e—”“d”4£ugf6Õctæ†$4—46”t”4–VÕg–#–¤–¦öt–çÆ6Ó–e—”—46ã´6wµ¥u–v4tg–3%fe•„¦æEsÆ&å'¤´6³d6”t”4'u•„§¥¥„–u4&†6ÖGu•„§¥¥3T&6ÖC%ugVDd&†6äæÆ6–t´”4t”4t”4&µ¥„æ¦6ÖÇvDvÇf&£“CDõCD¶³CDõsCD÷CDôCCDô£U¤4ÓVfS5&…£%VtäFösST4CCDwCDuƒU•wƒW”£W&–#d´wsTÂ´3WwsU¤4ÓVf–vöt”4tµöt”4v4tg–3%g”ÆÔfµ¤c–†6ÖC%ugVD6v”Å3µ•…&Ä–—vv6Õg†EvÇ•¥u•d„£¥7vvug64C“d¶ÖÓf•CWVÃCD43TÃdÄö””ÔD“$ÔF·”Õ4—6”t”4'u•„§¥¥„—U•u&µƒ$g•£5gE¥sS´4—DÅ„¦Æ35g6D3–##“–—vvD†Çu¥C•…&ôÄ4&µ¥u¦†EwƒU$e&´eeDe&eVµeEeW…Uƒ¥C6”t”4'u•„§¥¥„—U•u&µƒ$g•£5gE¥sS´öt”4t”4t”4—DÅu&†DtWF6Ó—fD4—46”t”4t”4vD†Çu¥C•…&ôÄöt”4t”4t”u&Å¦Ôc$…•VµeCä¥dS•5uc•5C•T”3†t–¤ƒ&†DtV””3†t–¤ƒ§D…'&Ö6”Äöt”4t”4t”v†Æ$„”—UwVâ¶¦÷Us–÷TôG&Tô74ôô''TôG´ôGdôôF”ôôwVÔf¦U3F’´ô'¶—VÖö²¶‡TôF‚´ô6ò´ôG$ôô7"´ôF”ôôGTô6·VS—'Tô&§”—46”t”46”t”4'u•„§¥¥„—U•u&µƒ$g•£5gE¥sS´öt”4t”4t”4—DÅ†F†FÕfÖ#4§DÅ„æÆ$uf¦DvÇf&”—46”t”4t”4vD†Çu¥C•…&ôÄöt”4t”4t”u&Å¦Ôc$…•FÓ—U¥7t´”4t”4t”4&õ¥w‡u4£5•…¦Å¦Ó—–%c—¥¥w†Å“5'##GU“4ã#CD43SW”#SUvÃWÔ3CDwcSuuWf3CD÷#CDóƒCDô“U–cCDwSCD÷3CDõCCDöÃCDóƒW&”“CDród´vóCDµ3TÃ"óCDtt–—t´”4t”6´´”4t”„&†6äæÆ6“V…¤u&e•„¦æEsÆ&åô–“FC#—–%g–7”—4”…#V4uS–sSÄ4&µ¥u¦†EwƒU$e&´eeDe&ec•53e5W–´´”4t”„¦ÆD…g–&”'u•„§¥¥„—V4tg–3%fe•„¦æ7–w6vôµ¤ufÔ”u§$uff3&†„Ö¥S$´„&†Dvwövöt”4u¤vÆå¥„ã”Cvtg¦w‡–“W¦tW”åE–ôµöt”4vC&Ã4'u•…&ôÆÓ—u¥sFô–ä¦”––¶u•„Öv3#“6ÔæÄövöt”4t”4t”†Föw†Ä”e'–EuSd6”t”4t”4t”4t”t§6#$ç$”Cv3#“6ÔæÄÆä¦Å•uôÕD”ä4”DWtÖ¥6”t”4t”4t”4t”vÆÔ”sWfD4&–$s–¦¦ô´”4t”4t”4t”4t”4t”t§•¥tg$6”t”4t”4t”4t”u'£%g¦D3S4u&†DuVõ–×‡e“'76”t”4'•¥…#6ÓFu¤vÆå¥„ãÆÖ†ÆTu'£%g¦D6w6vôµ¤ufÔ”„¦Æ4s—¦…'f6æÆfsWvE…&f%cT´„&†Dvwövöt”4t–”–“V5se”öóTÃ&3WwCCD·£CDõSCDóƒCDvãCD´3CD÷CDöCCD³CCDô“CD÷U–cCDvóU¤4ÓCDu“U•vÃU—#CD·CCDóƒCDµ3dÂµSCDu£CD44–”–”6vöt”4v4tc4””d&†Dvvö4tc6·V6Õg¦#'ƒ%¥6w6”t”4#6æ³d6”t”4t”4v6ÕcE„§T”„ã6–‡u•…&ôÆä¦Æ$tc…¦Åƒ5'd´d¤eTS•E5e%VÆÆeV³•d3W•¥„çf$…¦Ä´6·µöt”4u¥††¥¥„#”e¦†$…fÅ%„§–#4“d6”t”4t”4v4tg–D„Öu4'u•…&ôÆä&†6å'¤6”t”4t”4u¦Ó—””tgU“&‡f6”'&”&$–¤ƒ&†DtV”Ä4”ÔE¦esV†$†Ç¦„Ö•…Fô´”4t”4t”4t”4vu–u•sV¦s—””vÇT”„&†6å'¤övöt”4t”4t”4t”4t”4v6ÕcE„§T”„ã6–…•…&ô´7u•„£3Gu•„£7“W&Õ&ÆT6††&Ôæö#4—”GDµ6´´”4t”„¦ÆD…g–&”'u•…&ôÆÓV†%uT´6wµ¥u–v3$c%¥c–ÖvC6ÕVõ¦ÖÆæE„¦ÄÄ4'fE…'vE…&f4tc7vu¤„'DSÔ6³d6”t”4#¥sv#4¦†6æÆf4tc4””s“D„#Dc—u•…&ôÆæGDv†f&ÔgE¥6t´”4t”4t”4'fE…'vE…&f4tc3W¦DugD”76t–“S%„””76v#5c4…cƒ4&†DvwV35fÕ¦ÖÃD6”t”46”t”4&ÖvC6ÕWV3$c%¥u§§–ƒ¥sv#4¦†6æÆf4tc7vu¤„'u'v6´´”4t”„'6D3V¦$s—¥¥6†ÖvC6ÕW6”t”4#¥sv#4¦†6æÆf4tc3W•¥„'5•tæÄ´s“D„#Dc—u•…&ôµô´6Õ&Å¦”'•¥tfµƒ&ÇV4…c7–‡u•„¦Æ&å&f6Õg¦EwƒµFô´”4t”„ã•vFÄÕ4””„&†6ÕgVDc—•¥„ã$…tÇ”–†Æ–6ÖÆµƒ&Æµ¥sSu§“$cs—T–”d”4—tÕc—v6Õgv6Ó–¥¥„ç¦sVä–vöt”4v35&…£%W””Cv4tg•¥sSƒ4¦Æ35g6D4d”4¦öUt§–u&fu&Æ&å'¦ÖÆ¥•…'##F””3†t–¤•ƒ%§•¥„c¥sV¦Uc—¤ugVDvÆÖtæ†DvÇf&””´”4t”…#6ÓW&ÖFf4tc4””„ã•vFÄÕ4d”4£E„§VsVåƒ4'fsS7“V¦35–”6”t”4#5•…¦Å¦Ó—–%c—u•…&ô”Cv35&…£%W„”3†t–æF†FÕfÖ#4§Eƒ4'•¥„'–#$æÆ34ç&Ö7U“4ã$–vöt”4v4tg••sÆDug•ƒ4&†Dvvu4'¦Dtfå¥D–tÇ”–u&Æ&å'¦ÖÆÅ¤c—&Õg–DvÆ…ƒ4¦Æ35'f6ÖÇU§“V¦35–”6”t”4&Ö#4–v4tc4'&”&&D…g–&ÖÇU£—u•…&ôÄ4#5•…¦Å¦Ó—–%c—u•…&ôÄ4'u•„¦†%uc¥„¦f4tccd6”t”4t”4vu–v&Ó“”„&†DvwU¥†‡35'¤´6³d6”t”4t”4t”4t”„¦†„æÄ”U§$udö#5$v#5gU¤Ug–6Ó—”´4¥FDtfå¥4CDwSU•vÃU—#CDtÓCDt3CD´³CDr³CDv#CDµDö”””76v35'”´„&†Dvwµöt”4vD…g–&ÖÇU§”””„&´Æä¦Å•u&e“4ã$´…#6ÓW&ÖFf4tc6´´”4t”†F†FÕfÖ#4§F7”””„&´Æä¦Å•u&e“4ã$´†F†FÕfÖ#4§Eƒ4&†Dvw6”t”4'u•„¦†%uc¥„§¤”Cv4uV6Õf…¤c–¦35–ö4tg••sÆDug•ƒ4&†Dvw6”t”4'•¥…#6ÓFvD…g–&ÖÇU§—vvC$c%¥u§f6Ó¤Ä4'u•„¦†%uc¥„§¤Ä4&&D…g–&ÖÇU£—u•…&ôÄ4#5•…¦Å¦Ó—–%c—u•…&ôÄ4'u•„¦†%uc¥„¦f4tcc´6wµ¥u–v6Õf…¤c“5•…¦Å¦Ó—–%c—v$s“ƒ&ÇV4…c7–†µ•…&Åƒ%'6Õf¦Ds—–U7vv3%g5¥tãs—Uƒ4&†Dvw4”†F†FÕfÖ#4§Eƒ4ã%s†6æ·övöt”4t–”–”×¥F×3dÆÇfÆ¦vvÇ'ö×T·¦¦sc6¦w$F¦v¦¦t”eFDtfå¥4ƒCDvãVófƒSU6óCDuƒCDvcTÆ—CV"´CCDósU—“ce¦CCDµ3d·CCDródÃcƒCD´CD44–”–”6vöt”4vu–v&Ó“”„æÆ$uf¦DvÇf&Ã—u•…&ôÆÕcF„ã7–wövöt”4t”4t”„¦†„æÄ”U§$udö#5$v#5gU¤Ug–6Ó—”´4Æ×3dÆÇfÆÖ§†Æ´¶&öö¦¦u—¦¦u”Æ¦v÷&¦v#v¦u§f¦wÓd”4–t·”'¦D„–ö3%g5¥tãs—Uƒ4&†Dvwµöt”4v3%g5¥tãs—T”Cv4uV6Õf…¤c–¦35–ö3%g5¥tãs—Uƒ4&†Dvw4”ugU“#–¶sVå4£Du—Dô3¦v6”µöt”4v6Õg†EvÇ•¥uu4#t6”t”4t”4t–äæÅ£#Æ&å&fu”Äöt”4t”4t”4¦µ•…&…ƒ%§$uV”Äöt”4t”4t”4¦†TvÇ¤–—t´”4t”4t”4••sVæ$ufe“#—6EsT–—t´”4t”4t”4•“#—U¦ÖÆæE„¦†DvÇf&”—46”t”4t”4t–Õ'6Õf¦DvÇf&”—46”t”4t”4t–ä¦Æ4uc…'##F”Äöt”4t”4t”4§¦Dtg–Dc—&Õ&ÆT4—46”t”4t”4t–ÕgU¤c—&Õ&ÆT4—46”t”4t”4t–åg¥¥c–Ö#4¦e¦ÖÃDvÇU§”—46”t”4t”4t–ä¦ÆFÖÆÆC—¦DtcE„Ö”Äöt”4veöt”4v%vÇ¦3&ÇU§”””„çf6å&Å¤6‡•¥„c„¦Å¤4D”„æÆD6‡¥¥w†Å“5'##GU“#—6EsV7–·6”t”4'¦”'F„ç¦sVäövöt”4t”4t”„¦†„æÄ”e¦†$…fÅ%„§–#4–ô—V¦÷Us–÷VööUuV–‡ôô''Ut–Â´ô&¤õ3F¦V“'2´ô&Â´ô'Tô&„ôô'gTô&ÕFöt–”$”4—4”4—VÓ—&–‡F„ç¦sVäµ6´´”4t”vÆÔ”sWfD4ö3%g5¥tãs—Uw”§•¥…§¥†Ff35&†D…g¤–ÃU•„ãU„&Ä´„ã6–·V35'”Æågv4ug”´6¶uCt–´eTd¥fµdT––·U•w‡4´6³d6”t”4t”4v6Ôg3%VufÔg6Eudf6ä§f6–v“W$ö“V#&“VófƒU¤6Ód´vóCDw#W—VöÒód·ãd´tÓCDtÓCDt3CD´³CDr³CDu¤––´´6”t”4'¦EsE•„£T”CvC$c%¥u§f6Óf35gF%tg–U3W¥¥…&fsVµ¥†vô–äæÅ£#Æ&å&fu”µöt”4v3%g5¥tã¥uu4'¥¥w†Å“5'##V$6”t”4t”4t´„&´Æå'eƒ#S%ug–tÖö3%g5¥tãs—Uw”£3%fe¦Ó—•ƒ%§D…'&Ö6•…7vu¥„§–#4§¥4§••vÇ¥¥4—”C””DW6”t”4t”4t¦”ö3%g5¥tãs—Uw”¦¦##VÖvC6Ôcs—T–ÃU•„ãU„&Ä´„ã6–·V35'”Æågv4ug”´6¶t•Ct–´¤%DWv”µöt”4u…3V¦#4#T´6´´”4t”tæ…“&†Ä”CvS3´”4t”„¦Å“#—•¤„Öu4&%…öt”4vsWvE…&f4tc„Öu4&&3%g5¥tãs—Uƒ4&†Dv†D6”t”4&Ö#4–vEsS3%fµƒ&ÇU¤ucDÄ4'–#66vsFv3%g5¥tã¥uV…&Æ6ä§fC4ÖôµFô´”4t”4t”4'¥¥vGE¥sSƒ&Æ´”Cv35'”´„§fC6–3%fæ%ugVDc—¤4¦Dµöt”4t”4t”vÆÔ”„æÅ£#Æ&å&fuv&Ó“”vÇT”„ã%s†6æ·VsVµ¥†sd6”t”4t”4t”4t”„¦†„æÄ”e¦†$…fÅ%„§–#4–ö3%fæ%ugVDc—¤4$”4–sCDwUS5&…£%VtÖV¦÷Us–÷VF†Uvw6Tô&¤ôô&wTô6—Tô'gTô&Ò´ô6·”—6”t”4t”4u¤tc•c—u•…&ô”Cu¤tc¥c–¶„¦Å“5'f6æ¶tÇ”'¦D„–ö6Ó“5w”¦µ•…&…ƒ%§$uV•…6´´”4t”4t”4'¦”&µ•…&…ƒ4&†Dvvv&Ó“”vÇT”tæ…“&†Äövöt”4t”4t”4t”4'¦”'V#5u¤tc•c—u•…&ôÆÕcF„ã7–wövöt”4t”4t”4t”4t”4v6Ôg3%Vu&ÖÇ5¥SWfDU§fEsVµ%„§–#4–ô—UwVâ¶¦÷Us–÷TôG&Tô74ôô&¤ôô&wTô6—Tô'gTô&Ò´ô6·¦öt–”$”„ã6–†µ•…&…ƒ4&†Dvwµöt”4t”4t”4t”4&¥•tæõ¥gFµ•…&…ƒ4&†Dv†D”Cv4uV6Õf…¤c–¦35–õ¤tc•c—u•…&ôµöt”4t”4t”4t”4'&ä#Dc—u•…&ö7“V†4„&Æ&Õõ¤tc•c—u•…&ôµöt”4t”4t”tçf%„'5¥…&Ä”Cu“$f¦uf%¤tc•c—u•…&õ…öt”4t”4t”tgU£'†Åƒ$çf$…gF&”””„ã6–‡–#6F$–ÔgU£'†Åƒ$çf$…gF&”¦Dµöt”4t”4t”vÆÔ”4§¦U„ãsÅs#¥…4–v&Ó“”vÇT”tçf%„'5¥…&Ä”s—””tgU£'†Åƒ$çf$…gF&”'V#5vsFu“#—F4w†ÆDuSd6”t”4t”4t”4t”„¦†„æÄ”e¦†$…fÅ%„§–#4–ö35'”´u&†Dtff4tc6¶t·”””ôô'¶¦wUt—R´ô'gTô&â´ô'"¶–æ·UsgUt–Â´ô&¤ôô&wTô6—Tô'gTô&Ò´ô6·”—6”t”4t”4vDvÇE¥c—F7”””„&´Æå'eƒ#S%ug–tÖõ“#—F4w†ÆDuf$–äãV35'%uf&%„æD–Ã4”ug–6Ó—–7£•“#–Æ6ÔæÄ––´´”4t”4t”4&†&ÖG5¥c–µ¥v6u4'u¤3S#—VEsÆ6ÖÆ¤´tçf%„'5¥…&Ås$gU£'†Åƒ$çf$…gF&Ã4”ug–6Ó—–7£•“#–Æ6ÔæÄ––´´”4t”4t”4#%•w‡¤4””sWtÆÖÇ¥¦ÖÇV…&Ä´…'%uff%„×VDs–f&ågF4†¶ôµ6¶t¦”'V43W3%§&ÖÃ¥6††&ÖG5¥c–µ¥v7VDs–f&ågF4†¶ôµ6´´”4t”4t”4&¦##v$uc¥c“sÅƒ4Öu4#sÅƒ#¤Æå'eƒ#S%„#T´u#U„&Åu§6#$cµgC%•w‡¤ctÇ”„ÔDtÆ¤´”4t”4t”4&¦##v$uc¥c–†&ÖG5¥c–µ¥v6u4&†&ÖG5¥c–µ¥v7VDs–f&ågF4†¶õ¤…#V4uS•¦×‡e•…s5¦†$vÆµ…öt”4t”4t”tçf%„'5¥…&Åƒ$gU£'†Åƒ%&Å§”””6†¦##v$uc¥c–†&ÖG5¥c–µ¥v6t·”„ôDTÔ6¶t¥4¤æ¤TÔ4D”DSDÔ3Gt6”t”4t”4v35&†6åu4'&åö6Ó“5w”§¦Dtg–Dc—&Õ&ÆT4¦Dµöt”4t”4t”ugU¤4””vÇVD6‡–#6F$–ÕgU¤c—&Õ&ÆT4¦Dµ4$”DT´”4t”4t”4&¥¥sS¥„¦e¤ufä”Cu¦×‡e•…ö35gF%tg–U3W6#$æ&3%fæ%ugVDc—¤7vt–ÕgVFÕg6#4&Åƒ$æÆ&å&Æ6Ã–µ¥v6•…6´´”4t”4t”4'•¥tçf6Õ'¤ÆÔgv4ugU¤6t´”4t”4t”4t”4vWvöt”4t”4t”4t”4t”4t–äæÅ£#Æ&å&fu”ö”'¥¥vGE¥sSƒ&Æ´Äöt”4t”4t”4t”4t”4t–ÔcF„Ö”ö”'¦D„–ö6Ó“5w”¦†TvÇ¤–ÃÆäã6ÖÇt´6·VE„'u¥„–ôµ7t´”4t”4t”4t”4t”4t”4¦¦##VÖvC6Ôcs—T–¦öv35'”´„§fC6•“#—U¦ÖÆæE„¦†DvÇf&”¦Dµ3W¦D„§46wÆågv4ug”´6·46”t”4t”4t”4t”4t”4•¤vÇ•¥tãs—T–¦öv35'”´„§fC6•¤vÇ•¥tãs—T–ÃÆäã6ÖÇt´6·VE„'u¥„–ôµ7t´”4t”4t”4t”4t”4t”4§•¥„&ÆDvÃs—T–¦övsS´„§fC6–6Õgu¥…'DvÇf&”¦Dµ7t´”4t”4t”4t”4t”4t”4£sÅƒ4Ö”ö”&¦##v$uc¥c“sÅƒ4æ&35&†6åe¥sVµ…7t´”4t”4t”4t”4t”4t”4¦¥¥sS¥„¦Å¤c–†&ÖG5¥c–µ¥v6”ö”&¦##v$uc¥c–†&ÖG5¥c–µ¥vF&35&†6åe¥sVµ…4D”tæÆ&å&Æ6Ã–µ¥v746”t”4t”4t”4t”ƒ´”4t”4t”46”t”4'¦”'5¥sFö6Õf¦#4¦¶7–¶t•Ct×¥d6”t”4t”4v6Ôg3%VufÔg6Eudf6ä§f6–v“ST4CCDwCDuƒVófƒSU6óW$ö“V#&“CDtÔ×¥F·Sv&¦vf¦vö¦u”Æ¦v÷&¦v#v¦u§f¦wÓd”4–t·”'¦D„–ö$ugT´„¦Å“#—•¤„×µ6´´”4t”„¦ÆD…g–&”'•¥tçf6Õ'¤Ä4'&ä#Dc—u•…&ö7vô´6Õ&Å¦”&–EvÇ5¤c—&å&Æ6å¦†$„ÖöD…g–&ÖÇU§—vv4tg••sÆDug–7—vv%vÇVs%c–†%„'6…#¤ufe¤ufåS¥F¶ÄåeSeSDVÅUeU$eƒ$e'–³d6”t”4”–”Ææ´•¦v&¦u¦f×3dÆÇfÆ¦u—f¦vöæÆ´—¦Ç'&¦vf·f"ö¦u–'tµçG'ô”Ææw&æÇ#sv¦wÆ·e§¦¦v÷f¦t”–”–””´6”t”4'u•„¦†%uc¥„¦fsVµ¥†vu4'u•„¦†%uc¥„§¤ÆäæÆDc—&Õ&ÆT6†$–ÔcF„Ö”Ä4•“#—U¦ÖÆæE„¦†DvÇf&”¦Dµöt”4v6Ó“67”””gFD6”t”4¤”õ3F¦VööVUWöÖvwVT7VTô6wV¦wVW§Rµt–Âµ3F—Tô'"¶V’´ô&Â´ôvTô&æTô''Ut¦¦Ur¶¤ôô6·V—ôô&ò´ô'U3Ftôô'ôô''Utæ—Uu'ö6â´ô'ôô&Â´ô'vöt”4t—”FÖ§†çG&¦u¦f¦v&¦u•F¦t”ÇtµçG&¦u¦æ¦v÷f·T´†çbö¦u—¦Ö§†æÄ¶¦Æ£bööss6¦v&ÆôÅFÆ´–¦¦vF¦u¤†Æ¤Ç'Ç¦v&¦÷cs6Æ—F¦u¦æ¦v÷f¦t””´”4t”„æÆ$uf¦Duf´”CvD…g–&ÖÇU£CE„§VsVåw”¦¦##VÖvC6Ôcs—T–Ãt•Ct–´¤%DWv•…öt”4u¦Ó—””„æÅ£#Æ&å&fu4”vG–#5gt”vÇT”„æÆ$uf¦Duf´ÆÖG–#5gu–æ¶ô–äæÅ£#Æ&å&fu”Ä4'¦#4£U¦†$„æÄµFô´”4t”4t”4&æ6Ó“44””vG–#5gtÆäçf6å&fFÔg6Eug¤´4§u¥tg%ƒ#S%t¦Æ6”—Æä¦Æ3%cƒ&ÇU¤ucD´u'–#4•d„£¥6´´”4t”4t”4'&ÖÃtg4”Cv&äU¦×††DsWf&çÆ6Ó†õ£4§fE„&$–ÖÇ¥ƒ&ÇV…'•w†f4uf†”¦DÆå'eƒ#S%„#T´u#U„&ÅvÇVD6¶uCtÕ6´´”4t”4t”4'¦”'5¥sFösWDvÆ†$6¶t•CtÕFô´”4t”4t”4t”4v6Ôg3%VufÔg6Eudf6ä§f6–‡¥¥vGE¥sSƒ&Æ´”76t–”F¦vvÖä”FÆ”£6¦vvÖ§†æÄ¶§ô”Ææw&æ¦u—¦·T”FÖ„’ö¦vf¦vö¦u”Æ¦v÷&¦v#v¦u§f¦wÖ”µöt”4t”4t”vG–#5gt”Cu£4§fE„Vw‡e“G&åösWDvÆ†$g7u…6¶töÃV6Õg¥¥…&fsVµ¥†võ¤„§f4CV6åfÄµöt”4t”4t”tcF„Öu4'¦D„–õ£4§fE„V$s–¥w¤4”4¦†TvÇ¤–Ã6”t”4t”4u“#—U¦ÖÆæE„¦†DvÇf&”””„ã6–†æ6Ó“43W6#$æ$Ô7vt–Ôçf&Õ§£5g••…'##F•…6´´”4t”4t”4'v†Ç¦tæ†$4””„&†6ÔgE¥…&Æ6Ã—&Õ&ÆT3W6#$æ$´tcF„×4”tçf&Õ§£5g••…'##G…öt”4t”4t”u§f6”'&Õ&ÆT4'&”'••sVå¥6‡5¥sFõ£4§fE„”3tÕ6³d6”t”4t”4t”4t”u§6äã”Cu£4§fE„Vw‡e“G&Õ&ÆTc´”4t”4t”4t”4v$tg¦D4””vG–#5gtÆÖÇ6#$æ&sVµ¥†vt·”……öt”4t”4t”4t”4'¦”'V#5t´öt”4t”4t”4t”4t”4vsStÓKh‘éì¶»§q«^u‘Yå‘µÍ`É9Ù‘\ÔÁ%°ÁAM	Á‰¹E½dÈäÅ‰¹Ié\Í)ÙÅÍ¥ŒÉY¹‰]YÕ‘åÁi)‘aM­-%%!)±‘!Yå‰¥	åˆÍ‘é½-iYµ%åİ…!±é…]9¡‰åİea)¡‰]XÁia)é-½%åe\Å±‘Yå`ÈÕ¡‰]Yé1½%ŒÉ9¡‰Y­`Íi¡‰!Y±åİ-%%!9©e]á±åİ-%%iÁ•Y­`Í	½•a9ÁdÉÍATÕÙ‰µUÍ¥¬Ù¥%Ée]àÅia5AMİ‰µÑiQ½5Ñİ%iÙ¥	Õe\Å±%±Õ%iMIUY™UMETÅYYM`ÀÕ	QUYQ™E½%…]eiµ°Ñi]I™ ÕŒÉ±©e]İ…a5‰´äÁ%ÕÙ‰µTÙ¥%%i´åå%Õ¡‰]UÍ%!i¡‰!Y±%±Õ%iÁ•Y­`Í	½•a9ÁdÉÍ1µ°Ái\Åé-¬Ù¥%%%%!i¡‰!Y±ŒÅÑÕe\Å±aMå%iÍˆÉÁ-!i¡‰!Y±-E½%i´åå%±ÕiXÑ1	Õe\Å±%±Õ%YÕ‘\Å±µÁiM¡İea)¡‰]XÁia)™‰µÑia5Á=½%%%!i¡‰!Y±ŒÅÑÕe\Å±aMå%iÍˆÉÁ-!9©e]á±iäÉe]àÅia9‰…\Õ­ia¡‘%½ŒÉ9¡‰Yé\ÈÕ¡‰]Y‘-E½%µXÁ‘a)Õ%!i¡‰!Y±İ½-µI±i¥	™‰å©e]á™dÈå±iµiÁdÉ±±‰¹Ié-±Õ‘Yå‘µÍ1	İ…!±é…]9¡‰¬Ù¥%	¡•±é%Á…\ÔÁia(Ée]á‰%µÑ…a5¥aE½%µXÁ‘a)Õ%-%%%	İ…!±é…]9¡‰Í¥e°á¥%Íea¡ÁŒÄÁÍ¥%% ÕŒÉ±©e]á‰%µ9™´å­%°ÁÍ¥%% ÕŒÉ±©e]á‰%¹I¡‘Xá¥%Íea¡ÁŒÄÁÍ¥%Á½-iYµ%!9Ù‰!i±`É±Õ‘Yå‘µÍ`Í‘Á‘¡™ŒÉYÕŒÉ°Á…aiÁ‘±±å¡Á‰¹I±¹i¡‰İ ÕŒÉ±©e]İÁ=½%%¥%¥5•]9¥Õ]IÅ=…¸­=­Õ•Á©•]%¡Õ=	°­=•…Í½•µÕ•Õ•¥¹­Õ=	Éµ1©%¨ĞÑ	‘ÄÕ½M˜Õ‰Å´ĞÑ-Ù0­TĞÑhĞÑ%¥%¥½%…\Õ±¹IÁeMå%±Õ‘Yå‘µÍ]å)Á‰µYå‘±¡`ÉÑ¹`ÈÁå%°Á-%%!)±ŒÍIÙµ±Õiåå%±Õ‘Yå‘µÍ]å)åia8ÁˆÍ)Á‰µ‘™‰°åÑ`Í	±°ååe]E¥aE½%…\ÕÁ‘±¡‰å¡‰µ‘ÍiMå%±Õ‘Yå‘µÍ]å)é‘å‘å¡‰µ‘ÍiXååe]E¥aE½%iÑ±ÕiåİaY¡i!)¡‘±©1	µµ±©‘±Ù‰¥å%åÍˆÉ9¡‰å©ˆÉYµiµ±©…]YÕ‘!5½…\ÔÁia(Ée]İÍ%!	½•a9ÁdÉÍ-E½%ia	é…]áÙ‰¥å%Õİ1µI±ié)åe]E½I±))DÅI)PÀÕ™IY	QMUáAQ°åIU‘™Uå­-%%!9Ñe]áÍ`Í	±µ±Ùiå%%Õ5Å%Å¡‘Õ­-¥	ÑeaI½1¹9á¹E½…\Õ±¹IÁeMÙ%!)±ŒÍIÙµ±Õiå­-¥%	­i]ei±µiµYåi\ÔÁ…]Í`ÉYá‘]Á…\åÕ-!YÕ‘a9±iäÁ…\Å±1	é‘ÁiM¬Ù¥%%e\Õ¹‰UAM	é‘ÁiYÍİaE½%%%!9İi]Y­%ÁŒÍI¡‘Y‰5XÁ-%%%Áe\Õ½`Í9İi]Y­%Á‰¹Õ‘Õ…¡éY±iÙ%YİŒÉ±ÍˆÈÑÁ¥%%e]9©i]á±µÁ…\åÕ%Á1a)±ŒÍIÙµ±ÕiåÅ%Õİ1¹9Á‰¥¡¡‰µ‘ÍiM­-%%%	¡dÉ9±‰YåeaIÁˆÈÑ1PÁiÑ±ÕiåÅ%!9İi]Y­¥%%e]9©i]á±µÁ…\åÕ%Àå%!Åe]IåeaIÁeåÅ%¥å¡éY±i­-¥	éY±i½%%%©dÉYÍia)¡‘±Ù‰¥ÑAM	µµ±©‘±Ù‰¥Å%!I¡‰µ¡™ŒÍ	±i]E-%%%	¡dÉ9±‰YåeaIÁˆÈÑ1èÁ…\Õ±¹IÁeE½-%%%	é‘ÁiXåÅe]9Ùeµ±¡‰°áá5å%Ååia8ÁˆÍ)Á‰µ-¥	ÕÕ©ˆÍ5½e\Õ¹‰UÁ%á…\Õ±¹IÁeE½%%%!8ÁeaI±`ÉÁ¡dÈå¥…]Õaéá%Á1]I¡‰a	Á‰µ1Må1©-¥	á‘]­µÁ…]5-¥	¡e¹5½ŒÍ	±i]EÁ¥%%ŒÍI¡‘Y™…µ©ˆÉ)Áe\Õ™5Q1PÁi¹)ÁdÍIÁˆÈÑ-¥½5LÑİ%Á‘Õ…åéY±i½Å5¥­1å	±!9Á‰åÕ¥%%ŒÍI¡‘Y™…µ©ˆÉ)Áe\Õ™5Q1èÁ…\Õ±¹IÁeE½%%%!	¡µÑiaI±°åµˆÍ)©…\Õ¹%Á]İ½%%%%ÑŒÍ	±i]E1å	Á‰µYå‘±¡1½%%%%Ñe])é-!9İi]Y­-MÅ%!9İi]Y­%á…\Õ±¹IÁeMİ-%%%%1aI¡‰µ¡™ŒÍ	±i]E1å	Á‰µYå‘±¡1½%%%Á-%%%	­ia)Á‘µÁ…ai±%Á\Í9İi]Y­1	¡dÉ9±‰YåeaIÁˆÈÕ‘¥%%i´åå%!	¡µÑiaI±°åÁ‰µI±•	Á‰¥	åe\Õ¹iMé-Q½-%%%%e\Õ¹‰Y™ŒÉYÕŒÉ°Á…aiÁ‘!­AM	é‘ÁiYÍå%Í5¥Å%!	¡µÑiaI±°åÁ‰µI±•Á-%%%%ŒÍ	±i]I™ŒÉYÕŒÉ°Á…aiÁ‘!­AM	é‘ÁiYÍé%Í5¥Å%!	¡µÑiaI±°åÁ‰µI±•Á-%%%%iYå…ai¡‘°ÉiLÕ¡!	±‰µE½ŒÍ	±i]I™ŒÉYÕŒÉ°Á…aiÁ‘!­Á¥%%%%I±µ°ÉeaIÁ‘µUÕea	İi\Õ­-½%%%%%ŒÍI¡‘Y™…µ©ˆÉ)Áe\Õ™5Q-¥	¡‰µ‘ÍiXåéi\Õé…aIÁ‘µ°Á•E½%%%%%-å	é‘ÁiXåÅe]9Ùeµ±¡‰°áá5MÅ%!9İi]Y­`Í9±‰¹9Á‘°É…aHÕ¥%%%%%É%!	¡µÑiaI±°åµˆÍ)©…\Õ¹\Í	¡µÑiaI±°åÁ‰µI±•Á-%%%%-E½%%%!)±‘!Yå‰¥	­ia)Á‘µÁ…ai±½%iYµ%Õ±•!I™‘!Yå‰µ±ÕhÄå±‘µYÕ‘ Å‰¹Yéi]I™‘±ÑiMİŒÍI¡‘UÁ=½%%%!)±‘!Yå‰¥	é‘ÁiYÍáaE½-%%Õ±•!I™‘!Yå‰µ±ÕhÄå±‘µYÕ‘ÔÁia)Ñ…\Õ¡‰å%Iå‘]U-%%Õ±•!I™‘!Yå‰µ±ÕhÄå±‘µYÕ‘Õ­…a)±dÍIÁˆÈÑAMá1©…]e…\ÕÁ‘±¡‰å¡‰µ‘ÍiM­%Õ5	±‰!9±%Áá1©-%%!9Ù‰!XÁ…\åÕ%ÁŒÈåÍ‘µY™…aiİ-½%%%IÁiµi±µYÕ‘±¡‰å±aY¡‘±Ù‰¥İ-%%%½5Ñİ1	9EY¡)QYY9`Å9EY)MåEIY))PÁIQ%½ŒÈÅ¡‰á™Yå…\å­-Mİ-%%%	‰…\ÕÁ‘±¡‰å¡‰µ‘ÍiMİ5Ñİ1İ1©Í%Õ5İ5Ñİ1İ1©Í%Õ5İ5ÑİaMİ-%%%	ÑiaI½ˆÉDå%­IAUœÅ5å%Í¥%%iai±‰¹IéA\Õ±•!I™‘!Yå‰µ±ÕhÄå±‘µYÕ‘İ-%%%	å‘åÍAUII­YQI™U±IAQİ-%%%	¡‘åÍAYÑIUi	YUáU`Á=HÁá`Å9EIUY`ÁUPÁá‘%½=İ-%%%	Ñea¡™ŒÍI±Å9EY¡™TÅIUåEIY))PÁI™I±)	DÅI)PÀÑ-¥	é‰]Í‰åİia)ÁˆÉEÍ¥%Á¥%	Ái¥	ÕˆÍEŒÈåÍ‘aIÁˆÈÑÕŒÍY©dÉYéå	Ù¥	Íi\Ñ½ŒÈåÍ‘aIÁˆÈÑÕ‘å±‘µYÕ‘!9‰5ÁÁ%å%Ù¥%%µÁŒÉUU¹YÕ‘±ÑiUYå´åå-±Õ‘Yå‘µÍ]å)Á‰¹I±¹i¡‰åÁi)‘%Í%¥©„İµÉ-!Á½%1¹É¹©Á1µÁ)é± İÉ©…™©dÍ©ˆİ©iÙ©Á5¥-E½%iai±‰¹I™ŒÍI¡‘UAM	éˆÉàÅ‘±Ù‰¤ÔÕ`ÉXÉi\ÔÁŒÅÍİaYÍİaE½%µXÁ‘a)Õ%!Í-%%%¥!)±i±©‘Y­`ÈÕ±•!I™e\Õ¹‰Y™µ­%©½iµáÙeaE½iai±‰¹I™ŒÍI¡‘Y‰5ÁÁ1½%%%)İµY­…]8Ái]I™…Íi°åİia)ÁˆÉI™å$Ù%iÍˆÉÁ-!9Ù‰!XÁ…\åÕ1¹I™iai±‰¹Ié]é	‘]é	‘-Mİ-%%%¥ŒÉYÕŒÉ°Á…aiÁ‘!±™e¥$Ù%iÍˆÉÁ-XÉi\ÔÁ`Í8ÁeaI±]é)‘-Mİ-%%%¥ŒÉYÕŒÉ°Á…aiÁ‘!±™eå$Ù%iÍˆÉÁ-XÉi\ÔÁ`Í8ÁeaI±]éI‘-Mİ-%%%¥ŒÉYÕŒÉ°Á…aiÁ‘!±™‘Å%©½iµáÙeaE½iai±‰¹I™ŒÍI¡‘Y‰9°ÁÁ1½%%%)µ‘\Õ©‘±Ù‰°å±‘µÍ‘]Á…\åÕå$Ù%±Õ‘¡éˆÉàÅ‘±Ù‰¤ÕÕiµXÉ-Mİ-%% Á-Á­i]eŒÈåÍ‘µY™…\ÔÁia(Ée]á™‘!)¡…µY©‘åå•M-%%±Õ‘Yå‘µÍ1½% ÕŒÉ±©e]İÍ¥%	ée\Åİ‰Y™dÈäÅ‰¹DåXÁ]IUiAU¬Å™Y)	M­YYåM]XåQYU)MYi)TÁ±AQ±5-åá1½Á=½%%¥%¤Õ„Ù˜ÕÉ¥ÌÙ…ÔÑ,ÔĞÑ0ĞÑ-(Õ1Å$ÕÉ¥ÌÕÅå Ù…ÔÑ,ÔĞÑ¬ĞÑ¸ĞÑÔĞÑ=XĞÑ-¨ĞÑ=ĞÑ=$ÕÁÕäÔİ•„ĞÑ-LÙ0­TĞÑhĞÑ%¥%¥½%…\Õ±¹IÁeMå%±Õ‘Yå‘µÍ]å)Á‰µYå‘±¡`ÉÑ¹`ÈÁå%°Á-%%!)±ŒÍIÙµ±Õiåå%±Õ‘Yå‘µÍ]å)åia8ÁˆÍ)Á‰µ‘™‰°åÑ`Í	±°ååe]E¥aE½%…\ÕÁ‘±¡‰å¡‰µ‘ÍiMå%±Õ‘Yå‘µÍ]å)é‘å‘å¡‰µ‘ÍiXååe]E¥aE½%iÑ±ÕiåİaY¡i!)¡‘±©1	µµ±©‘±Ù‰¥å%åÍˆÉ9¡‰å©ˆÉYµiµ±©…]YÕ‘!5½…\ÔÁia(Ée]İÍ%!	½•a9ÁdÉÍ-E½%ia	é…]áÙ‰¥å%Õİ1µI±ié)åe]E½I±))DÅI)PÀÕ™IY	QMUáAQ°åIU‘™Uå­-%%!9Ñe]áÍ`Í	±µ±Ùiå%%Õ5Å%Å¡‘Õ­-¥	ÑeaI½1¹9á¹E½…\Õ±¹IÁeMÙ%!)±ŒÍIÙµ±Õiå­-¥%	­i]ei±µiµYåi\ÔÁ…]Í`ÉYá‘]Á…\åÕ-!YÕ‘a9±iäÁ…\Å±1	é‘ÁiM¬Ù¥%%e\Õ¹‰UÍ%!9İi]Y­%ÁŒÍI¡‘U-%%%	¡dÉ9±‰YåeaIÁˆÈÑAMÑµYé‘åå…\Õ¹%½‰¹ÕŒÉ±Õ-ÕhÉá±-E½%%%©dÉYÍia)¡‘±Ù‰¥ÑAM	­e\Åİ…\Õ¹%½ŒÍ	±i]E-%%%	¡dÉ9±‰YåeaIÁˆÈÑ1PÁaY¡i!)¡‘±©%½e])é-!9İi]Y­-MÅ%!9İi]Y­¥%%e]9©i]á±µÁ…\åÕ%Àå%iå…]8Á…\åÕ%½‰¹Õ‘Õ…¡éY±iÙ%YİŒÉ±ÍˆÈÑÁ¥%%µXÁ‘a)Õ%ÑéY±iİe]9©i]á±µÁ…\åÕ%á…\Õ±¹IÁeXÁ-¥%	­i]e‰µXÑ‘äÁ‘a)Õ…\Õ¹`ÉXÉi\ÔÁ-!YÕ‘a9±iäÁ…\Å±1	é‘ÁiM¬Ù¥%%µXÁ‘a)Õ%!8ÁeaI±]é‘½%‰µXÑ‘äÁ‘a)Õ…\Õ¹`ÉXÉi\ÔÁ1¹I±´ÅÁ‰µÍ%ÁY!(ÅiE½%‰µXÑ‘äÁ‘a)Õ…\Õ¹`ÉXÉi\ÔÁ1µIÁµY©‘±Ù‰¥å%Õ5	Ái¥	Á‰µ°Á…]Í`ÉÕhÉá±%Ñ5Ñİ%YÍŒÉU1QÕ5½%ŒÈåÍ‘aIÁˆÈÑAM	éˆÉàÉiXåÁ‘¹½¥%%i±µiµYåi\ÔÁ…]Í`ÉYá‘]Á…\åÕ1½%%%İ1©Í%Å	]±9YTÅ™TÁY	U­9%`Å	U­±AI5-¥	é‰]Í‰åİia)ÁˆÉEÁ1½%%%ÑÁ‰µ°Á…]Í`ÉÕhÉá±1İ1©	‘1½%%%Å±‘¡ÙiÁ¥IåE=Ué%¥İ-%%%	±‘µYÕ‘!4å‰µXÑ‘äÁ‘a)Õ…\Õ¹`ÉXÉi\ÔÁ1½%%%I±‰¹9±`ÈäÅ‘!Å‘ÅU¹Y±1½%%%!(ÁˆÉÜåIYEYY5YåMYå51½%%%ÁˆÉÜå\ÁII­YQI™ETÕ!QY™TÅ	IUI™EYIAQİIYEYY5Yå	Q­‘5IXåQUYIå	Yå5aMİ-%%%	Ñea¡™ŒÍI±Å9EY¡™TÅIUåEIY))PÁI™I±)	DÅI)PÀÑ-¥	é‰]Í‰åİia)ÁˆÉEÍ¥%Á¥%	Ái¥	ÕˆÍEŒÈåÍ‘aIÁˆÈÑÕŒÍY©dÉYéå	Ù¥	Íi\Ñ½ŒÈåÍ‘aIÁˆÈÑÕ‘å±‘µYÕ‘!9‰5ÁÁ%å%Ù¥%%µÁŒÉUU¹YÕ‘±ÑiUYå´åå-±Õ‘Yå‘µÍ]å)Á‰¹I±¹i¡‰åÁi)‘%Í%¥©„İ½ÔÑé½ĞÙ!¹Ñe1¹ÄØ½©Á1µÁ)é± İÉ©…™©dÍ©ˆİ©iÙ©Á5¥-E½%iai±‰¹I™‘±ÑiMå%iÍˆÉÁ-!9Ù‰!XÁ…\åÕ1¹I™iai±‰¹Ié]é	‘]é	‘-E½%µYÍeaIÁ‘µY™‘±ÑiMå%Õİ1µáÁ‰¹9İe]9±-Õ5İiai±‰¹I™‘±ÑiMİ…\ÔÁ-!9¡‰a	ÍiXå©ˆÍYÕ‘­Á¥%	¡‰µ‘ÍiMå%!9Ù‰!XÁ…\åÕ1¹9Ù‰¡åi]á¡‘°ÉiXäÁ…\Å±-YÍİaE½%µXÁ‘a)Õ%!)±‰Á…ai±`ÍIÁ‰]UÍ%ÕhÉá±½-iYµ%åéˆÉàÉiXäÁea9É-!I¡ŒÉÍÁ=½%…\ÔÁia(Ée]İÍ%!	½•a9ÁdÉÍ%Á‘é…İ½%µXÁ‘a)Õ%!9Ù‰!i±`É±Õ‘Yå‘µÍ`Í‘Á‘¡™ŒÉYÕŒÉ°Á…aiÁ‘±±å¡Á‰¹I±¹i¡‰İ ÕŒÉ±©e]İÁ½-iYµ%XÉe]àÅeaI±`É±Õ‘Yå‘µÍå¡Á‰¹I±¹i¡‰!5Í%!	½•a9ÁdÉÍ1	İˆÈåÍATÕÙ‰µUÁ=½%‘é„Í5AM	‰-±Õ‘Yå‘µÍ1	İ…!±é…]9¡‰­i´åå%±Õ‘Yå‘µÍ%±Õ%±Õ‘Yå‘µÍŒÄÁ-%%±µ%!	ÙˆÉİ…a5Q´åÕiQ½-%%%	åia8Å‰!Ié%Á\ÄåéˆÉàÉiXäÁea9É-!I¡ŒÉÍÁ%iÙ¥Áea9É%±Õ%!I¡ŒÉÑéaE½%i]áéiQ½-%%%	©…!YÕ„Äåé…aÁ±%Á‰]Ñ-Í%á±‰¥ Áea9Éå­1äá-!	ÙˆÉİÕ`Í	åˆÉ9±ŒÍ9±åÅ%Á-E½%%%!)±ŒÍYÍ‘!5AM	İˆÈåÍ1´Å¡¡™ŒÈåÍ‘µY™‘é…åİ‘é„Í5Í%9½‘\ÕÉŒÉ°ÙiPÅ©…!YÕ„Äåé…aÁ±-E½%µYé…]HÅe]İAM	ÕÕ¡ŒÉåµÕ-½%%%Í-%%%%µYé‘]àÁ]å)İµY­…]8Ái]I™‰µXÑ‘å¡‰µ‘ÍiXååe]E¥aMÑ%±Õ‘Yå‘µÍ]å)Ñi]é‘a)±iåÕia Á`ÉÕhÉá±`Í)¡i)‘¥%%%%iÙ¥	Á‰¹I±¹i¡‰İµYé‘]àÁ%±Õ%!ÁÁ¡Á‰¹I±¹i¡‰!5Í%!)±ŒÍYÍ‘!5Á¥%%aMİ-%%%	­‘!±İiPÅµ‰å¡‘İ-%%­-%%!)±‘!Yå‰¥	åia8Å‰!Ié1	åia9Ái!Y¡‰½-µI±i¥	±•!	Í…]9Á‘å±‰µYåhÍ±™eµé…a5½e\Åİ‰°Á‘]I±`Í)¡iİ…\Õ±¹IÁeMİµYé‘åå…\Õ¹-Q½-%%ÑáÁ‘!Y­iMå%¥å¡µ‰å¡‘¡¡‰a	Í…aHÅiY™µ­-M­-%%åÑi]‘¡`ÍÁ±´áAM	ÕÕéa(Á-!)±ŒÍIÙµ±ÕiåÙ%±Õia(Á…]Á¥%	İea)¡‰]XÁia%AM	ÕÕé…\Ñ½5ĞÅ%½e\Åİ‰°Á‘]I±-MÅ-¥å¥%	µ…a)é‘åÉ…\Õ­%Ái]áÍ…a	É-!	¡µÑiaI±¥­-%%!9±dÈåÕiåÉ…\Õ­%Ái]áÍ…a	±-!	¡µÑiaI±¥­-%%!)±‘!Yå‰¥	ÕÕ¡ŒÉåµÕ-½%%%Í-%%%%=Ñİ%½ˆÈÅ±hÉ™•µYå‰åÅ%¡éi]9Ù‰µI™„É±ÕiÑ%á1©1M	İea)¡‰]XÁia%Á%½iµ±åŒÍI™„É±Õi­Í¥%%%%EÕ5Å%åÑi]‘¡`ÍÁ±´áÅ-©%-¥½‰¹ÕŒÉ±Õ-ÑáÁ‘!Y­iM­1M	¡‰a	Í…aHÅiU-¥	ÕÕ©ˆÍ5½e\Åİ‰°Á‘]I±-M­Í¥%%%%%Õ5Å%ÑáÁ‘!Y­iMİ-%%%	‘1½%%%HÁ•a	±A]iÍˆÉÁ1½%-E½-µI±i¥	Á‰µ°Á…]Í`ÉYÕia)¹•Xåµ…aE½…\ÔÁia(Ée]áé1	İea)¡‰]XÁia)™‰µÑia5Á=½%‰]Áµ°Ñ%Á\ÄÁ-%%!I¡µ‘±‘å%Ñ‘¥%	µˆÍ%…\ÔÁia(Ée]İ…\Ñ…\ÔÁia(Ée]áé=½%%%)¡ŒÉ±é%Áia¡İ‰±©…aI™i\Õ±µÕ`É)¡ŒÉ±é-½%%%%	Á‰¹I±¹i¡‰Í¥ŒÍI¡¹I™e\Õ¹‰Y™µ­%°ÁÍ¥%%%%±Õ‘Yå‘µÍ]å)Á‰µYå‘±¡`ÉÑ¹`ÈÁå%°ÁÍ¥%%%%±Õ‘Yå‘µÍ]å)åia8ÁˆÍ)Á‰µ‘™‰°åÑ`Í	±°ååe]E¥aMİ-%%%Á¥%%´äÍ%Á‰¹Õ•µYåˆÍ5½‰YÕ-!	¡µÑiaI±°åÕe\Å±å­Í%HÁ•a	±A]iÍˆÉÁ-E½%%%Ñ…a5AM	Á‰¹I±¹i¡‰Í¥ea¡Áå)‘¥%%i´åå%±ÕiXÑ1	Õe\Å±%±Õ%YÕ‘\Å±µÁiM¡İea)¡‰]XÁia)™‰µÑia5Á=½%%%%	Ái¥	Õe\Å±%Àå%)¥aå%-å	¡•±é=½%%%%%´äÍ\É±ÕiXÑaMå%)¡ŒÉ±é]é	‘¥%%%%YÍ…]e‰µÑiMåAM¥dÄååˆÉE¥=½%%%%%´äÍ\É±ÕiXÑaMå%)¡ŒÉ±é]é‘¥%%%%YÍ…]e‰µÑiMåAM¥‘Åaå%-å	¡•±é=½%%%%%´äÍ\É±ÕiXÑaMå%)¡ŒÉ±é]é)‘¥%%ŒÍI¡¹I™i\Õ±µÕ%Á…\ÔÁia(Ée]á‰%¹)±ŒÍIÙµ±ÕhÄåÕ`ÈÅ™Yå`Í)¡i)‘%½-½%%%%á1©1M	ÕÕ©ˆÍ5½…\ÔÁia(Ée]á‰%¹8Áea(Á`ÉÕhÉá±`Í)¡i)‘-E½%%%­-%%%	±‰µI™i\Õ±µÕ%Á…\ÔÁia(Ée]á‰%¹)±ŒÍIÙµ±ÕhÄåÕ`ÈÅ™Yå`Í)¡i)‘%½-½%%%%á1©1M	ÕÕ©ˆÍ5½…\ÔÁia(Ée]á‰%´Å±ea8ÅµY­`ÈÕ±•!I™e\Õ¹‰Y™µ­%°ÁÁ¥%%-E½%%%!‘±…]‘½‘å%Õ5Ù%Õİ1¹9á¹E½…\ÔÁia(Ée]á‰%¹‘¡‘µYµˆÍ)Ñ`É±Õ‘Yå‘µÍ`É9Ù‘\ÔÁ%°ÁÁ¥%%‰]Áµ°Ñ1µİYÕi¡åˆÍ-¥Íi]±¹…!EÁ¥%%‘åhÉXÁ1µİYÕi½ŒÍI¡¹I™i\Õ±µÕ%Ái\Õ­`ÉYÕia)¹•M­-¥Íi]±¹…!EÁ¥%	åia8Å‰!EAM	ÍŒÍ™‰±Õi]å-Õİ1µéea)åea­½‰]Áµ°Ñ-Mİ‰¹Õea9¡¹)¡•M Áea)¹iaEÁ1	¥ˆÍYÕi!4å-Õ5İ‰¹Õ…\Õµ-M­-%%!)±‘!Yå‰¥İ‰µÑiQ½iµáÙeaE½µYé‘]àÁ1¹¡‰…\Õ­ia¡‘-M	µˆÍ%…\Õ­iaÍ%Õ¡‰]U…\Ñi\ÔÅ‰]YåeaI±-!	¡µÑiaI±°åÕe\Å±å°å½-iYµ%YÕia)¹•Xåµ…aI™É°Á…åµ…a¡±iå©-±Õ‘Yå‘µÍåİåe\Å±‘Yå`ÈÕ¡‰]Yé1	©ˆÈÅÑˆÈÕ™eå¬Ù¥%¥%¥)¨ĞÑ-LÕiÔØÕ„Ù„ĞÑ`ĞÑÕ„Ù˜ÕÉ¥ÌÙ…ÔÑ,ÔÙi…PĞÑÔĞÑ-¼ĞÑ=8ĞÑ=ÈĞÑ-ÔĞÑ<àÕÁ8Õ…MàĞÑ0ĞÑ-(ÕÄÙ0ĞÑ-,ĞÑÔÕ0­ÕÁ]ÜĞÑ-LÕÉĞÑ-ĞÑ-0ĞÑ%¥%¥½%‰]Áµ°Ñ%Á\ÄÁ-%%!I¡µ‘±‘å%Ñ‘¥%	µˆÍ%…\ÔÁia(Ée]İ…\Ñ…\ÔÁia(Ée]áé=½%%%)¡ŒÉ±é%Áia¡İ‰±©…aI™i\Õ±µÕ`É)¡ŒÉ±é-½%%%%	Á‰¹I±¹i¡‰Í¥ŒÍI¡¹I™e\Õ¹‰Y™µ­%°ÁÍ¥%%%%±Õ‘Yå‘µÍ]å)Á‰µYå‘±¡`ÉÑ¹`ÈÁå%°ÁÍ¥%%%%±Õ‘Yå‘µÍ]å)åia8ÁˆÍ)Á‰µ‘™‰°åÑ`Í	±°ååe]E¥aMİ-%%%Á¥%%´äÍ%Á‰¹Õ•µYåˆÍ5½‰YÕ-!	¡µÑiaI±°åÕe\Å±å­Í%HÁ•a	±A]iÍˆÉÁ-E½%%%Ñ…a5AM	Á‰¹I±¹i¡‰Í¥ea¡Áå)‘¥%%i´åå%±ÕiXÑ1	Õe\Å±%±Õ%YÕ‘\Å±µÁiM¡İea)¡‰]XÁia)™‰µÑia5Á=½%%%%	Ái¥	Õe\Å±%Àå%)¥aå%-å	¡•±é=½%%%%%´äÍ\É±ÕiXÑaMå%)¡ŒÉ±é]é	‘¥%%%%YÍ…]e‰µÑiMåAM¥‘Åaå%-å	¡•±é=½%%%%%´äÍ\É±ÕiXÑaMå%)¡ŒÉ±é]é)‘¥%%ŒÍI¡¹I™i\Õ±µÕ%Á…\ÔÁia(Ée]á‰%¹)±ŒÍIÙµ±ÕhÄåÕ`ÈÅ™Yå`Í)¡i)‘%½-½%%%%á1©1M	ÕÕ©ˆÍ5½…\ÔÁia(Ée]á‰%¹8Áea(Á`ÉÕhÉá±`Í)¡i)‘-E½%%%­-%%%	±‰µI™i\Õ±µÕ%Á…\ÔÁia(Ée]á‰%¹)±ŒÍIÙµ±ÕhÄåÕ`ÈÅ™Yå`Í)¡i)‘%½-½%%%%á1©1M	ÕÕ©ˆÍ5½…\ÔÁia(Ée]á‰%´Å±ea8ÅµY­`ÈÕ±•!I™e\Õ¹‰Y™µ­%°ÁÁ¥%%-E½%%%!‘±…]‘½‘å%Õ5Ù%Õİ1¹9á¹E½…\ÔÁia(Ée]á‰%¹‘¡‘µYµˆÍ)Ñ`É±Õ‘Yå‘µÍ`É9Ù‘\ÔÁ%°ÁÁ¥%%‰]Áµ°Ñ1µİYÕi¡åˆÍ-¥Íi]±¹…!EÁ¥%%‘åhÉXÁ1µİYÕi½ŒÍI¡¹I™i\Õ±µÕ%Ái\Õ­`ÉYÕia)¹•MÑ%9Ù‰\ÅÙ‰°å©%½eµé…a9‰5XÁÁ%½ÉYÁhÉ Á-E½%µYé‘]àÁ%Á‰!9á`ÉáÁ‰µY¡¥¡ÕÕ¡ŒÉåµÕ-Å¡‘!)Á•­Í%Õİ1µéea)åea­½‘åhÉXÁ-Mİe´äÅ‰µIéAMİ1©Í%Õİ1µ±Õi¥­Á¥%	åiaHÅ´Ñ”ÈÕ¡‰]TÙ%iÍˆÉÁ-!)±ŒÍYÍ‘ÔÑ\É±ÕiXÑaM­i´åå%±ÕiXÑ1	Õe\Å±%±Õ%YÕ‘\Å±µÁiM¡İea)¡‰]XÁia)™‰µÑia5Á™E½-µI±i¥	İea)¡‰]XÁia)™ŒÉ9¡‰Yé-±Õ…aIÁe]á™i¹)±iM¬Ù¥%	¥`Í9©e]á±%Á‰]Ñ-±Õ…aIÁe]á™i¹)±iYÍ¥e°å)Q¥)‘1	Á‰µ°Á…]Í`Éiåi]Y‰%µ)™PÅYU%°ÁÁ¥%ÁeaY™ŒÉ9¡‰UAM	Ñea½…\ÕÁ‘±¡‰åµµY±]å(ÁeaY™MTÑ¥aMİ…\ÕÁ‘±¡‰åµµY±]å(ÁeaY™PÅYU%°ÁÁ¥%	©`Í9©e]á±%Á…\ÕÁ‘±¡‰åµµY±]å)©`Í)Ùi)‘¥%	Ái¥	Ñ…\Ñ½e°åédÉÍiMİdÄåédÉÍiMİ‘Å`Í9©e]á±-MáAMİ1©Ù¥%%µÁŒÉUYµÍ‘]Y¹)Ù¥¤Ùi´äĞÑ-¼ĞÑ=8ĞÑ=ÈĞÑ-ÔĞÑ<àÕe¥ÕÁå˜Õe¬ĞÑ0ĞÑ-(ÕÄÉ¨ĞÑÔĞÑ=HĞÑ=ÀĞÑ= ĞÑ<àĞÑ,¼Õ‰ØÕ‰Å´ĞÑ-LÕ0ÉŒĞÑ-4ĞÑ¬ĞÑˆĞÑ-Q%¥­-%%!)±‘!Yå‰¥İ¥%%%µ)™MTÑ¥=¥	¥`Í9©e]á±1½%%%)¥`ÀåYY$Ù%)™ŒÉ9¡‰UÍ¥%%%µ9™´å­%©½dÄåédÉÍiMİ-%%%¥‘Å`Á±=%©½‘Å`Í9©e]á±1½%%%(ÁeaY™PÅYU%©½‘Å`Í9©e]á±1½%™E½-µI±i¥	åˆÉ(ÅŒÍI™ŒÉ9¡‰Y™i¹)Ù‰XåÁ‰µ°Á…]Í-!)±ŒÉ±­‘]Í`Í)¡i¬Ù¥%	åia9Ái!Y¡‰å­i]AM	ÕÕåe]EåiY¹-Õİ1µéea)åea­½µYé…]HÅe]á™µ­1	­‘!±İiPÅµ‰å¡‘­Á¥%	Ñi]IÁe\ÑAM	µ‰å¡‘¡ÕÕÑi]IÁe\Ñ½µYé…]HÅe]á™iY¹-M­-%%Å¡iå%iÍˆÉÁ-Õİ1´Å±i±¡‰¥¡ÕÕ¡e¹5½µYé…]HÅe]á™iY¹%Á‰]Y­…]Õ-M­Á¥%	édÉÍiXå­i]AM	9EUI™HÁYTÅ9)ETÕ™TÁ9	QU-¥	Ñe]E-%%±µ%ÕÙ‘	ÕÕÁŒÉiÁ‰µ°ÁiM¡édÉÍiXå­i]Á%åå%!9©e]á±`ÉI±iåáAMİ1©Ù¥%%µÁŒÉUYµÍ‘]Y¹)Ù¥¤Õe¥ÕÁå˜ÕÄÙ0Õ‰•ÔĞÑ0ĞÑ-(ĞÑ=ĞĞÑ=DĞÑ,ÔĞÑ=$Õ‰ØÕ‰Å´ĞÑ-LÕÉØÕ„Ù„ĞÑ¸ĞÑ8ĞÑ¬ĞÑˆĞÑ-Q%¥­-%%!)±‘!Yå‰¥	édÉÍiXå­i]-Á­i]eˆÉ)Åi]8Á…ai±`ÉÕiå¹µ­…]YÕ‘-%%!9©e]á±iäÉe]àÅia5Í¥%	İea)¡‰]XÁia)™‰µÑia5Í¥%	édÉÍia5Íf«)à¶»§q«^v‹­¦ëh®("©m¢G§r‹§·]4ÓDèµ©hºÚn¶X§zÍPÚPYÒPĞœ›”›Û–š’\ĞÚPYÒPĞXŒ’ŒXÌÔ™˜Ì“š‘Õ™˜ÛQšÓ[ÙÒPĞYØÑÎ]˜İÒÒPĞYÒQÖœQÕšÖĞ›ÙVœL‘œÔM]˜›U\ĞÚZÍÚPYÒPĞØR˜UÓšĞNRQ]ØR˜UÓš‘]ÖVš•ÕŒ–’Ğ[ÙÒPĞYÒPĞYÒRšÛQ–›Û]VUÌ[Ş]ÙØÌ“š‘ÕšÖÖš’›Ş]ÙØÌ“š‘Õ“Ğ›XV‘]ØR˜UÓš[ÙÒPĞYÒÔ[ÙÒPĞYØÛU™ŞŞ]ÙØÛU˜UÔŒVUİÙÔĞ›QœÙÑŒ•\›”›Û–š’[ØUÍL–Œ–UŞ“ĞØR˜UÓšİÙØÑÎ]˜ÚÒÒPĞYÒR™QœÙÕYÔĞV–œ’šĞ]’R–[•™^–L‘œÖ•^VUÔRÒPĞYÒR›ØŒNL–UŞV”ĞNRQÍ]Ó“Û”[ÓTÍÒPÜÙÙ[L–UŞV”ÛÜSZZÙÓĞ^RÒPĞYÒR˜UL–UŞV”ĞNRR™QœÙÕYÓPXĞÍ^˜ÖŒÑ]SPĞ\’R™QœÙÕ\RÚ’\ÚPYÒPĞŒÖV››N^X•Z˜ŒÕYĞNRQŞšZØUÍL–Œ–UŞ’[“›ŒŒ[›”™˜UÔZVĞ›XŒÒYØUÍL–Œ–UİÙØUÍØUÍL–Œ–UŞ™”ÚÒÒPĞYÒQÎZX[Uš™Û–”ĞNRQ]SP[ÙÒPĞYÖŒÒš‘Û›”™˜ÑÚXÌ›–UİÙÔĞØ›Q•ÙÓPÍÒQÖ˜ÚPVUÌ[QÛRRšÛQ–›Û]VUÌ[ÌÌÒPĞYÒQÖ˜ÚPœ›T›PİÙÒÑÛYÕYQœÓĞV–ŒX’\QÛRQÕYÌ[ÛQŒ”Ú˜V[ØUÍL–Œ–UŞ“ĞV–ŒX’’ÔÚÍÚPYÒPĞYÒPĞYÙ•œŒšQÓTÍÒPÎÒĞ[ÙÒPĞYÒPĞYÒPĞYÒPĞŒÖV››N^X•Z˜ŒÕYĞ\RQÛYÕYQœÕŞRŒÖV››N^X•\›”›Û–š‘Z˜ŒÕYÒ™ÚPYÒPĞYÒPĞYÒÔ[ÙÒPĞYÒPĞYÒQÎZX[Uš™Û–”Ğ\”ĞŒÖ•Û˜RYÒÚPXQÎY™QœÙÕ˜˜UÍZÖ–ÚPYÒPĞYÒPĞYÖL]•Î]RQÙ•œŒšPÛÙØÒœÖš’›Ì›V‘ÕĞ]’R–[•™^–L‘œÖ•^VUÔRÒPĞYÒPĞYÒPĞšQÛ’QØUÍL–Œ–UŞ’[QVZV[ÙÒPĞYÒPĞYÒQÖ˜ÚPVUÌ[QÛRRšÛQ–›Û]VUÌ[Ş›ÒÒPĞYÒPĞYÒPĞYÒPĞYØUÖYØ›Q”ĞNTĞZV[RPÜÙÖVŞ›ÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÙVUÔœ•ÍLĞ›ÙVœL‘œÕÌZ•Õ™PÜÎRQÓ˜•Ì]˜šP\RR›ÌÕœÙœÚXÌ•XÌ›Vœ–ZR™ÚPYÒPĞYÒPĞYÒPĞYÒQÕœØUÖYØ›Q”ĞNTĞZVLN^XŒ”ZSÙÛÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÖŒÒš‘Û›”™˜ÑÚXÌ›–UŞ˜›Q•ŒÒŞŒÖL]•Î]RPÛÙØÛU™ŞŞR–•Í^˜Vœ[UZ’[ÒPĞYÒPĞYÒPĞYÒPĞYÖ•ŞšPVUÌ[QRPÒŒV™’ZP\’QÑVMÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞ›˜ÛQšØUÕY]ØR˜UÓš‘VUÌ[Ğ\”Ğš˜ŒŒ]ŒÒÚPV–ŒX’˜’[“››“œÛ˜VVÔšÒ™ÚPYÒPĞ›˜ÛQšØUÕY^–L‘œÖ•ÔYÔĞXĞÍZÌ‘XÛQRĞ[ÙÒPĞYÒPĞYÒQ˜ÛQšØUÕY]ØR˜UÓš‘VUÌ[Ğ\RRš–UŞÌ]VUÌ[Ğ›XŒÒYØ›Q”ĞœšPÖVš•ÕŒ–™˜›Q–™[ÙÒPĞYÒPĞYÒQÔŒV›ÖœØŒ‘Œ[ÙÒPĞYÒÔ[ÙÒPĞYØÛUŒRQÖœØŒ‘ŒÑÎZX[Uš™Û–”ÚÜÒQÙVUÔœ•ÍLÓš–UŞ[ÒĞÛT›šP›XV™˜•ÎZÖ•İÛĞÚPYÒPĞœ›”›Û–š’\ĞÚPYÒPĞÖVš•ÕŒ–™˜›Q–\ĞÚPYÒPĞ–L‘œÖ–\ĞÚPYÒPĞXŒ’ŒXÌÔ™˜Ì“š‘Õ™–‘Õ›“[ÙÒPĞYØUÍ\Û‘]ØR˜UÓšİÒÒPĞYÒR˜ŒÎUN]V”İÒÒPĞYÒQÌZQ\ÕVVœŒ^”V••^”šÛVP•ÑR•‘U”ÔU”’•U[ÙÒPĞYÖ›[•Ô™˜ÑÚXÌ›–UİÎUN]V”İÒÒÕÒÒPĞYÒQÛXVœUŞ˜Ì“š‘ÕšÒQØ›]VVšÛ’šTÙÒÒPĞYÒPĞYÒPĞ˜˜UÍ\Û‘]ØR˜UÓšÍ[––[Ø›Q”İÙÓPÍÒÔĞ]’Rš–UŞÌ]VUÌ[Ğ›XŒÒYØ›Q”ĞœšPÖVš•ÕŒ–™˜›Q–™[ÙÒPĞYÒPĞYÒQÔŒV›ÖœØŒ‘Œ[ÙÒPĞYÒÔ[ÙÒPĞYÖ–š’šÛ˜›Z˜ŒÕYĞNRQRĞÚPYÒPĞšÖ•ÖYÖ–š’šÕ[ØÌ“š‘ÕšÖÖš’›ŞZÍÚPYÒPĞYÒPĞYØ›N]X‘ÎZ–UİÙÖ–š’šÛ˜›Z˜ŒÕY[ÙÒPĞYÒPĞYÒQÕŒ–UŞVVœŒY–LLX›”YÒŞŒÓT[ÙÒPĞYÒPĞYÒR›XšP–[\LÔœU™–UÍZÖ™VUÔœ•ÍLĞ[ÙÒPĞYÒPĞYÒPĞYÒPĞ–L‘œÖ•Ô™™QœÙÕ“[ÙÒPĞYÒPĞYÒPĞYÒPĞÖVš•ÕŒ–™˜›Q–\ĞÚPYÒPĞYÒPĞYÒPĞYÒRš–UŞŞ]ÒÒPĞYÒPĞYÒPĞYÒPĞYØUÍL–Œ–UŞ“[ÙÒPĞYÒPĞYÒPĞYÒPĞXĞÍZÖ•ØŞXÛQšÒÒ–[•™^–L‘œÖ•ZÖ•ØÜ[ÙÒPĞYÒPĞYÒPĞYÒPĞØŒ\Ó[ÙÒPĞYÒPĞYÒPĞYÒPĞ›XV‘]ØR˜UÓšİÒÒPĞYÒPĞYÒPĞ\ÙÛÙÒPĞYØÛU™ŞQØ•ÛXUÌ\[U[ĞÚPYÒPĞYÒPĞYÖ–š’šÕ\ĞÚPYÒPĞYÒPĞYØUÍ\Û‘^–L‘œÖ•Ô\ĞÚPYÒPĞYÒPĞYØ•ÕŒQÎZÔÒ“SR‘ÔŒS]ZR\ĞÚPYÒPĞYÒPĞYØ[Qš””YÕ\ĞÚPYÒPĞYÒPĞYÖ[NLX›T”œÛÓPÍÓĞ“ØŒ[ÕŒÒÚPœÖ•ÍØÑÑVUÌ[ÕVZ•Õ’ÔİÒÒPĞYÒPĞYÒPĞ˜ÒœŒ^”ÒÒPĞYÒPĞYÒPĞYÒPĞYÒ[LZQÛ–ZSÚPV˜V›ÛQŒUÎ]XŞ]ÒÒPĞYÒPĞYÒPĞYÒPĞYÒ[VŒŒÚSÚP^›^S[ÙÒPĞYÒPĞYÒPĞYÒPĞZVŒÔ˜ÒM’Q]SQÕ]ĞİÒÒPĞYÒPĞYÒPĞYÒPĞYÒ[LZQŞ’Z›ÙÓ^\ĞÚPYÒPĞYÒPĞYÙ”İÒÒPĞYÒPÚÒÒPĞYÒR›ÙVœL‘œÒQÖĞ›ÙVœL‘œÖĞšÛQ–›Û“[ĞÚPYÒPĞYÒPĞYØÑÑVUÌ[ÕVZ•Õ“ĞV–ŒX’]YPİÙØÌ“š‘Õ“Ğ›XV‘]ØR˜UÓš[ÙÒPĞYÒÔ[ÙÒPĞYØÒ›‘Û™Û˜›“\ÒR›Ì›ÙÑœÒQÖ–š’šÕ™˜UÍL–Œ–UŞ’ÑÛYÕYQœØŞ]ÙØÑÚXÌ›–UİÜÒR˜ŒÜÚPYÒPĞV–ŒXÛMÙ]ÛÙÒPĞYÒPĞYÒPÒ™Óš––’Z›ÙÖ[N]˜ÚV–ŒX’]XÌÕš–L•˜ŞZÜĞÚPYÒPĞYÒPĞYÒ[L[ÌÓšŒ•ZSÚP™[ØÛU™ŞL[ÌÓšŒ•\[ÙÒPĞYÒPĞYÒPÒ–[\LÔœUZSÚP›X‘ÎZÚV–ŒX’]V›•RÔİÒÒPĞYÒPĞYÒPĞZXV›ÛQŒUÎ]XŞRM’QÛYÚV–ŒX’]X›[ÔİÒÒPĞYÒPĞYÒPĞZV–š’šÛ˜›“ZSÚPœ›”[Ö–š’šÛ˜›Z˜ŒÕYÚÜĞÚPYÒPĞYÒPĞYÒ[YVUÔœ•ÍLŒZQZ[“ZSÚP›X‘ÎZÚXĞÍ]VÛØ›]VUÒ’Ò›ÌÕœÙÍ\VUÓ\ÔÚÜĞÚPYÒPĞYÒPĞYÒ[šÛQ–›Û“ZSÚPØR˜UÓšİÒÒPĞYÒPĞYÒPĞZXÒ›‘Û™Û˜›“ZSÚPØÛUšØUÓŒUÎ]XŞ]ÒÒPĞYÒPĞYÒPĞZXÛU˜UÔŒVUŞ˜ÛQšÒZ›ÙØÛU˜UÔŒVUİÜĞÚPYÒPĞPÙÛÒÖ‘Õ›RQ]–[\LÔœU™™QœÙÕ[ØUÍL–Œ–UŞ“ĞV–œ’šİÙØÛNZYŒÓš–UŞÒšÚÍÚPYÒPĞ–Öš’›QØÛU˜UÔŒVUİÙÓPXŒ’ŒXÌÔ™˜Ì“š‘Õ™˜ÛQšĞÚPYÒPĞXQÎY™QœÙÕYÔĞXĞÍ^˜ÖŒÑ]SPĞ\’R™QœÙÕ\RÚ’\PÌÓTÍĞÚPYÒPĞŒÖV››N^X•Z˜ŒÕYĞNRQŞšZØUÍL–Œ–UŞ’[“›ŒŒ[›”™˜UÔZVĞ›XŒÒYØUÍL–Œ–UİÙØUÍØUÍL–Œ–UŞ™”ÚÒÒPĞYÒR›XšP›X‘ÎZÙÒÒPĞYÒPĞYÒPĞ™ÌĞÚPYÒPĞYÒPĞYÒPĞYÒR›ØŒNL–UŞV•›T›QŒÒPĞYÒPĞYÒPĞYÒPĞYÓP[Ù‘Œ–•Ö˜ÛLY–LLX›”YÒÚPœ›”›Û–š‘œÚY‘Œ–•Ö˜ÛLY˜UÍL–Œ–UŞ–LLX›”ZVÚÒÒPĞYÒPĞYÒPĞYÒPĞYÖ›N^RQÛV‘ÕĞœ›”›Û–šĞœšP››•–šÕ[ØUÍL–Œ–UŞ’Ô[ÙÒPĞYÒPĞYÒPÚÒÒPĞYÒPÚÒĞÙÜÖ•ÖYÖ›[Œ]–‘ÕœÖ™–[Ô˜šYÒÒPĞYÒQÛYÕYQœØŞ]ÒÒPĞYÒRšÛQ–›Û]VUÌ[Ş]ÒÒPĞYÒRš–UŞŞ]ÒÒPĞYÒR–[•™^–L‘œÖ•ZÖ•ØÜĞÚPYÒPĞœ›[UÑœÖĞ›ÙVœL‘œÓ[ÙÒPĞYØÑÎ]˜‘SØŒ[[ÙÒPĞYØ•Ñ›–šÛ˜›“NTLR”LS™•šÑ“TÕT•‘[S”Uš”Õ”‘•ZÑ•TÕNSÕ^]ÒÒPĞYÒQÖœQÕšÖĞ›ÙVœL‘œÔM]˜›U\ĞÚZÍÚPYÒPĞZRZSZ‹Û\X›[››œR]›’KÚ™Üİ˜‹Ú™ÖX›ÛÔ›^šİMZš™ÖLÚ™ÍŒÚ™ÍQ™Ü›š™ÍV˜ŞLSÖ–ŒÛÌÛÒ^›œš™ÒRZRZRRĞÚPYÒPĞ–L‘œÖ•Ô™™QœÙÕ’QØ›]VVšÛ’šTÙÒÒPĞYÒPĞYÒPĞ˜˜UÍ\Û‘]ØR˜UÓšÍ[––[Ø›Q”İÙÓPÍÒÔĞ]’Rš–UŞÌ]VUÌ[Ğ›XŒÒYØ›Q”ĞœšPÖVš•ÕŒ–™˜›Q–™[ÙÒPĞYÒPĞYÒQÔŒV›ÖœØŒ‘Œ[ÙÒPĞYÒÔ[ÙÒPĞYØÛNZYŒÓš–UŞÒšĞNRQÍ]ÓT›’VUÔ[ØÛNZYŒÓš–UŞ”›ZÒÒPĞYÒQÕŒ–UŞVVœŒY–LLX›”YÔĞ]ĞÚPYÒPĞš˜ŒL––›–•ÔYÔĞ‘ÖUŞ–”[ÙÒPĞYØ•Õ˜Ì‘›–”ĞNRPÒV–QÛ–šÛ˜›“YØÛUšLšÒRÒPĞYÒR›ÌÕœÙYÔĞ“ØŒ[ÚPYÒPĞV–œ’šĞNRQM]˜›URÒPĞYÒQÛ–šÛ˜šPNRQRĞÚPYÒPĞ›XŒÒYØV›ÛQŒUÎ]RQÛRRš›YÑ\ÒQÌZQ\ÕVVœŒ^’PÜÙÓTÚÍÚPYÒPĞYÒPĞYØÑÚXÌ›–UİÙÔĞ™˜ÑÚXÌ›–UŞ˜ÑÑVUÌ[ÕXŞYÒÒPĞYÒPĞYÒPĞYÒPĞYØÑÑVUÌ[ÕVZ•Õ“Ğ–L‘œÖ•Ô™™QœÙÕ“Ğ–L‘œÖ–\ÒQÖœQÕšÖĞ›ÙVœL‘œĞÚPYÒPĞYÒPĞYÒÔ[ÙÒPĞYÒPĞYÒR›ÌÕœÙ\ÒR›Ì›ÙÑœÒQÖ–š’šÕ™˜UÍL–Œ–UŞ’ÑÛYÕYQœØŞ]ÙØÑÚXÌ›–UİÜÒR˜ŒÜÚPYÒPĞYÒPĞYÖ–š’šÛ˜›Z˜ŒÕYĞ\”Ğ^ÚPYÒPĞYÒPĞYØŒ’œV•ÓŒV›QÖZX[Uš™Û–•L–UŞV”Ú›”›Û–š’\ÒR›Ì›ÙÑœÓĞXŒ’ŒXÌÔ™˜Ì“š‘Õ™˜ÛQšÒÔ[ÙÒPĞYÒPĞYÒR™QœÙÕYÔĞV–œ’šĞ]’R–[•™^–L‘œÖ•^VUÔRÒPĞYÒPĞYÒPĞXŒ’ŒXÌÔ™™•œŒšQÓTÍÒPÎØ›]XÌÑYÙŞYÒŞP–Öš’›Ú[ŞRÔ[ÙÒPĞYÒPĞYÒRU›XŒÒ“™ÍLQØ‘ÕRÒXŒÙ’[“›ŒŒ[›”™˜UÔZVĞ›XŒÒYØÛNLÒQÛRQÛYÕYQœØÌÌÚPYÒPĞYÒPĞYØ[Qš˜Œ’œUÍÔĞXĞÍM––˜ŞYÛØ‘ÕRÑÛYÕYQœØŞZÜÒQŞšZÖVš•ÕŒ–™˜›Q–\ÔİÙÖ’XÑÕNV›^–V\ÚPYÒPĞYÒPĞYÙÑVŒ•ŒQØ›]Y[UXŒÓ[Ø‘ÕRÑÛYÕYQœØŞZÜÒQÔŒV›ÖœØŒ‘ŒÔ[ÙÒPĞYÒPĞYÒQÖ˜ÚPXŒÙ˜UÍZÖ–ÜÒPÚ›”›Û–šİÙØÒ›‘Û™Û˜šZÙØUÍÖ•ÍLX•ÕVV›ÒĞÚ›”›Û–š’\ÒR›ÌÕœÙ\ÕÒÒPĞYÒPĞYÒPĞYÒPĞYÙ•œŒšQØ•ÑŒPÍ^˜ÖŒĞ[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØÛNZYŒÙUÙÙXŒÙ˜UÍZÖ–ÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞ]’PÚÖV››N^X•Z˜ŒÕYĞ\RQÛYÕYQœÕŞRŒÖV››N^X•\›”›Û–š‘Z˜ŒÕYÒ™Ô[ÙÒPĞYÒPĞYÒPĞYÒPĞ\ÚPYÒPĞYÒPĞYÒPĞYÒRšÛYXŒÙ˜UÍZÖ–QÓUÙÙĞ\RR›Ì›ÙÑœÕÌÒ™N\›T›QŒÓPXŒ’ŒXÌÔ™˜Ì“š‘Õ™˜ÛQšĞÚPYÒPĞYÒPĞYÒPĞYÒQÑVYÔĞœ›”›Û–š‘œÚVVŞR™ÚPYÒPĞYÒPĞYÒPĞYÒQÖ˜ÚPš˜ŒX•ÍÒQÍZ•ÕYØUÍÖ•ÍLX•ÕVV›ÒšÛQ–›Û]VUÌ[ŞZÍÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞ–•Í^˜Vœ[TĞNRQ]SP[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØUÖYØ›Q”ĞNTĞZV[RPÜÙÖVŞ›ÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞ–•Í^˜Vœ[TĞNRRV•ÔœLÔœŒX’[“››“œÛ˜VV’ZV[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÖ•ŞšPVUÌ[QRPÒš–Ò–ÒMÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØÌ•XÌ›VœÙÔĞØÛUšØUÓŒUÎ]UŞR–•Í^˜Vœ[UZ’[ÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÕœØUÖYØ›Q”ĞNTĞZYÑŒVRYÒŞPšQÛ“ÙÛÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒR››“œÛ˜VRQØÒ›‘Û™Û˜›ÚXÌ•XÌ›Vœ™ÑŒR[ÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÜLZXUÑUÌÒ™N\›T›PİÙÖL\ÙÌ]VĞNRPÙÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞŒÖ•Û˜RYÒÚP–•Í^˜Vœ[TĞ\RRš–UŞÌ]VUÌ[Ğ]’R–[•™^–L‘œÖ•^VUÔRÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPÚÒÒPĞYÒPĞYÒPĞ™ÕÖÒ›ÌÕœÙĞNRQŞ˜Õ\ØUÍ[V[ĞÚPYÒPĞYÒPĞYÒPĞYÒQÜLZXUÑS[ÙÒPĞYÒPĞYÒPĞYÒPĞŒV›––\ĞÚPYÒPĞYÒPĞYÒPĞYÒQÒ™ÍZØŞŒÓš–UŞ‘L–UŞV–\ÒQÍ]ÓVŒX‘İÛØ‘ÕRÒšÛQ–›Û]VUÌ[ŞZÜÒQÍ]Ó[VšZÜ[ÙÒPĞYÒPĞYÒPĞYÒPĞœØÌŒ^VÔ˜‘VVŒR\ĞÚPYÒPĞYÒPĞYÒÔ[ÙÒPĞYÒPĞYÒQÖŒX‘Ş˜ÌÔ›ĞĞNRRŒ–™˜ÛU™Ş™ÒÒPĞYÒPĞYÒPĞœšPXĞÍ]VÛØ›]VUÒ’ÑÖŒX‘Ş˜ÌÔ›ĞÚÜQÎRQS”ÕS•V•[TU”’•Y•LT‘•QUU•ZÑ“ÔLMÚPYÒPĞYÒPĞYÒPĞYÒQÓ˜›–›ÛYĞNRQ”YÕRÒPĞYÒPĞYÒPĞYÒPĞYØ•Õ˜Ì‘›–”ĞNRPÒ–L‘œÖ•ÔYÔŒ‘ŒXÌÓ]UŒÙÎ]RRŒ–YÖ[UœØŒØÙÙÎ\Ö–š›S›YÛÙÒPĞYÒPĞYÒPĞYÒPĞšXÛUš]ÛÒÒPĞYÒPĞYÒPĞšL“›Ò›ĞNRQVš’›ÚPYÒPĞYÒPĞYÖ›N^RQŞ›U™˜Ì•šÛS›Ö›V‘ÕQÛRRš›YÑS”ÕS•V•[TU”’•Y•[Ô•U•Q”ÔL•LT‘•Q“\ÙÛÙÒPĞYÒPĞYÒPĞYÒPĞ›VUÓŒŒÒYÔĞ]Ó•\RÛ^›U™˜Ì•šÛS›Ö›V‘ÕÚPYÒPĞYÒPĞYÒPĞYÒRXUÑœÖÓš–UŞĞNRQÍ]ÓLZQÛÌÓPÍÓĞ–L‘œÖ•Ô™™QœÙÕ’PÜÙÖ›Qš™Î^RPÛÙÖ›•œØ‘^™ÕÒÔ[ÙÒPĞYÒPĞYÒPĞYÒPĞŒÛ[‘]ØR˜UÓšĞNRQ]ØR˜UÓš‘]ÖVš•ÕŒ–’Ğ[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØÑÑVUÌ[ÕVZ•Õ“ĞŒÛ[‘^–L‘œÖ•Ô\ÒRš–UŞŞ]ÙÖ›[•Ô™˜ÑÚXÌ›–UİÒÒPĞYÒPĞYÒPĞYÒPĞYÒÔ[ÙÒPĞYÒPĞYÒPĞYÒPĞŒÛ[‘^V–ŒX’“ĞŒÛ[‘^V–œ’šĞNRQÕŒ–UŞVV››YÕYQœØŞYÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÛYÕYQœØŞ]ÙÙœUŞ˜ÑÚXÌ›–UİÜÒR˜ŒÒÒPĞYÒPĞYÒPĞYÒPĞYÒÔ[ÙÒPĞYÒPĞYÒPĞYÒPĞ›QœÙÑŒUÎ]V“™ÍLPÜÎRQRÒPĞYÒPĞYÒPĞYÒPĞYÙœUŞ˜Œ’œV•ÓŒV›QÖZX[Uš™Û–•L–UŞV”ÙÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÛYÕYQœØŞ]ÙÙœUŞ˜ÛU˜UÔŒVUİÜÒR–[•™^–L‘œÖ•^VUÔRÒPĞYÒPĞYÒPĞYÒPĞYÒÔ[ÙÒPĞYÒPĞYÒPĞYÒPĞœšPŒÛ[‘]–[\LÔœUYÔĞ–[\LÔœUMÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞ–L‘œÖ•Ô™™QœÙÕ’QÙœUŞ˜Ì“š‘ÕšĞÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞV–ŒX’’QÙœUŞ˜ÛU™ŞİÛÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØÛU˜UÔŒVUİÙÔĞŒÛ[‘^V–œ’š[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÖUÓš––Œ•ÔYÔĞ•XÛ•›ÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞV•ŞÛ–•Z˜QÑVŒ•YÔĞ[ØŒ’œV•ÓŒV›PÌÙœUŞ˜Œ’œV•ÓŒV›ÔĞ]’QÌZPÙÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞš[“[ØŒ’œV•ÓŒV›ÔİÙØ›]V›[V›NÖ›^–V\UØİÛÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒÔ[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØUÖYØÛUœÖVœU™–Lš›YQÎRQS”ÕS•V•[TU”’•Y•’Ô•S•TÕ–‘–T”U”ÔUMQ•ÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞš˜ŒL––›–•ÔYÔĞ•XÛ•›ÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØ•Õ˜Ì‘›–”ĞNRPÒV•ŞÛ–”Ğ–[\LÔœUYÖLš›YQÒ›‘ÎLÒR˜‘ÕVUÍZ–”ÒRÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÒV•ÑœÚPYÒPĞYÒPĞYØUÖYØ›NLQÑš–L•ÙÕšÓÙÛÙÒPĞYÒPĞYÒPĞYÒPĞš˜ŒL––›–•ÔYÔĞ•XÛ•›ÚPYÒPĞYÒPĞYÒPĞYÒQÌ[ÌÓšŒ•YÔĞZX‘ÛV”Ğ–•ÑVL™ÙÖ›NLX›TYØ›NØUÌ]ØÛNL˜UÍ[’RŒ–ZPÚPYÒPĞYÒPĞYÒPĞYÒQÒV•ÑœÚPYÒPĞYÒPĞYØUÖYÖL]YUVŒ•šÓÙÛÙÒPĞYÒPĞYÒPĞYÒPĞšXÛUš]ÛÒÒPĞYÒR›ÙVœL‘œÒQÖĞ›ÙVœL‘œÖĞšÛQ–›Û“[ĞÚPYÒPĞYÒPĞYØÑÑVUÌ[ÕVZ•Õ“Ğ–L‘œÖ•Ô™™QœÙÕ“Ğ–L‘œÖ–\ÒQÖœQÕšÖĞ›ÙVœL‘œĞÚPYÒPĞ\ÚPYÒPĞV–ŒX’“ĞV–œ’šĞNRQÕŒ–UŞVV››YÕYQœØŞZ›”›Û–š’\ÒR›ÙVœL‘œÓĞØŒ\ÒÔ[ÙÒPĞYÖ–š’šÛ˜›Z˜ŒÕYĞ\”Ğ^ÚPYÒPĞ–[\LÔœUYÔĞ™˜Œ’œV•ÓŒV›Öš’›ÑÛYÕYQœØŞ]ÙØÛU˜UÔŒVUİÜÒR–[•™^–L‘œÖ•^VUÔ\ÚPYÒPĞV–ŒXÛMÙ]ÛÙÒPĞYÒPĞYÒPÒ™Óš––’Z›ÙÖ[N]˜Ú˜ŒL––›–•Ô\[ÙÒPĞYÒPĞYÒPÒ––UÙZ›ÙØ•Õ˜Ì‘›–”İÒÒPĞYÒPĞYÒPĞZXŒ’œV•ÓŒV›Z›ÙØŒ’œV•ÓŒV›[ÙÒPĞYÒPĞYÒPÒœÕVVœŒ^’Z›ÙØUÍLÑÛ–šÛ˜šZÜĞÚPYÒPĞYÒPĞYÒ[UŒ–UŞVVœŒ^’Z›ÙØUÍLÑÕŒ–UŞVVœŒY–LLX›”\[ÙÒPĞYÒPĞYÒPÒ›˜ÛQšØUÕY]V–UÒ’Z›ÙØ›]X›QS[ÙÒPĞYÒPĞYÒPÒÖVš•ÕŒ–’Z›ÙØÑÚXÌ›–UİÜĞÚPYÒPĞYÒPĞYÒ[V•ÔœLÔœŒ^’Z›ÙØÛU™ŞŞ]ÒÒPĞYÒPĞYÒPĞZXÛU˜UÔŒVUŞ˜ÛQšÒZ›ÙØÛU˜UÔŒVUİÜĞÚPYÒPĞPÙÛÒÖ‘Õ›RQÌ]–‘ÕœÖŒ[œLÓ[ØUÍL–Œ–UŞ“Ğ›XV\ÙÛÙÒPĞYÙÑšX‘ÕYÔĞÖÍQVVš›’š•Õ[ĞÚPYÒPĞYÒPĞYÙ]ÛÙÒPĞYÒPĞYÒPĞYÒPĞZXÌ•›˜•ÕY\ÒM’QXŒÙ’[“›ŒŒ[›”™˜UÔZVĞ›XŒÒYØÛNLÒQÛRQÛYÕYQœØÌLĞÚPYÒPĞYÒPĞYÒPĞYÒPÒV–œ’š‘ZÖ•ØÚSÚPXĞÍ^VUÔ^V‘Õ›’ÑÖœœÚXÛU˜UÔŒVUŞ˜ÛQšÒ[[ÙÒPĞYÒPĞYÒRÒPĞYÒPÚÒÒPĞYÒRU›XŒÒÒÌ•YÔĞŒUÒœÖ”Í[˜ÛNLXÑÒRĞÒ–•Ù•ÍL›ÒZ[’[’›Ì›ÙÑœÖ”›R™QØÑŞRĞ[ÙÒPĞYÒPĞYÒQŞ•ÒšÖTĞŒ–UŞV–M’QÖœØŒ‘ŒÑÍ]Ó“Û”[Ø›]X•ÕššZ–UŞV–]YÎY˜›•ÒÛÒÔĞ\RÚP^RÔÚÜÚPYÒPĞ\ÚPYÒPĞV–ŒXÛMÙ]ÛÙÒPĞYÒPĞYÒPÒœ›”›Û–š‘^X–›”›RM’QÖœØŒ‘ŒÑÍ]Ó“Û”[Ø›]X•ÕššZUÒœÖ•œÚXÛU˜UÔŒVUŞ–‘Õ›’[ÒÚ[ÙÓZZÜÔİÒÒPĞYÒPĞYÒPĞZY‘Œ–•Ö˜ÛLY––ŒVUŞ˜ÛL^–•ZÖ•ØÚSÚP›X‘ÎZÙÒÒPĞYÒPĞYÒPĞYÒPĞYØ›]XÌÑYÚXĞÍ]•ÑRÒU›XŒÒÒÌ•]YÎY˜›•ÒÛÒÔĞ\RÚP^RÔÚÒÒPĞYÒPĞYÒPĞ\[ÙÒPĞYÒPĞYÒPÒŒÖV››N^X•^X–›Œ[UÍY–‘Õ›’Z›ÙÖ›^–V[Ù‘Œ–•Ö˜ÛLY˜ÛL^–”Í]•ÑRĞÚÜ[ÙÒPĞYÒPĞYÒPÒŒÖV››N^X•^X–›Œ[‘Û›ZÖ•ØÚSÚP›X‘ÎZÚÖV››N^X•^X–›L[‘ÛšYÜÔİÒÒPĞYÒPĞYÒPĞZY‘Œ–•Ö˜ÛLY˜ÛL^–•]V–‘Õ›’Z›ÙÖ›^–V[Ù‘Œ–•Ö˜ÛLY˜ÛL^–”Í]VÛÒÔÚÜĞÚPYÒPĞPÙÛÒÖ‘Õ›RQÖœLÖV››N^X–™™Ú›ZŒ™V•ÙÕ[ĞÚPYÒPĞœ›”›Û–š’\ĞÚPYÒPĞšV›––V•Õ\ĞÚPYÒPĞØŒ\ÔM]˜›U\ĞÚZÍÚPYÒPĞZRZSÒS™Ü›œ™ÜZš™ÍÚ™Íš™ÜMÚ™ÍŞ›’KÚ™ØY›\Í“˜SRÖİ[‘™Ü\ÖS™ÛÒ™ÒRİRÌÛÍÛÒÕ™ØšœM›U™Ö›š™Ûİš™ÒRZRZRRĞÚPYÒPĞ›˜ÛNLXÑÕšÒQØ‘Û™ÚÖÍQVVš›’š•Õ[ØUÍL–Œ–UŞ’ÔÍ[˜ÛNLXÑÒRĞÒ–•Ù•ÍL›ÒZ]ÙØÌ^YQÖUŞ–”ÚÜÚPYÒPĞ›XV™]ÖV’QÕÌLÒPĞYÒQÖ˜ÚP–•Ù•ÍL›ÓĞŒX›•–•Ô™–ŒÒ™YØUÍÖŒÒ™›‘ÒÒPĞYÒPĞYÒPĞœØŒ“šĞNRQXŒØÙÖ›N^RR™PœšPœ›”›Û–š’YØUÖYØÛNLÕŞR–•Ù•ÍL›Ò[ÔØÌ•›˜•ÕY\‘ŒÒPĞYÒPĞYÒPĞšQÛ’QØ‘ÎZ–UŞ“QŒX’[QVZV[ÙÒPĞYÒPĞYÒQÍZ•Õ’QÒÑœÚV[RPÜÙÖVÌLØUÖYÖ[\ÌN[XÛU›QÕœØÌ•YÕÌLPÜÙÕİÛÙÒPĞYÒPĞYÒPĞYÒPĞZVLN^XŒ”ZS[ÙÒPĞYÒPĞYÒPĞYÒPĞZYÑŒVRYÒŞPšQÛ“[ÙÒPĞYÒPĞYÒQŒÒPĞYÒPĞYÒPĞÖVš•ÕŒ–’QØUÍ\Û‘[›UVŒÛ–›[ÑŞ–L‘œÓĞVUÌ[ŞZÒÒPĞYÒPĞYÒPĞØR˜UÓšĞNRRVUÌ[ÚP]ÓYÖ›N^RQÍZ•ÕYØUÍÔ›‘”•TTU’•U•T•’™•Ñ“”•“PÚPYÒPĞYÒPĞYØÑÚXÌ›–UİİYšÖV›ÒšÛQ–›Û“\ÚPYÒPĞYÒPĞYÙÍLXÌ•šÖĞV•ÔœLÔœŒ^“ĞV–œ’šĞNRQÕŒ–UŞVV››YÕYQœØŞZØŒ“šİÙØÑÚXÌ›–UİÜÒR˜ŒÜÚPYÒPĞYÒPĞYÖ›[XÌÔ™˜ÑÑ˜ŞMZÒ››T[ĞÚPYÒPĞYÒPĞYÒPĞYÒRÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPÒ–•Ù•ÍL›ÒZ›ÙØÌ•›˜•ÕY\İÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPÒšQÛ’Z›ÙÖVŞ]ÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPÒš˜Œ[XUÙXÛQŒUÎ]RZ›ÙØ‘ÎZ–UŞ“QŒX’[S˜›VœŒÕVVœŒVİÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPÒšØV›LÔœŒSÚPœØŒ“š‘œİÖœÚV‘ÛV•ÓŒUÎ]R[ĞÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞZXUÍL–Œ–UŞ–LLX›”ZSÚPœÖ•ÍØ‘ÎZ–UİÜ[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒ[VœÛ“Œ’ZSÚPØR˜UÓš‘œÚV[RPÜÙÖVÌLĞÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞZV›[XÌÔ™–^RM’R›ÙVœL‘œÕŞRš–Ò–Ò™[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒ[VœÛ“ŒÔšÒM’R›ÙVœL‘œÕŞRŒV™’ZP\’QÑV™[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒ[VœÛ“ŒÒÌ•™–‘Õ›’Z›ÙÖ›^–V[ĞÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØ›]XÌÑYÚXĞÍ]•ÑRÑÍ]Ó’š‘šÖ•ØÛØÛU˜UÔŒVUİÜPÛÜRQ\5ÓM-¢G§²ÚîÆ­yÕ¥„¦†DvÇf&äÖ”ö”tÄöt”4t”4t”4¦ÆFÔg6Etcs—V7”“d”vÇVD6t´”4t”4t”4t”4vDtf–$uf$–Õ§6äãƒ'‡&Õf†6Ã—¦#'ƒ%¥„Ö•…3W¦Esôµ4$”…&…–×†Åw”§•¥u§Dc—6sVÅ•„¦f3#—6FÕg¤–ÃV35gD´6´´”4t”4t”4Äöt”4t”4t”4¦æ6Ôf¶ugVDc—E•††e•t§¤–¦öv&äV&ÔgTÄöt”4t”4t”4§u•„¦†%uc¥„§¤–¦öv4vƒV3&Æ¥•ww46”t”4t”4t–ä'•¥u'“5'##W¤–¦öv4„¦Å¤vÆ¦DvÇf&ä×46”t”4t”4t–ä¦Æ3&Æ¶Etg5ƒ4¦…¤4“d”„¦Æ3&Æ¶Etg4Äöt”4veöt”4v6ÕcE„§T”‡6•¦ÖÃ–¦öu¦ÖÃÄ4–C$c%¥u§f6Óf4tg••sÆDug–7”“d”…&…–×†ÄÄ4•“#—F%s—Uƒ$Ö”ö”&¦##F##Ve“3´6wµ¥u–u¦ÖÃƒ5&†Ec—f&×ƒUƒ5&õ¥sVe•vFæ6Õfå•…&Ä´vÇVDug–FÔg67—vu¦ÖÃE¥u&e——vv4s—f$Cö##VÄµFô´”4t”4–”–Ô“”ÔôôuuÆÓw&Ç'&¦vf×3dÆÇfÆ¦u¥F¦v¦¦vS•…†¦vF¦u¤†¦wÆ×5”Æ¦vô†¦t”†÷Sv¦Æ”µ†·T³6Ç³vÆtµF¦v&§ÓF&çD•F¦u¦æ¦v÷f¦t”–”–””´6”t”4'–#6G¤”Cus´”4t”vG–#5gu¥uu4'6„ã´„&´Æµ&†Dtdv6ÔgE¥6‡&å&Æ6å¦†$„×ÆÖG–#5gu–æ¶ô–äæÅ£#Æ&å&fu”Ä4'¦#4£U¦†$„æÄµ6´´”4t”u§f6”'¥¥vGE¥sSƒ&Æ´Ä4#&åg¥¥u&e£4§fE„vsFu£4§fE„&Å¤Fô´”4t”4t”4'6#$æ†$4””gG–#66u¦Ó—””„§fG”'&”'&å&Æ6å¦†$„Övu–v6Ó“5w”§¥¥vGE¥sSƒ&Æ´–ÃuCv3%fæ%ugVDc—¤c´”4t”4t”4&†TvÇ¤”Cv$s–¥•w†$Ôc$–ÔcF„Ö•…öt”4t”4t”u§D…&Å¤4””ugU¥„¦æUc–Ö…&fC&Ãc–Ö††Å¤c–¤´w‡e“$g4Ä4&$–å&†Ec†””76u•†‡34”u§Tufµƒ$×6”t”4t”4v4vƒV3&Æ¥•wvu4#v&ÔgE¥FötÔ3Gt”u§f6”'U•sÄ”vÇT”U¥5%UfeTTe5SedUe5ƒT%EUeFeöt”4t”4t”„&öU„ç“$g5w”¦¥ƒ4§e¤4¦D”Cu¦ÖÃE¥u&e—vöt”4t”4t”„&öU„ç“$g5w”£•…fd–”$”tcF„æD”Cu¦ÖÃDufµw”£•…fd–”$”tcF„æD6”t”4t”4vEsS3%fµƒ4'•¥u'“5'##W¤Ä4'•¥„ç¤…f†$4””uc%•wƒ•…&Åƒ&ÇVDug–FÔg67–‡6#$æ†$7vv4vƒV3&Æ¥•ww4”„'f#'w6”t”4t”4v6Ó“67“V†4„&Æ&Õô6”t”4t”4t”4t”‡4´”4t”4t”4t”4t”4t”4§¥¥vGE¥sSƒ&Æ´–¦öv3%fæ%ugVDc—¤7t´”4t”4t”4t”4t”4t”4¦†TvÇ¤–¦öu•†‡7—t´”4t”4t”4t”4t”4t”4¦¦##VÖvC6Ôcs—T–¦öv$s–¥•w†$Ôc$–Ôçf&Õ§£5g••…'##F•…7t´”4t”4t”4t”4t”4t”4¦¶„¦Å“5'##F”ö”'6#$æ†$g7u…g6•¤vÇ•¥tãs—T–Ã46”t”4t”4t”4t”4t”4–sS¥„£%•w†e“#“&å”ö”'5¥sFö$s–¥•wwÄöt”4t”4t”4t”4t”4t–Õ§Tufµƒ$–”ö”tÆ¤46”t”4t”4t”4t”4t”4•¦ÖÃE¥u&e—”“d”u§Tufµƒ$×46”t”4t”4t”4t”4t”4•¦ÖÃDufµƒ5&†E4“d”u§D…&Å¤g6–Dtc‡”–t·”&†TvÇ¥…7t´”4t”4t”4t”4t”4t”4§–%„æÅƒ%&Å§”“d”u§6#$c´sWtÆäç†6åö&äV%uf†&–‡V43W••u•¤ufä´„¦Æ3&Æ¶Etg4µ4¶””µ6·Äöt”4t”4t”4t”4t”4t–×‡&Õf†6Ã—¦#'ƒ%¥„Ö”ö”„Äöt”4t”4t”4t”4#”6”t”4t”4tµô´”4t”…&…–×†Ä”Cv4uU$tc•U§••sÄ´„§fC4×6”t”4'v†Ç¦tæ†$4””‡4´”4t”4t”4•–Ã”¥F”“d”DTÔ7t´”4t”4t”4•–Ã•ee”ö”tÆ¤46”t”4t”4t–Ôæf6Ó–´–¦öu¦ÖÃE¥u&e——t´”4t”4t”4–DtcƒÄô–¦öu¦×‡e•…öDtf–$uWV$s–¥s5&…–×†Åw”¦†TvÇ¤–ÃuCt–¶Äô–—vt–Õ§D…&Å¤c“•…V•…3WE¥u'•sFôµ6·46”t”4t”4t–å&†Ec•ee”ö”&Ö$s–†D6ƒ•t§5¥3W6#$æ&Dtf–$uf$–ÔcF„Ö•…4•4•CeT–—vt–Õ§D…&Å¤c“•…V•…3WE¥u'•sFôµ6·46”t”4#”6”t”4'v6Õf¶tãs—V7—vv6Õg¦u#•wvu4&ÆFÔg6Etc¥c—&å&Æ6å¦†$„ÖösS¥„£%•w‡¤Ä4'v†Ç¦tæ†$7vv4s—f$6´´”4t”u§D4””‡4´”4t”4t”4–35f¥“%g¦7”“d”e'–EuW46”t”4t”4t–ÓÆ34æ…£%V”ö”–sV¶…§¤…f†$4'V##WU¥vF†DvÃ%¥4#•…WF##W6U4&Æ&Õg•£6¶u¦ÖÃ7”&…£&G•¥vF†Duf´”t£T”tcF„Öv%uf¶tgV7”—46”t”4t”4t–Ó––Õf¦DvÃ%¥4“d”u§6#$c´sWtÆÓÅ•sFö6Õg¦u#•ww¶¤—µ7t´”4t”4t”4–…&Æ6Ôcs—V7”“d”D46”t”4t”4t–Õc%•wƒ•…'##W¤–¦övsS´…&…–×†Åw”§6sVÅ•„¦f3#—6FÕg¤–ÃV35gD´6·Äöt”4t”4t”4¦æ6Ôf¶ugVDc—E•††e•t§¤–¦öv&äV&ÔgTÄöt”4t”4t”4§u•„¦†%uc¥„§¤–¦öv4vƒV3&Æ¥•ww46”t”4t”4t–ä'•¥u'“5'##W¤–¦öv4„¦Å¤vÆ¦DvÇf&ä×46”t”4t”4t–ä¦Æ3&Æ¶Etg5ƒ4¦…¤4“d”„¦Æ3&Æ¶Etg4Äöt”4veöt”4v6ÕcE„§T”‡6•¦ÖÃ–¦öu¦ÖÃÄ4–C$c%¥u§f6Óf4tg••sÆDug–7”“d”…&…–×†Æeô´6Õ&Å¦”&¥•w†¦Ew††Duff6ÕcV&Ó—5¤„æe•„ç¥¥„ç¦%ugVD6‡&å&Æ6å¦†$„×övöt”4t–”–“U¤4SU“$³U¤vóW–cCDwSW”V6ãe”6cV'ÓSD³SCDw#CDv³CDtSCDvÓCD÷CCDôCCDô£CDwSCD÷3CD¶³CDôóCD÷#CD³cWwsCDµ3d¶”“SceƒCDu£CD´ÃCD44–”–”6vöt”4vE„'u¥„¦e¦ä¦…“5'##Fu4%5C&eed%%d¦eDUdõ#$•ƒ¶¥tÇ”ô6”t”4t”4uV³”UƒeTUe5ƒ„eF¶EU4c”ä¶–ó”76uV³”Uƒ…ce5ƒ„eF¶EU4c”ä¶–ó6”t”46”t”4&Å¦Õ¦Å“5'FÕff6Ôf¶…g¤”CtÔ3CD”6öt´öt”4t”4t”d¥$c•eTd$eVÃ”Õ%ST…dV†eE6÷å4$”d¥$c”ÕCDeVÃ”Õ%ST…dV†eE6÷åöt”4tµ4d”6…5C&eed%%d¦eDUdõ#$•ƒ¶¥t·”%5C&eDS•…%d¦eDUdõ#$•ƒ¶¥6”t”4'–#6G¤”Cus´”4t”u§f6”'&å&Æ6å¦†$4'&”'&å&Æ6å¦†$„Ód6”t”4t”4u•sv$vÃEu&Ä”Cu•t§¤´vÇVDug–FÔg5w”§¦Dtg–Dc–†&ÖG5¥c—••u•…6´´”4t”4t”4'E•†‡%…gEƒ4çu¥uf´”Cv%tc3W¦5„£´öt”4t”4t”4t”4”Æ¤´”4t”4t”4t”4t¶”'&å&Æ6å¦†$g6–6Õg¦Ds—–sVåƒ#Vf%c—u¥„¦f6Ôf´–Ã´”4t”4t”4t”4t¶”ôÕ3Gt”3v%tc3V¦#4Öõ•sv$vÃEu&Äµ6´´”4t”4t”4t”4tÇ”'&å&Æ6å¦†$g6–sVÆ6å'•c—%£—DÖ”¦D6”t”4t”4tµöt”4t”4t”…gv4ug•ƒ5'4c—¦4ufÅ¤4””s†TvÇFEsf34&Å¥ut¶”%5C&eed%%d¦eDUdõ#$•ƒ´”4t”4t”4'6#6FÆ6Ã“„&f34&Å¥uu4'E•†‡%…gEƒ4çu¥uf´”6öuV³”Uƒ…ce5ƒ„eF¶EU4c”ä6”t”4t”4u¥u¦Õ¥tã…¦Åƒ4çu¥uf´”Cv%tcFs%c—¦4ufÅ¤4”ufÕ¦Õf¦DvÃ%¥c—••u'E„Ô´”4t”4t”4'•¥†ÇV#'†¶3–Õ•tã#4–u4ô6”t”4t”4t”4t”Td¥VÃ”U%SUE5e%¥ƒD…ƒ¤”6öuV³”Uƒ$¥SedUe5ƒtÇ”$%5d¦e$fÄõS¥•u5däECä¥dfÆeTTfeWvöt”4t”4t”6´´”4t”4t”4'–#6G¤ÆÔgv4ugU¤6t´”4t”4t”4t”4vWvöt”4t”4t”4t”4t”4t–ÖÇVDug–FÔg5ƒ&Æ´–¦övsS¥„£%•w†$–ÖÇVDug–FÔg5ƒ&Æ´–Ã46”t”4t”4t”4t”4t”4–3%fæ%ugVDc—¤4“d”vÇVDug–FÔg5w”§¥¥vGE¥sSƒ&Æ´–Ã46”t”4t”4t”4t”4t”4••†‡7”“d”vÇVDug–FÔg5w”¦†TvÇ¤–Ã46”t”4t”4t”4t”4t”4•“#—U¦ÖÆæE„¦†DvÇf&”“d”vÇVDug–FÔg5w”¦¦##VÖvC6Ôcs—T–Ã46”t”4t”4t”4t”4t”4–35&†6å&e•sv$vÃEu&Åƒ%&Å§”“d”vÇVDug–FÔg5w”§¦Dtg–Dc–†%„'6…#¤ufe¤ufä–Ã46”t”4t”4t”4t”4t”4–%tcFs%c–†&ÖC$tg•ƒ4çu¥ufµƒ4¦…¤c—¤–¦öv%tcFs%c—¦4ufÅ¤7t´”4t”4t”4t”4t”4t”4£4„&Æ6Ã“„&f34&Å¥u&f%c—¤–¦övE„'u¥„¦fDvÇuƒ4çu¥uf´Äöt”4t”4t”4t”4t”4t–ågv4ug•ƒ5'4c—•¥†ÇV#'†¶7”“d”„¦ÆUsWf$u'¥ƒ%¦…“5'f6””…gv4ug•ƒ5'4c—¦4ufÅ¤7t´”4t”4t”4t”4t”4t”4§6#6FÆ6Ã“„&f34&Å¥u&f%c—¤–¦öv$s“5¥„¦fDvÇuƒ4çu¥uf´Äöt”4t”4t”4t”4t”4t–×‡fC%g•ƒ5'4c—•¥†ÇV#'†¶7”“d”„¦ÆUsWf$u'¥ƒ%¦…“5'f6””w‡fC%g•ƒ5'4c—¦4ufÅ¤7t´”4t”4t”4t”4t”4t”4¦¶6Ôfåƒ6FÆvFöDufµƒ4¦…¤vÃ3—D–¦öu¥u¦Õ¥tã…¦Åƒ4¦…¤vÃ7—t´”4t”4t”4t”4t”4t”4¦¶6Ôfåƒ6FÆvFöDufµƒ4çu¥ufµƒ#f7”“d”ufÕ¦Õf¦DvÃ%¥c—¦4ufÅ¤7t´”4t”4t”4t”4t”4t”4¦¶6Ôfåƒ6FÆvFöDufµƒ4¦ÆUsWf$u'¤–¦öv6ÕcV&Ó—5¤„æe¦Ôf¦Ds—””6öu¥u¦Õ¥tã…¦Åƒ4çu¥uf´Äöt”4t”4t”4t”4t”4t–ågv4ug•ƒ4§e¤c“#4§†Eufe¦ä¦…“5'##F”ö”#4„&Æ6Ã–Ö6Ôf¦DvÇf&—t´”4t”4t”4t”4veöt”4t”4t”6´´”4t”„¦ÆD…g–&”'–#6G¤6vôµ¤ufÔ”„çf$…¦Åƒ$çf&å'&ågfE„æfC$c%¥u§f6Óö6Õf¦#4¦´Ä4'¥¥vGE¥sSƒ&ÇVDug–FÔg67—vv4vƒV3&Æ¥•wwövöt”4t–”–“W”U––CCDwSVófƒSU6óf43SD³SCDtÃCD´£W”V#dÓCDr³CDvãCD4#VfcW&—3U”6³CDsCVö“sCDucCDve”6£SvSfÔãU–”sCDu£CD´ÃCD44–”–”6vöt”4v35&†6å&fDvÇE¥4””„æÅ£#Æ&å&fsS¥„£%•w‡¥w¤&Ew”§¦Dtg–Dc“sÅƒ4Ö•…öt”4u¥sVµƒ5'%uVu4'¥¥vGE¥sSƒ&ÇVDug–FÔg637DÕc$–ÕgU¤c“sÅƒ4Ö•…öt”4v%uf†35g•¥u&f%tg¦”””6‡•¥tçf6Õ&$–å'%uff7”¦D”CC””„ã•„£ƒ5'%uW”5–t´öt”4t”4t”„¦Å“#—•¤g6–DvÇE¥c—¤–ÃuCu¥sVµƒ5'%uT´”4t”6´´”4t”„¦Æ$tc…¦Åƒ5'%uVu4'•¥tçf6Õ&$–å'%uff7”¦Es#Å•„ã6Õfµƒ#†3'FD”3v35&†6å&fDvÇE¥öt”4v%uf†35g•¥u&e•sVæ$ufe¤ufä”Cv6Õf¦#4¦µw”¦¥¥sS¥„¦Å¤c–†&ÖG5¥c–µ¥v6•…gGE¥tg¦E„¦Å¤c—E•„ç%…öt”4vu–v$ugT´„¦Æ$tc…¦Åƒ5'%uW”GvtÖ¦ô´”4t”4t”4'••vÇ¥¥4%u•wƒ¥Ug–6Ó—”´„¦Å“#—•¤g6–3%fæ%ugVDc—¤4¦D”76t–”F¦vwtµçG&×#UF÷d•¦w%†¦su¦sVf¦sgf¦u—¦·T“6÷G%¦u¦f¦v&¦u•F¦v#v¦u¦¶”µöt”4vsS¥„£%•wvu4'¥¥vGE¥sSƒ&ÇVDug–FÔg637u…öt”4vsVÆ6å'•4””vÇVDug–FÔg5w”§&Õg–DvÆ…ƒ'Fåƒ#”–Ã´”4t”„¦Æ35'f6ÖÇU§”””vÇVDug–FÔg5w”§•¥„ã#4§&ÖFf&Ã—Eƒ4&Æ6Ã—••u•…öt”4u¤tgF4vÇU§—vv5…f…¤„¦†DvÆ¤Ä4&Ö6ÖÆ¦DvÇf&”””c—6#$æ†$c–¦#%fÕ¦ÖÆ¦ugVD„ÖösS¥„£%•ww4”„&öU„ç“$g4µöt”4u¥„'¦w‡f&”””sWtÆÕ&Å§¤§••uõ&Ä¤¥$¥CVe%d%E5W…FÃ”U%VFeW–´´”4t”„çE•w‡5ƒ4&Æ6ÖÇe¤4””D—TÔ4”s†DvwV4v¶t¶”'E•…&ôÆäç†6åösVÆ6å'•4d”„¦Æ35'f6ÖÇU§–´´6”t”4&µ¥u–u¤vÆÕ¦Õg•¥sStg5ƒ%g†Etcs—T´…gVE„æÅ¤c“sÄÄ4'¦Dtc¥6³d6”t”4t”4u•sVæ$uW4”„çu¥uf´”Cv35&†DuT´”4t”4t”4&…“$æÆ$ug••…'##Fu4F6Õg¦Ds—–sVä”6öv&äV3&ÇT´tgU£'†Äµöt”4t”4t”tf¥“%g5¥„¦†DvÇf&”E4&µ•svsVä”6öv34&Å¥u´”4t”4t”4&…“$æÆ$ug••…'##FtÅCv5…f…¤„¦†DvÆ¤”6öu•t§¤´„çu¥uf´µ4”„çu¥uf´6”t”4t”4u•tæ¥¥w†Æ6Ôcs—T”3””u§–tãs—T”6öv&äVDtgV6‡¦4ufÅ¤4d”ugv3&Ç6##G6”t”4t”4v6ÕcE„§T”gG¦4ufÅ¤7vu•tæ¥¥w†Æ6Ôcs—T”3†vsVÆ6å'•c´6”t”4'¦#'ƒDvÇf&”””„çf$…¦Åƒ&Ã&46t´”4t”4t”4&¶u¦Õ¥„¦Æ&å'•w†e¥„c•…'##G46”t”4t”4t´DTÔ7vu¦×‡e•…ö6Õg5•…'FÕffDvÇE¥g7DÕcµ7t´”4t”4t”4&&sS¥„£%•w†$–äã•„£ƒ$gU£'†Åƒ4¦…¤4¦DÄ4tÆ¤&DÄöt”4t”4t”sÆDv‡e¤C•$S•ôEW¤–—t´”4t”4t”4#ƒ%c%•ws–6Õg5•…'FÕffDvÇE¥7t´”4t”4t”4'–Ds—5U$e&´eeDe&eVÅ%D7t´”4t”4t”4&†Ds—5gDU%U¤%eW…Uƒdõ#„eƒå%UdUƒeUCw4”U$e&´eeDe&eST…DUfeS$e%U&ee%Dc46”t”4t”4v%tcEƒ4ã¥„•ETe•ƒåU%d&eTUe55S”Uƒ¥5TåU5S”ô”6öv3#†$w†f4ug–s–´Äöt”4tµöt”4vu–v&Ó“”„çf$…cs—TÆäã“$æÆ34Öv#4–v$ugT´„çf$…cs—TÆå”4S””w†Æ&–‡•¥w††DvÃ%¥c“sÄµFô´”4t”4t”4'••vÇ¥¥4%6EsSsÅ%„§–#4–ö6Õf¦#4¦µw”§¥¥vGE¥sSƒ&Æ´–Ãt·”””ôô''VÔò¶S&×VW¦Ut–‡Tô'µv·6VfÂ´ô&Â´ô'gTô&Â´ô&ç”—6”t”4'v6Õf¶tã¥u&e•sVæ$ufe¤ufä”Cv&äV6Ôf´ÖÕ&Å§–‡¦#'ƒDvÇf&“SUw¤&Dµöt”4v6Õg¦u#•w†e¤ufä”Cv4„¦Å¤vÆ¦Dufµƒ$gU£'†Åƒ%&Å§”D”sÅ•„ã6Õfµƒ$gU£'†Åƒ%&Å§vöt”4v6ÕcE„§T”‡4´”4t”4t”4–DvÇE¥c—¤–¦öv6Õg5•…'FÕffDvÇE¥7t´”4t”4t”4–%uf†35g•¥u&e•sVæ$ufe¤ufä–¦öv%uf†35g•¥u&e•sVæ$ufe¤ufäÄöt”4t”4t”4§v6Õf¶tã¥u&e•sVæ$ufe¤ufä–¦öv4„¦Å¤vÆ¦Dufµƒ$gU£'†Åƒ%&Å§—t´”4t”4t”4–6Ó¥¥c–µ¥v6”ö”&Ö$s–†D6‡V43W¦5„£´sWtÆÓÅ•sFö6Õg¦u#•w†e¤ufä¶–÷”µ6·Äöt”4t”4t”4§E•ufe¤ufä–¦öu¦×‡e•…ö&äV%uf†&–‡V43V…–äÖö6Õg¦u#•w†e¤ufäµ6·Äöt”4t”4t”4§E•†‡%…gEƒ$f–3–Æ6ä§f6Ã–µ¥v6”ö”&Ö$s–†D6‡V43WE•†vö&äU•t§¤´„¦Æ3&Æ¶Etg5ƒ%&Å§–·µ7t´”4t”4t”4•¥sV¶4s—&å&e¥„§–#4¦e¤ufä–¦öu¦×‡e•…ö6Õg¦u#•w†e¤ufåw“……6·46”t”4#”6vôµ¤ufÔ”uc%•wƒ•…&Åƒ$gU¤c—v$s“ƒ$çf&å'&ågfE„æfC$c%¥u§f6Ó¤´öt”4vC$c%¥u§f6Óf6Õf¦#4¦¶7—t´”4t”vÇVDug–FÔg67—t´”4t”„&öU„ç“$g4Äöt”4v%s–µ¥w†f$tf•¥ww46”t”4'fE…'vE…&f4tc7t´µFô´”4t”4–”–¤ÓW$ö“V#&“CDwSe”6£SvSfÔãU–”sWµSdÇ”CU§W£CDvóW$ö“V#&“U––Ãd·³V&WSCDµ3TÃ&3CD´ÃCD44–”–”6vöt”4v6Õf¦#4¦¶7”””„çf6å&Å¤6t´”4t”4t”4#5•…¦Å¦Ó—–%c—•¥tçf6Õ'¤Äöt”4t”4t”wFÆUC5•s•¤tVv…&Æ%Föt´öt”4t”4t”4t”4'DugEw”¦†TvÇ¤–Ã46”t”4t”4t”4t”vÃ¥s$–Ôçf&Õ§£5g••…'##F•…7t´”4t”4t”4t”4v…&Æ%g6•¤vÇ•¥tãs—T–Ã46”t”4t”4t”4t”vÃ¥s$–ä¦Æ4uc…'##F•…7t´”4t”4t”4Äöt”4tµöt”4u–æÆf3%fæ%ugVD4””‡C”6”t”4&Ö#4–vsS¥„£%•wvvsFvsS¥„£%•w‡¤övöt”4t”4t”t£Uƒ4æÅ£#Æ&åV3%c¤ufÕ•…g6D6‡&å&Æ6å¦†$g6–3%fæ%ugVDc—¤4¦DÄ4&%…6·U•„'u¥sV´´vÇVDug–FÔg4µöt”4u“#—6EsUƒ$çfEsS”Cuceu%U¥V³eC¤eVÅ¤¥%fFe”ÕeSõWvöt”4v6Ó“5ƒ$çfEsS”CvsS´s†DvwU“%g$6‡5¥sFö6Õf¦#4¦¶7–¶tÇ”&¦#'ƒ%sVe“#“&åµöt”4u¦ÖÆæE„¦ÄÄ4&†Tug¤”Cv4wƒÆäã–ä'6#5'¤´öt”4t”4t”„§fC–¦#5gVD7t´”4t”4t”4&¦#'ƒ%sVe“#“&å46”t”4t”4u¦ÖÆæ3&Ãe¥Côæ“Gt”6öu“#—6EsUƒ$çfEsSÄ4¤Æ¤t¶”'–#6Fe“#“&åÄöt”4t”4t”„ç†EufÆVÕS•&Ôg63%W46”t”46”t”4'–#6G¤”Cus´”4t”u§f6”'v$s“ƒ#S%t¦Æ6—vv6Õf¦#4¦´”vÇT”ugVEsÆ6Ôc¥6‡•¥tçf6Õ'¤µFô´”4t”4t”4'¥¥vGE¥sSƒ&ÇVDug–FÔg67”””„çf6å&Å¤6t´”4t”4t”4t”4u–æÆf3%fæ%ugVDgG•¥tçf6Õ&$–äæÅ£#Æ&å&fu•…c4”wFÆUC5•s•¤tVv6Ó“4ö”'–#6F$–ÖÇVDug–FÔg5ƒ#S%t¦Æ6”¦D6”t”4t”4tµöt”4t”4t”tçf%„&†6ÖÇ¦##Fu4'¦#'ƒ%¥c–¦##SsS#5g¥ƒ6F†FÕfÖ#4§D´öt”4t”4t”4t”4'•¥tçf6Õ4”„æÅ£#Æ&å&fsS¥„£%•w‡¤Ä4'v†Ç¦tæ†$öt”4t”4t”6´´”4t”4t”4&†TvÇ¤”Cu•††Æ7“VÖ$tcs4'6#5&f&ågE–Õg•…öt”4t”4t”tcF„×V4w‡fD6t´”4t”4t”4t”4u“#—F4tg–„çf&Ç6–DvÇE¥c—¤–Ã46”t”4t”4t”4t”tçf%„&†6ÖÇ¦##V$–ÓÅ•„ã6Õfµƒ$gU£'†Åƒ%&Å§”¦DÄöt”4t”4t”4t”4&¦#'‡f6£”Ô3Cå4—46”t”4t”4t”4t”w‡&Õc6u#CtÆ¥“Äöt”4t”4t”4t”4'5•t¦Æ$C–%uf†35g•¥u””vÆÔ”„'6#5&f&ågE–Õg””C””Du¥w‡¥¥4$ö##VÄÄöt”4t”4t”6´´”4t”4t”4&†TvÇ¤Æä'6#5ô6”t”4t”4t”4t”tçf%„&†6ÖÇ¦##V$–å'%uff7”¦DÄöt”4t”4t”4t”4&¦##u•„§3#—Uw”§v6Õf¶tã¥u&e•sVæ$ufe¤ufä–Ã46”t”4t”4t”4t”tçf$s—•4–¥¤F³¦¤”–—t´”4t”4t”4t”4v$vÇU¥†G¤…&õDWTÔ7t´”4t”4t”4t”4v$tf•¥ws”–Ôçf&å'&ågfE„Öv4„¦Å¤vÆ¦DvÇf&”–vu–v4w‡fDc—VEs•¥„–uCtÔ4&Æ$„æÄ”SWf&ÕW46”t”4t”4tµöt”4t”4t”tcF„×V3%cƒ5'Dw†Ä´öt”4t”4t”4t”4'•¥tçf6Õ&$–äæÅ£#Æ&å&fu•…4$”u–””4%5Edäe‡F¦##u•„§3#—Uw–G–%„æÅƒ%&Å§–FDö“G•¦ãu¤ufä–—t´”4t”4t”4t”4u¦Ó—VD„çVÕS”ô7t´”4t”4t”46”t”4t”4u•†‡7“Væ6ÖÆ´´e'–EuW4”tg64v†…DTÖ–´´”4t”4t”4&†TvÇ¤Æå'“'Ff4tg••s¤´w†…–Õg63&Ãe¥C4µöt”4t”4t”„§fC4×U•„'u¥sV´´öt”4t”4t”4t”4#t6”t”4t”4t”4t”4t”4–%s–µ¥wv”ö”'F#%&Æ$c—5•t¦Æ$7t´”4t”4t”4t”4t”4t”4§¥¥vGE¥sSƒ&Æ´–¦öv6Õf¦#4¦µw”§¥¥vGE¥sSƒ&Æ´–Ã46”t”4t”4t”4t”4t”4••†‡7”“d”„¦Å“#—•¤g6••†‡7”¦DÄöt”4t”4t”4t”4t”4t–Ôçf&Õ§£5g••…'##F”ö”'•¥tçf6Õ&$–Ôçf&Õ§£5g••…'##F•…7t´”4t”4t”4t”4t”4t”4¦¶„¦Å“5'##F”ö”'•¥tçf6Õ&$–Õ'6Õf¦DvÇf&”¦DÄöt”4t”4t”4t”4t”4t–ä¦Æ4uc…'##F”ö”'•¥tçf6Õ&$–ä¦Æ4uc…'##F•…7t´”4t”4t”4t”4t”4t”4§¥•sv$ug¤–¦öv$ugT´tçf%„&†6ÖÇ¦##V$–å'%uff7”¦Dµ7t´”4t”4t”4t”4t”4t”4¦¶E„¦†DvÇf&Ã—¤–¦öu¦×‡e•…õ“#—F4tg–„çf&Ç6–DvÇE¥c—¤–Ã$ÅDfDµ7t´”4t”4t”4t”4t”4t”4§–%„æÅƒ%&Å§”“d”tçf%„&†6ÖÇ¦##V$–ä§F3%fe¤ufä–Ã46”t”4t”4t”4t”4t”4–%tfÅƒ%&Å§”“d”tçf%„&†6ÖÇ¦##V$–Ó…¥c–µ¥v6•…7t´”4t”4t”4t”4t”4t”4§E•†‡%…gEƒ$f–3–Æ6ä§f6Ã–µ¥v6”ö”&¦##u•„§3#—Uw”§E•†‡%…gEƒ$f–3–Æ6ä§f6Ã–µ¥v6•…7t´”4t”4t”4t”4t”4t”4¦Æ&Õ'v#&ÇVDc–Æ6ä§f6Ã–µ¥v6”ö”&¦##u•„§3#—Uw”¦Æ&Õ'v#&ÇVDc–Æ6ä§f6Ã–µ¥v6•…7t´”4t”4t”4t”4veöt”4t”4t”6´´”4t”u§f6”#&åg¥¥u&e•†‡7”'&”&†Tug¤ÆÕ§5•…&&$ugT´„¦Å“#—•¤„×”GDövöt”4t”4t”…gVE„æÅ¤c–†TvÇ¤ÆÔcF„Öô–Ó–Õ¦”—6”t”4&ÖvC6ÕWV35gvTw†…–Õg4´4£sÄ”u§–##u¦ÖÇ–35u¦ÖÃDuf´”„&Å•w6us4æD––´´”4t”u§£5g•¥3W¦E„#V$tf•¥wvô–ÔæÆ&å&Æ6Õf´”tgU£'†Ä”gFµ¥vFD––´´”4t”v††&Õ'5¥„×4”w†…–Õg67”””tcE¥„×U¦×††Dg7u…3Vå¥…&f$ufå¥sVµƒ&††&Õ'5¥„æf$tf•¥w‡¤´6´´”4t”u§£5g•¥3W5¥vFÆ&Õô6”t”4t”4vtgU¤w†Æ7—t´”4t”4t”4'5•t¦Æ$„×46”t”4t”4v$s–¥4£4„&Æ6”&¥¥sS¥„–”Äöt”4t”4t”t¦–#6†fDs–e•sV¦s—•6wtÆ¥W4”DTõFsTµ7t´”4t”4t”4'U“#—5D—46”t”4t”4u¦ä¦†%ugf&£u•w‡¥¥7t´”4t”6´´”4t”u§£5g•¥3W¦E„#…'5¥6t´”4t”4t”4•S5&…£%Vtä4&¦##SsS#5g¤”†F†FÕfÖ#4§D”tçf%„&†6ÖÇ¦##Cd”4–t·”'F#%&Æ$c—5•t¦Æ$7t´”4t”4t”4#UDTõF³TÄöt”4tµöt”4u¦ÖÆæE„¦ÄÆå'£&ƒƒ'††Us“D6‡•¥tã6wtÆ¤”Ä4tÆ¤”Ä4„Æ¤4”DTõF7”µ6´´”4t”„æ†FÕfe¦ÖÆæE„¦Ä´u§£5g•¥7vv#5c4…cƒ4&†Dvw4”u'vCTÔ6´´”4t”„¦ÆD…g–&”'–#6G¤6vôµ¤ufÔ”„&†6ÔgE¥…&Æ6Ã“&ÔæÆ6å&†sSU6‡&å&Æ6å¦†$„×4”u§D7vv4tg••sÆDug•ƒ#V†%ug¤Ä4'–#$£35&f3$æ†$ufe¤ufäµFô´”4t”„¦Æ3&Æ¶Etg4”Cu¦ÖÃw”§•¥„ç¤…f†$c—••u•…öt”4v6Ó––E„ãƒ4æ¥•w†Åƒ4¦…¤4””sWtÆÕ&Å§¤§••uö6Ó––E„ãƒ4æ¥•w†Åƒ%&Å§–´´”4t”‡fFÔg6EuVu4'•¥„ç¤…f†$4d”„§e–åg¦Dc—¥“$g5¥c—••u´”4t”„§e–åg¦Dc“5¥vÆæ…u4„Æ¤tÇ”'V43W¦5„£´DWTÔ4$”‡fFÔg6EuW¶¤—6”t”4#5•…¦Å¦Ó—–%c–¦#5gVD4””w†Åš®x§‚ÚîÆ­yÚ.¶›­¢¸ Šv¥¶‰Ê.İtÓM¢Ö¥¢ëiºÙbë5bih7cm93WyJzZWdtZW50X2lkIl0gZm9yIHJvdyBpbiBpbnRlcnZhbHN9KQogICAgamFjb2JpYW4gPSBucC56ZXJvcygobGVuKGludGVydmFscyksIGxlbihwYXJhbWV0ZXJfbmFtZXMpKSwgZHR5cGU9ZmxvYXQpCiAgICB3ZWlnaHRlZF9yZXNpZHVhbCA9IG5wLnplcm9zKGxlbihpbnRlcnZhbHMpLCBkdHlwZT1mbG9hdCkKICAgIGZvciByb3dfaW5kZXgsIChpbnRlcnZhbCwgcHJlZGljdGlvbikgaW4gZW51bWVyYXRlKAogICAgICAgIHppcChpbnRlcnZhbHMsIGZpdFsicHJlZGljdGlvbnMiXSkKICAgICk6CiAgICAgICAgYmFzZV93ZWlnaHQgPSAxLjAgLyAoCiAgICAgICAgICAgIHdhdmVmb3JtX2NvdW50ICogaW50ZXJ2YWxbIndhdmVmb3JtX2ludGVydmFsX2NvdW50Il0KICAgICAgICApCiAgICAgICAgd2VpZ2h0ID0gbWF0aC5zcXJ0KGJhc2Vfd2VpZ2h0ICogcm9idXN0X3dlaWdodFtyb3dfaW5kZXhdKQogICAgICAgIHdlaWdodGVkX3Jlc2lkdWFsW3Jvd19pbmRleF0gPSB3ZWlnaHQgKiByZXNpZHVhbFtyb3dfaW5kZXhdCiAgICAgICAgYXhpcyA9IGludGVydmFsWyJheGlzIl0KICAgICAgICBmb3IgY29sdW1uLCBuYW1lIGluIGVudW1lcmF0ZShwYXJhbWV0ZXJfbmFtZXMpOgogICAgICAgICAgICBpZiBuYW1lID09ICJiXyIgKyBheGlzOgogICAgICAgICAgICAgICAgamFjb2JpYW5bcm93X2luZGV4LCBjb2x1bW5dID0gd2VpZ2h0ICogcHJlZGljdGlvblsic2Vuc2l0aXZpdHlfYiJdCiAgICAgICAgICAgIGVsaWYgbmFtZSA9PSAiY19yb2QiOgogICAgICAgICAgICAgICAgamFjb2JpYW5bcm93X2luZGV4LCBjb2x1bW5dID0gd2VpZ2h0ICogcHJlZGljdGlvblsic2Vuc2l0aXZpdHlfYyJdCiAgICAgICAgICAgIGVsaWYgbmFtZSA9PSAidGF1XyIgKyBheGlzOgogICAgICAgICAgICAgICAgamFjb2JpYW5bcm93X2luZGV4LCBjb2x1bW5dID0gd2VpZ2h0ICogcHJlZGljdGlvblsic2Vuc2l0aXZpdHlfdGF1Il0KICAgIGRlZ3JlZXNfb2ZfZnJlZWRvbSA9IG1heCgxLCBsZW4oaW50ZXJ2YWxzKSAtIGxlbihwYXJhbWV0ZXJfbmFtZXMpKQogICAgdmFyaWFuY2UgPSBmbG9hdChucC5zdW0od2VpZ2h0ZWRfcmVzaWR1YWwqKjIpIC8gZGVncmVlc19vZl9mcmVlZG9tKQogICAgY292YXJpYW5jZSA9IHZhcmlhbmNlICogbnAubGluYWxnLnBpbnYoamFjb2JpYW4uVCBAIGphY29iaWFuKQogICAgc3RhbmRhcmRfZXJyb3IgPSBucC5zcXJ0KG5wLm1heGltdW0oMC4wLCBucC5kaWFnKGNvdmFyaWFuY2UpKSkKICAgIGRlbm9taW5hdG9yID0gbnAub3V0ZXIoc3RhbmRhcmRfZXJyb3IsIHN0YW5kYXJkX2Vycm9yKQogICAgY29ycmVsYXRpb24gPSBucC5kaXZpZGUoCiAgICAgICAgY292YXJpYW5jZSwKICAgICAgICBkZW5vbWluYXRvciwKICAgICAgICBvdXQ9bnAuemVyb3NfbGlrZShjb3ZhcmlhbmNlKSwKICAgICAgICB3aGVyZT1kZW5vbWluYXRvciA+IDAuMCwKICAgICkKICAgIHJvd3MgPSBbXQogICAgZm9yIGluZGV4LCBuYW1lIGluIGVudW1lcmF0ZShwYXJhbWV0ZXJfbmFtZXMpOgogICAgICAgIHZhbHVlID0gZml0WyJwYXJhbWV0ZXJzIl1bbmFtZV0KICAgICAgICByb3dzLmFwcGVuZCgKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgInBhcmFtZXRlciI6IG5hbWUsCiAgICAgICAgICAgICAgICAidmFsdWUiOiB2YWx1ZSwKICAgICAgICAgICAgICAgICJzdGFuZGFyZF9lcnJvciI6IGZsb2F0KHN0YW5kYXJkX2Vycm9yW2luZGV4XSksCiAgICAgICAgICAgICAgICAiY2k5NV9sb3dlciI6IGZsb2F0KHZhbHVlIC0gQ09ORklERU5DRV9aXzk1ICogc3RhbmRhcmRfZXJyb3JbaW5kZXhdKSwKICAgICAgICAgICAgICAgICJjaTk1X3VwcGVyIjogZmxvYXQodmFsdWUgKyBDT05GSURFTkNFX1pfOTUgKiBzdGFuZGFyZF9lcnJvcltpbmRleF0pLAogICAgICAgICAgICB9CiAgICAgICAgKQogICAgcmV0dXJuIHJvd3MsIGNvcnJlbGF0aW9uCgoKZGVmIGNyb3NzX3ZhbGlkYXRlX3dhdmVmb3JtcygKICAgIGludGVydmFscywKICAgIG1vZGVsX25hbWUsCiAgICBwYXJhbWV0ZXJfbmFtZXMsCiAgICBzY2FsZXMsCiAgICByb2J1c3Rfc2NhbGVfZGVnLAogICAgZnVsbF9maXQsCiAgICBwb29sLAopOgogICAgIiIi5YWo44OH44O844K/5pyA6YGp6Kej44Gu5Y6z5a+G44Ok44Kz44OT44Ki44Oz44GL44KJ57ea5b2i5YyWMeazouW9oumZpOWklkNW44KS6KGM44GG44CCIiIiCgogICAgcm93cyA9IFtdCiAgICBzZWdtZW50X2lkcyA9IGxpc3QoZGljdC5mcm9ta2V5cyhyb3dbInNlZ21lbnRfaWQiXSBmb3Igcm93IGluIGludGVydmFscykpCiAgICBmdWxsX3NjYWxlZCA9IG5wLmFzYXJyYXkoCiAgICAgICAgW2Z1bGxfZml0WyJwYXJhbWV0ZXJzIl1bbmFtZV0gLyBzY2FsZXNbbmFtZV0gZm9yIG5hbWUgaW4gcGFyYW1ldGVyX25hbWVzXSwKICAgICAgICBkdHlwZT1mbG9hdCwKICAgICkKICAgIHJvYnVzdF9zY2FsZV9yYWQgPSBucC5kZWcycmFkKHJvYnVzdF9zY2FsZV9kZWcpCiAgICBmb3IgZm9sZF9udW1iZXIsIGhlbGRfc2VnbWVudCBpbiBlbnVtZXJhdGUoc2VnbWVudF9pZHMsIHN0YXJ0PTEpOgogICAgICAgIHRyYWluaW5nX2luZGljZXMgPSBbCiAgICAgICAgICAgIGluZGV4CiAgICAgICAgICAgIGZvciBpbmRleCwgcm93IGluIGVudW1lcmF0ZShpbnRlcnZhbHMpCiAgICAgICAgICAgIGlmIHJvd1sic2VnbWVudF9pZCJdICE9IGhlbGRfc2VnbWVudAogICAgICAgIF0KICAgICAgICBoZWxkID0gW3JvdyBmb3Igcm93IGluIGludGVydmFscyBpZiByb3dbInNlZ21lbnRfaWQiXSA9PSBoZWxkX3NlZ21lbnRdCiAgICAgICAgdHJhaW5pbmdfd2F2ZWZvcm1fY291bnQgPSBsZW4oc2VnbWVudF9pZHMpIC0gMQogICAgICAgIGphY29iaWFuID0gbnAuemVyb3MoKGxlbih0cmFpbmluZ19pbmRpY2VzKSwgbGVuKHBhcmFtZXRlcl9uYW1lcykpLCBkdHlwZT1mbG9hdCkKICAgICAgICB0YXJnZXQgPSBucC56ZXJvcyhsZW4odHJhaW5pbmdfaW5kaWNlcyksIGR0eXBlPWZsb2F0KQogICAgICAgIGZvciBtYXRyaXhfcm93LCBpbnRlcnZhbF9pbmRleCBpbiBlbnVtZXJhdGUodHJhaW5pbmdfaW5kaWNlcyk6CiAgICAgICAgICAgIGludGVydmFsID0gaW50ZXJ2YWxzW2ludGVydmFsX2luZGV4XQogICAgICAgICAgICBwcmVkaWN0aW9uID0gZnVsbF9maXRbInByZWRpY3Rpb25zIl1baW50ZXJ2YWxfaW5kZXhdCiAgICAgICAgICAgIHJlc2lkdWFsX3ZhbHVlID0gZnVsbF9maXRbInJlc2lkdWFsX3JhZCJdW2ludGVydmFsX2luZGV4XQogICAgICAgICAgICB6X3ZhbHVlID0gcmVzaWR1YWxfdmFsdWUgLyByb2J1c3Rfc2NhbGVfcmFkCiAgICAgICAgICAgIHJvYnVzdF93ZWlnaHQgPSAxLjAgLyBucC5zcXJ0KDEuMCArIHpfdmFsdWUqKjIpCiAgICAgICAgICAgIHdlaWdodCA9IG1hdGguc3FydCgKICAgICAgICAgICAgICAgIHJvYnVzdF93ZWlnaHQKICAgICAgICAgICAgICAgIC8gKHRyYWluaW5nX3dhdmVmb3JtX2NvdW50ICogaW50ZXJ2YWxbIndhdmVmb3JtX2ludGVydmFsX2NvdW50Il0pCiAgICAgICAgICAgICkKICAgICAgICAgICAgdGFyZ2V0W21hdHJpeF9yb3ddID0gLXdlaWdodCAqIHJlc2lkdWFsX3ZhbHVlIC8gcm9idXN0X3NjYWxlX3JhZAogICAgICAgICAgICBheGlzID0gaW50ZXJ2YWxbImF4aXMiXQogICAgICAgICAgICBmb3IgY29sdW1uLCBuYW1lIGluIGVudW1lcmF0ZShwYXJhbWV0ZXJfbmFtZXMpOgogICAgICAgICAgICAgICAgc2Vuc2l0aXZpdHkgPSAwLjAKICAgICAgICAgICAgICAgIGlmIG5hbWUgPT0gImJfIiArIGF4aXM6CiAgICAgICAgICAgICAgICAgICAgc2Vuc2l0aXZpdHkgPSBwcmVkaWN0aW9uWyJzZW5zaXRpdml0eV9iIl0KICAgICAgICAgICAgICAgIGVsaWYgbmFtZSA9PSAiY19yb2QiOgogICAgICAgICAgICAgICAgICAgIHNlbnNpdGl2aXR5ID0gcHJlZGljdGlvblsic2Vuc2l0aXZpdHlfYyJdCiAgICAgICAgICAgICAgICBlbGlmIG5hbWUgPT0gInRhdV8iICsgYXhpczoKICAgICAgICAgICAgICAgICAgICBzZW5zaXRpdml0eSA9IHByZWRpY3Rpb25bInNlbnNpdGl2aXR5X3RhdSJdCiAgICAgICAgICAgICAgICBqYWNvYmlhblttYXRyaXhfcm93LCBjb2x1bW5dID0gKAogICAgICAgICAgICAgICAgICAgIHdlaWdodCAqIHNlbnNpdGl2aXR5ICogc2NhbGVzW25hbWVdIC8gcm9idXN0X3NjYWxlX3JhZAogICAgICAgICAgICAgICAgKQogICAgICAgIHN0ZXBfcmVzdWx0ID0gbHNxX2xpbmVhcigKICAgICAgICAgICAgamFjb2JpYW4sCiAgICAgICAgICAgIHRhcmdldCwKICAgICAgICAgICAgYm91bmRzPSgtZnVsbF9zY2FsZWQsIG5wLmZ1bGwobGVuKHBhcmFtZXRlcl9uYW1lcyksIG5wLmluZikpLAogICAgICAgICAgICBsc21yX3RvbD0iYXV0byIsCiAgICAgICAgKQogICAgICAgIHVwZGF0ZWRfc2NhbGVkID0gbnAubWF4aW11bSgwLjAsIGZ1bGxfc2NhbGVkICsgc3RlcF9yZXN1bHQueCkKICAgICAgICB1cGRhdGVkX3BoeXNpY2FsID0gX3BoeXNpY2FsX3BhcmFtZXRlcnMoCiAgICAgICAgICAgIHBhcmFtZXRlcl9uYW1lcywgdXBkYXRlZF9zY2FsZWQsIHNjYWxlcwogICAgICAgICkKICAgICAgICBwcmVkaWN0aW9ucywgcmVzaWR1YWwgPSBldmFsdWF0ZV9pbnRlcnZhbHMoaGVsZCwgdXBkYXRlZF9waHlzaWNhbCwgcG9vbCkKICAgICAgICByZXNpZHVhbF9kZWcgPSBucC5yYWQyZGVnKHJlc2lkdWFsKQogICAgICAgIHJvd3MuYXBwZW5kKAogICAgICAgICAgICB7CiAgICAgICAgICAgICAgICAibW9kZWwiOiBtb2RlbF9uYW1lLAogICAgICAgICAgICAgICAgImhlbGRfc2VnbWVudF9pZCI6IGhlbGRfc2VnbWVudCwKICAgICAgICAgICAgICAgICJheGlzIjogaGVsZFswXVsiYXhpcyJdLAogICAgICAgICAgICAgICAgImNvbmZpZ3VyYXRpb24iOiBoZWxkWzBdWyJjb25maWd1cmF0aW9uIl0sCiAgICAgICAgICAgICAgICAiZGlyZWN0aW9uIjogaGVsZFswXVsiZGlyZWN0aW9uIl0sCiAgICAgICAgICAgICAgICAiaGVsZF9pbnRlcnZhbHMiOiBsZW4oaGVsZCksCiAgICAgICAgICAgICAgICAicm1zZV9kZWciOiBmbG9hdChucC5zcXJ0KG5wLm1lYW4ocmVzaWR1YWxfZGVnKioyKSkpLAogICAgICAgICAgICAgICAgIm1lYW5fcmVzaWR1YWxfZGVnIjogZmxvYXQobnAubWVhbihyZXNpZHVhbF9kZWcpKSwKICAgICAgICAgICAgICAgICJtYXhpbXVtX2Fic19yZXNpZHVhbF9kZWciOiBmbG9hdChucC5tYXgobnAuYWJzKHJlc2lkdWFsX2RlZykpKSwKICAgICAgICAgICAgICAgICJyZWZpdF9tZXRob2QiOiAib25lLXN0ZXAgcm9idXN0IEdhdXNzLU5ld3RvbiBpbmZsdWVuY2UgdXBkYXRlIiwKICAgICAgICAgICAgICAgICJzY2FsZWRfc3RlcF9ub3JtIjogZmxvYXQobnAubGluYWxnLm5vcm0oc3RlcF9yZXN1bHQueCkpLAogICAgICAgICAgICAgICAgImZpdF9zdWNjZXNzIjogaW50KHN0ZXBfcmVzdWx0LnN1Y2Nlc3MpLAogICAgICAgICAgICAgICAgImZpdF9pdGVyYXRpb25zIjogMSwKICAgICAgICAgICAgICAgICoqe25hbWU6IHVwZGF0ZWRfcGh5c2ljYWxbbmFtZV0gZm9yIG5hbWUgaW4gRlJFRV9QQVJBTUVURVJfTkFNRVN9LAogICAgICAgICAgICB9CiAgICAgICAgKQogICAgcmV0dXJuIHJvd3MKCgpkZWYgdmFsaWRhdGVfbGluZWFyaXplZF9jcm9zc192YWxpZGF0aW9uKAogICAgaW50ZXJ2YWxzLAogICAgY3Zfcm93cywKICAgIG1vZGVsX25hbWUsCiAgICBwYXJhbWV0ZXJfbmFtZXMsCiAgICBzY2FsZXMsCiAgICByb2J1c3Rfc2NhbGVfZGVnLAogICAgZnVsbF9maXQsCiAgICBwb29sLAopOgogICAgIiIi5b2x6Z+/6YeP5pyA5aSn44GuTE9P44Kx44O844K544KS5a6M5YWo5YaN5ZCM5a6a44GX44CB57ea5b2i5YyW6L+R5Ly844KS5qSc6Ki844GZ44KL44CCIiIiCgogICAgY2FuZGlkYXRlcyA9IHNvcnRlZCgKICAgICAgICBbcm93IGZvciByb3cgaW4gY3Zfcm93cyBpZiByb3dbIm1vZGVsIl0gPT0gbW9kZWxfbmFtZV0sCiAgICAgICAga2V5PWxhbWJkYSByb3c6IHJvd1sic2NhbGVkX3N0ZXBfbm9ybSJdLAogICAgICAgIHJldmVyc2U9VHJ1ZSwKICAgIClbOkNWX0xJTkVBUklaQVRJT05fVkFMSURBVElPTl9GT0xEU10KICAgIHZhbGlkYXRpb25fcm93cyA9IFtdCiAgICBmb3IgbnVtYmVyLCBhcHByb3hpbWF0ZSBpbiBlbnVtZXJhdGUoY2FuZGlkYXRlcywgc3RhcnQ9MSk6CiAgICAgICAgaGVsZF9zZWdtZW50ID0gYXBwcm94aW1hdGVbImhlbGRfc2VnbWVudF9pZCJdCiAgICAgICAgcHJpbnQoCiAgICAgICAgICAgICJDVui/keS8vOaknOiovCAiCiAgICAgICAgICAgICsgbW9kZWxfbmFtZQogICAgICAgICAgICArICIgIgogICAgICAgICAgICArIHN0cihudW1iZXIpCiAgICAgICAgICAgICsgIi8iCiAgICAgICAgICAgICsgc3RyKGxlbihjYW5kaWRhdGVzKSkKICAgICAgICAgICAgKyAiICIKICAgICAgICAgICAgKyBoZWxkX3NlZ21lbnQsCiAgICAgICAgICAgIGZsdXNoPVRydWUsCiAgICAgICAgKQogICAgICAgIHRyYWluaW5nID0gW3JvdyBmb3Igcm93IGluIGludGVydmFscyBpZiByb3dbInNlZ21lbnRfaWQiXSAhPSBoZWxkX3NlZ21lbnRdCiAgICAgICAgaGVsZCA9IFtyb3cgZm9yIHJvdyBpbiBpbnRlcnZhbHMgaWYgcm93WyJzZWdtZW50X2lkIl0gPT0gaGVsZF9zZWdtZW50XQogICAgICAgIGV4YWN0X2ZpdCA9IGZpdF9tb2RlbF9nYXVzc19uZXd0b24oCiAgICAgICAgICAgIHRyYWluaW5nLAogICAgICAgICAgICBwYXJhbWV0ZXJfbmFtZXMsCiAgICAgICAgICAgIHNjYWxlcywKICAgICAgICAgICAgcm9idXN0X3NjYWxlX2RlZywKICAgICAgICAgICAgZnVsbF9maXRbInBhcmFtZXRlcnMiXSwKICAgICAgICAgICAgcG9vbCwKICAgICAgICAgICAgbWF4X2l0ZXJhdGlvbnM9Q1JPU1NfVkFMSURBVElPTl9NQVhfSVRFUkFUSU9OUywKICAgICAgICApCiAgICAgICAgdW51c2VkX3ByZWRpY3Rpb25zLCBleGFjdF9yZXNpZHVhbCA9IGV2YWx1YXRlX2ludGVydmFscygKICAgICAgICAgICAgaGVsZCwgZXhhY3RfZml0WyJwYXJhbWV0ZXJzIl0sIHBvb2wKICAgICAgICApCiAgICAgICAgZXhhY3Rfcm1zZSA9IGZsb2F0KAogICAgICAgICAgICBucC5zcXJ0KG5wLm1lYW4obnAucmFkMmRlZyhleGFjdF9yZXNpZHVhbCkgKiogMikpCiAgICAgICAgKQogICAgICAgIHJtc2VfcmVsYXRpdmVfZGlmZmVyZW5jZSA9IGFicyhleGFjdF9ybXNlIC0gYXBwcm94aW1hdGVbInJtc2VfZGVnIl0pIC8gbWF4KAogICAgICAgICAgICBleGFjdF9ybXNlLCBucC5maW5mbyhmbG9hdCkuZXBzCiAgICAgICAgKQogICAgICAgIHNjYWxlZF9wYXJhbWV0ZXJfZGlmZmVyZW5jZSA9IG1heCgKICAgICAgICAgICAgYWJzKGV4YWN0X2ZpdFsicGFyYW1ldGVycyJdW25hbWVdIC0gYXBwcm94aW1hdGVbbmFtZV0pIC8gc2NhbGVzW25hbWVdCiAgICAgICAgICAgIGZvciBuYW1lIGluIHBhcmFtZXRlcl9uYW1lcwogICAgICAgICkKICAgICAgICBwYXNzZWQgPSAoCiAgICAgICAgICAgIGV4YWN0X2ZpdFsic3VjY2VzcyJdCiAgICAgICAgICAgIGFuZCBybXNlX3JlbGF0aXZlX2RpZmZlcmVuY2UgPD0gQ1ZfUk1TRV9SRUxBVElWRV9UT0xFUkFOQ0UKICAgICAgICApCiAgICAgICAgdmFsaWRhdGlvbl9yb3dzLmFwcGVuZCgKICAgICAgICAgICAgewogICAgICAgICAgICAgICAgIm1vZGVsIjogbW9kZWxfbmFtZSwKICAgICAgICAgICAgICAgICJoZWxkX3NlZ21lbnRfaWQiOiBoZWxkX3NlZ21lbnQsCiAgICAgICAgICAgICAgICAic2VsZWN0aW9uX3JlYXNvbiI6ICJsYXJnZXN0IHNjYWxlZCBpbmZsdWVuY2Utc3RlcCBub3JtIiwKICAgICAgICAgICAgICAgICJhcHByb3hpbWF0ZV9ybXNlX2RlZyI6IGFwcHJveGltYXRlWyJybXNlX2RlZyJdLAogICAgICAgICAgICAgICAgImV4YWN0X3JlZml0X3Jtc2VfZGVnIjogZXhhY3Rfcm1zZSwKICAgICAgICAgICAgICAgICJybXNlX3JlbGF0aXZlX2RpZmZlcmVuY2UiOiBybXNlX3JlbGF0aXZlX2RpZmZlcmVuY2UsCiAgICAgICAgICAgICAgICAibWF4aW11bV9zY2FsZWRfcGFyYW1ldGVyX2RpZmZlcmVuY2UiOiBzY2FsZWRfcGFyYW1ldGVyX2RpZmZlcmVuY2UsCiAgICAgICAgICAgICAgICAiZXhhY3RfZml0X3N1Y2Nlc3MiOiBpbnQoZXhhY3RfZml0WyJzdWNjZXNzIl0pLAogICAgICAgICAgICAgICAgImV4YWN0X2ZpdF9pdGVyYXRpb25zIjogZXhhY3RfZml0WyJpdGVyYXRpb25zIl0sCiAgICAgICAgICAgICAgICAicGFzc2VkIjogaW50KHBhc3NlZCksCiAgICAgICAgICAgIH0KICAgICAgICApCiAgICByZXR1cm4gdmFsaWRhdGlvbl9yb3dzCgoKZGVmIG1ha2VfaW50ZXJ2YWxfcm93cyhpbnRlcnZhbHMsIG1vZGVsX2ZpdHMpOgogICAgcm93cyA9IFtdCiAgICBmb3IgaW5kZXgsIGludGVydmFsIGluIGVudW1lcmF0ZShpbnRlcnZhbHMpOgogICAgICAgIHJvdyA9IGRpY3QoaW50ZXJ2YWwpCiAgICAgICAgZm9yIG1vZGVsX25hbWUsIGZpdCBpbiBtb2RlbF9maXRzLml0ZW1zKCk6CiAgICAgICAgICAgIHByZWZpeCA9IE1PREVMX1BSRUZJWEVTW21vZGVsX25hbWVdCiAgICAgICAgICAgIHByZWRpY3Rpb24gPSBmaXRbInByZWRpY3Rpb25zIl1baW5kZXhdCiAgICAgICAgICAgIHByZWRpY3RlZF9kZWcgPSBmbG9hdChucC5yYWQyZGVnKHByZWRpY3Rpb25bInByZWRpY3RlZF9uZXh0X2FuZ2xlX3JhZCJdKSkKICAgICAgICAgICAgcm93W3ByZWZpeCArICJfcHJlZGljdGVkX25leHRfYW5nbGVfZGVnIl0gPSBwcmVkaWN0ZWRfZGVnCiAgICAgICAgICAgIHJvd1twcmVmaXggKyAiX3Jlc2lkdWFsX2RlZyJdID0gKAogICAgICAgICAgICAgICAgcHJlZGljdGVkX2RlZyAtIGludGVydmFsWyJtZWFzdXJlZF9uZXh0X2FuZ2xlX2RlZyJdCiAgICAgICAgICAgICkKICAgICAgICAgICAgcm93W3ByZWZpeCArICJfYW1wbGl0dWRlX3Jlc2lkdWFsX2RlZyJdID0gKAogICAgICAgICAgICAgICAgYWJzKHByZWRpY3RlZF9kZWcpIC0gYWJzKGludGVydmFsWyJtZWFzdXJlZF9uZXh0X2FuZ2xlX2RlZyJdKQogICAgICAgICAgICApCiAgICAgICAgICAgIHJvd1twcmVmaXggKyAiX3ByZWRpY3RlZF9oYWxmX3BlcmlvZF9zIl0gPSBwcmVkaWN0aW9uWwogICAgICAgICAgICAgICAgInByZWRpY3RlZF9oYWxmX3BlcmlvZF9zIgogICAgICAgICAgICBdCiAgICAgICAgICAgIHJvd1twcmVmaXggKyAiX2hhbGZfcGVyaW9kX3Jlc2lkdWFsX3MiXSA9ICgKICAgICAgICAgICAgICAgIHByZWRpY3Rpb25bInByZWRpY3RlZF9oYWxmX3BlcmlvZF9zIl0KICAgICAgICAgICAgICAgIC0gaW50ZXJ2YWxbIm1lYXN1cmVkX2hhbGZfcGVyaW9kX3MiXQogICAgICAgICAgICApCiAgICAgICAgcm93WyJhbXBsaXR1ZGVfYmluX2xvd2VyX2RlZyJdID0gKAogICAgICAgICAgICBtYXRoLmZsb29yKGludGVydmFsWyJzdGFydF9hbXBsaXR1ZGVfZGVnIl0gLyBSRVNJRFVBTF9BTVBMSVRVREVfQklOX0RFRykKICAgICAgICAgICAgKiBSRVNJRFVBTF9BTVBMSVRVREVfQklOX0RFRwogICAgICAgICkKICAgICAgICByb3dzLmFwcGVuZChyb3cpCiAgICByZXR1cm4gcm93cwoKCmRlZiBzdW1tYXJpemVfcmVzaWR1YWxzKGludGVydmFsX3Jvd3MsIGFkb3B0ZWRfbW9kZWwpOgogICAgdGFibGUgPSBwZC5EYXRhRnJhbWUoaW50ZXJ2YWxfcm93cykKICAgIHJlc2lkdWFsX2NvbHVtbiA9IGFkb3B0ZWRfbW9kZWwgKyAiX3Jlc2lkdWFsX2RlZyIKICAgIGFtcGxpdHVkZV9yZXNpZHVhbF9jb2x1bW4gPSBhZG9wdGVkX21vZGVsICsgIl9hbXBsaXR1ZGVfcmVzaWR1YWxfZGVnIgogICAgcm93cyA9IFtdCiAgICBncm91cGluZ3MgPSB7CiAgICAgICAgImF4aXNfY29uZmlndXJhdGlvbiI6IFsiYXhpcyIsICJjb25maWd1cmF0aW9uIl0sCiAgICAgICAgImF4aXNfdHJhbnNpdGlvbiI6IFsiYXhpcyIsICJ0cmFuc2l0aW9uIl0sCiAgICAgICAgImF4aXNfYW1wbGl0dWRlX2JpbiI6IFsiYXhpcyIsICJhbXBsaXR1ZGVfYmluX2xvd2VyX2RlZyJdLAogICAgfQogICAgZm9yIGdyb3VwaW5nLCBjb2x1bW5zIGluIGdyb3VwaW5ncy5pdGVtcygpOgogICAgICAgIGZvciBrZXlzLCBncm91cCBpbiB0YWJsZS5ncm91cGJ5KGNvbHVtbnMsIHNvcnQ9VHJ1ZSk6CiAgICAgICAgICAgIGlmIG5vdCBpc2luc3RhbmNlKGtleXMsIHR1cGxlKToKICAgICAgICAgICAgICAgIGtleXMgPSAoa2V5cywpCiAgICAgICAgICAgIHJlc2lk×M4¶‰ËkºwµçSĞ]ÖÍ^––™™QŞ[UœÒĞÒ•Ñ™›ĞV–R›UÜÙÕÌ”›ŒLRÔ[ÙÒPĞYÖVÌ\İÓĞ]ÖÍ^––™™UŞ[UœÒĞÒØÛUšØUÓŒ•ÔYØ›UĞÖ•Ñœ’QÖ•ÙZZÒÒPĞYÒQÑ–˜“PİÙÓQŒX‘Õ›–•ÍZÒĞÚÒÒPĞYÒQÑ–˜“PİÙÓUŒVVØ‘ÛV”ÙİÓ\ÒQÓ˜‘Î^TÒšX‘Ñš˜^R\ÒQŞ›UŒØUÔŒQÔ[ÙÒPĞYÖVÌ\İÓĞ^Í^––™™QŞ[UœÒĞÒ™ÑYĞš–œØVŒV‘ÕYÕÌ”›ŒLRÔ[ÙÒPĞYÖVÌ\İÓĞ^Í^––™™UŞ[UœÒĞÒV–›UÜÙÖUÌ]Ø‘ÛÔ›R›Ì›ÙÑœÒQÖ•ÙZZÒÒPĞYÒQÑ–˜“PİÙÓUŒX‘Õ›–•ÍZÒĞÚÒÒPĞYÒQÒ™QZÖVšQÕİÛÙÒPĞYÒPĞYÒQÓŒ•Ì“Œ•ŞRŒ”›Ò™QRQÌ]–‘ÕœÖœÚXÛL^–•ZÖ•ØÚVÍLŒN]YÌ]ÙTÚÙÖ•[X‘ÎZÚÒÒPĞYÒPĞYÒPĞ›XŒÒYØ•ÎZÖ•İÙØUÍÕNQT•^•Q’‘”šÛT•“RÒPĞYÒQŒÒPĞYÒQÑ–˜“TİÙÓQŒV[NMÑŞ™ÙÒÒPĞYÒPĞYÒPĞšXŒÚ–‘ÑŒTİÒÒPĞYÒPĞYÒPĞŒUÓœ–[UœØŞŒX’[R™ÙÙÖZP›XÛU›Z]ÙÒ[R™”ÕMSPÒ\ÒPÒšXŒÔ›ÒQÒNSPÒ™[ÙÒPĞYÒÔ[ÙÒPĞYÖVÌ\ŞĞ]ÖÍ^––™™UŞ[UœÒĞÒœÖ•ÑŒ–”Ì]˜›U]‘Œ–•Ö˜ÛLŒÕŒQ’“•LYÕÌ”›ŒLRÔ[ÙÒPĞYÖVÌ\ŞĞ]ÖÍ[˜Û[ÒÑ”YÕ\ÒQÑVNR[šÚSĞš’›ÖUÓ“\ÚPYÒPĞVUÌ[ŞPNRQœÚYšUÍ\›XÚSĞZUNTS•Ò[ÒPĞYÒR™QœÙÕYÔĞXĞÍZÛQVŒ•[Ø‘ÕRÑÍZ•Õ’ÔÚÒÒPĞYÒR’›ÒQÓPÍS”[ÙÒPĞYÖ›N^RQÎ[V›“›İÙØ•ÎZÖ•İÙØUÍÙ[[ÒÑœİTÍÓĞ]Ó\ÒQ]SQŒÒQLT‘U“VP”Ô•V’•ÑU•ÕÒÒPĞYÒPĞYÒPĞŒ–UŞV–YÔĞ˜ÚPYÒPĞYÒPĞYÒPĞYÒQÓ˜–šÛ[˜ŒX‘ÎZ•ÌŒ]–‘ÕœÓĞZY‘Œ–•Ö˜ÛLY––ŒVUŞ˜ÛL^–•ZÖ•ØÚVİÒÒPĞYÒPĞYÒPĞYÒPĞYÖL]ÑÑXV˜šM\ØŒ“˜˜•ÎZÖ•İÜÒPÒš™LÖV››N^X•[Öš‘^X–›”›R™[ÙÒPĞYÒPĞYÒQŒÒPĞYÒPĞYÒPĞšQÕ•Ş‘\ÒQ™RšÚYÒÒPĞYÒPĞYÒPĞYÒPĞYÙQL–UŞV”Ğ\’QÎ[V›“›Ğ\RR’›Ó[ÙÒPĞYÒPĞYÒPĞYÒPĞŒ–UŞV–\ĞÚPYÒPĞYÒPĞYÒPĞYÒR’›Ó[ÙÒPĞYÒPĞYÒPĞYÒPĞœÖUÒ›‘]Œ”›İÒÒPĞYÒPĞYÒPĞ\ÚPYÒPĞšQÕ•Ş‘\ÒQ™“›MÛ˜LÓ[ÙQL–UŞV”İÙØ›Q–\ÚPYÒPĞšQÕ•Ş‘\ÒQ™“›MX‘ÑšV•İÛÒ[™U›XŒÒÕÑœÒQ’“•LYÕÌ”›ŒLRÔ[ÙÒPĞYÖVÌ\ŞĞ^Í\Ö•Ù›T[Ö›N]Yœ[UNSĞÚÒÒPĞYÒQÑ–˜“TİÙÓUŒVŒÒœÚXÛ•›ĞšQÛ”ÒRZ]ÙÖUŞØQÑNSPÍ’Ô[ÙÒPĞYÖ›[™›“ŒXÒœŞĞÒ•Ñ›–”ĞLR›ÖV›ĞXŒ”YÖ‘ÑÑÛVPœ‘ÕYÛXUÓšÛ˜š›ÙÒZP\’QÑšØŒĞŒ•Ô™˜•ÎZÖ•İÜÚPYÒPĞ›XUÙXÛU]YÛ˜R™˜‘ÑXŒÕŒĞÚÒÒPĞYÒRšU™–›[™›ÑÖœŒÕV”İÙØŒÕŒÒŒĞšÙÜÙÛÒÖ‘Õ›RRœØŒÔ™™‘Œ–•Ö˜ÛLY˜ŒÖ›Û^V[ĞÚPYÒPĞŒÖV››N^X•^V•Ó˜ÛT“[ÙÒPĞYØUÍL–Œ–UŞ“[ÙÒPĞYÖUÔ˜Ò›‘[XV\ĞÚPYÒPĞ™Ù™˜ÑÑŒPİÒÒÕÒÒPĞYÒPÒZR]UÑœQL\“ÚMXŒšMÍV^M–˜UVZ[ÕÚÑÒM\^MMÙXMÛÍXM™\“ÚMXŒšMÔÍ–YSİÛM’ÑÛÍM”ÍÖÓĞÒZRZPÙÛÙÒPĞYØÛUš˜ŒÒšØŞPNRR˜Û”›ÙÒÒPĞYÒPĞYÒPĞŒÖV››N^X•^V•Ó˜ÛT“[ÙÒPĞYÒPĞYÒQİU\ÖUÌZV‘ÑYØV›•ÙÒĞ[ÙÒPĞYÒPĞYÒPĞYÒPĞœÕŞRšQÛ’[ĞÚPYÒPĞYÒPĞYÒPĞYÒQÛ•ÌX’[S˜›VœŒÕVVœŒVİÒÒPĞYÒPĞYÒPĞYÒPĞYØV›•œÚV‘ÛV•ÓŒUÎ]R[ĞÚPYÒPĞYÒPĞYÒPĞYÒQÛ•ÌX’[’›ÑÕŒVœŒVİÒÒPĞYÒPĞYÒPĞ\[ÙÒPĞYÒÔ[ÙÒPĞYØUÍL–Œ–UŞ˜UÍZØUÓ›ŞPNRRPÚPYÒPĞ›XŒÒYØUÍZÖ–ÜÒQÛYÕYQœÒQÛRQÕYÌ[ÛQŒ”Ú›”›Û–š’\ÙÛÙÒPĞYÒPĞYÒQÛYÕYQœÖ›V‘Û––]XÌ•Œ‘Õ›VVœÙÚ›”›Û–š‘œÚXÌ•›˜•ÕY\Ò™Ğ˜–ÚİVVÖ•ÍZÒÑÛV‘ÕÔ[ÙÒPĞYÖL\ÙÌ]V“™ÍLQÕŒ•Ô•V”ZÌY•V‘•[’”•™”LSU•LSÕ]ÛÙÒPĞYØÛNLÖ“™ÍLQØUÍLÑÌZÙİVL•œÚÖ•ÍØÛUš˜ŒÒšØŞZÙÓPš˜ŒX•ÍY–LLX›”\Ô[ÙÒPĞYÖ›[™›ĞšQÕ’QØÑŞ“ŒV[œØŒÔ’Ğ[ÙÒPĞYÒPĞYÒR™NZ˜ŒÕYİÒÒPĞYÒPĞYÒPĞš˜ŒX•ÍY–LLX›”\ĞÚPYÒPĞYÒPĞYÖ›[˜Ì›–•ÓšMÒPÛÙÖL\ÙÌ]V“™ÍLĞ^“YÒÚPXŒÙ–LLX›”\[ÙÒPĞYÒPĞYÒRÕ›[UNT›QœØÌ•\ĞÚPYÒPĞ\ÚPYÒPĞ›XŒÒYØÑŞ™]YÌZV–\ÒR›L^VĞœšP››•–šÕ[ØÛUš˜ŒÒšØŞZÍÚPYÒPĞYÒPĞYÖVŞPNRQÑ–]V›^Ø‘ÎLLX•Ò›ÛÒPĞYÒPĞYÒPĞœ›TœL•’QØUÍL–Œ–UŞ˜UÍZØUÓ›Ì]V•Ó˜ÛT˜’[“›ŒŒ[›”™˜UÔZVŒÒPĞYÒPĞYÒPĞ–•Ù•ÍL›YÕYQœØŞPNRQ›”›Û–š’˜˜UÍZÖ–QÖ˜ÚPœ›T›PĞœšPœ›TœL•–[ÙÒPĞYÒPĞYÒRœ•Õ™˜ŒÒœŒ›RQØÌ•›˜•ÕY\›”›Û–š’˜“QŒX’[“ŒVŒÔœ•Õ™˜ŞR™ÚPYÒPĞYÒPĞYÖ›[VUŞ™Û”ĞNRR›ŒŒ[›”™˜UÍL–Œ–UŞ•ŞLœÚV•ÍZÖÔœ•Õ™˜ŞR™ÚPYÒPĞYÒPĞYØ•ÕšÌÕV•Ô™˜•Ñ˜^PNRPÚV•Ó˜ÛT˜’[”œ•Õ™˜ŞR™QRRœ•Õ™˜ŒÒœŒ›RÔĞ[RPÙÒÒPĞYÒPĞYÒPĞYÒPĞYØÛUš˜ŒÒšÕŞRŒUÌ[ÓZVĞNĞ›XUÍZ‘LUÌ[ÚPYÒPĞYÒPĞYÒÔ[ÙÒPĞYÒPĞYÒQÑV]XÑŞ™ÙÒÒPĞYÒPĞYÒPĞYÒPĞYØÛUš˜ŒÒšÕŞRŒUÌ[ÓZV•Ñ™›‘]Vœ–Ğ]Rœ•Õ™˜ŒÒœŒ›S[ÙÒPĞYÒPĞYÒPĞYÒPĞV•Ó˜ÛT˜’[S››”›ÛUšÖ‘VŒ”›R™ÌŒ[VŒXÛUšÖŒZÌ[ÙÒPĞYÒPĞYÒPĞYÒPĞš˜Œ˜ÚŒSPÍS”Ò\ĞÚPYÒPĞYÒPĞYÒPĞYÒQŞ›UŒØUÔŒQÓ–LS[ÙÒPĞYÒPĞYÒPĞYÒPĞœÖUÒ›‘X•ÕšÌÕV•ÔYÙ‘Œ–•Ö˜ÛLRQÛRRœØŒÔ™˜›•[URQRQYÖ•Ş–”Ğ“ØŒ[[ÙÒPĞYÒPĞYÒPĞYÒPĞ˜ŒÒšÖ–NSTİÒÒPĞYÒPĞYÒPĞ\ÚPYÒPĞYÒPĞYØÒ›‘Û™ÕšÖÔœ•Õ’QÕÌLÒPĞYÒPĞYÒPĞØÛUšØUÓŒ•Ô™–UÍ[˜‘Õ’QÕÌLÒPĞYÒPĞYÒPĞ•Ñ™›‘]Ö•Ñœ–Ôœ•Õ’QÕÌÓ›ŒŒ[›”™˜UÍL–Œ–UŞ•Ş™ŞR™ÑYLUÌ[ÓZVĞ]Rœ•Õ™˜ŒÒœŒ›V[ÙÒPĞYÒPĞYÒQÌ[VŒXÛUšÖĞ›Uİ–UÍ[˜‘Õ’QÕÌÓ›ŒŒ[›”™˜UÍL–Œ–UŞ•Ş™ŞR™ÑYZ›YÖ•ZÖ•ØÚVŒÒPĞYÒPĞYÒPĞ›XŒÒYØUÍL–Œ–UŞ˜UÍZÖ–ÙØUÍØUÍZØUÓ›Ş›ÒÒPĞYÒPĞYÒPĞYÒPĞYØUÍL–Œ–UİÙÔĞœ›”›Û–š’˜˜UÍL–Œ–UŞ˜UÍZÖ–ÚPYÒPĞYÒPĞYÒPĞYÒR›‘ÑŒV›Ôœ•Õ\ÒQÑVŒÒšĞNRR˜’››YÕYQœÖÔVUÜLÔ˜ÛšÛĞÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞœ›”›Û–šİÙÖUÔ˜Ò›‘[XV˜’[šÛQ–›Û“ZV[ÙÒPĞYÒPĞYÒPĞYÒPĞ\ÚPYÒPĞYÒPĞYÒPĞYÒQÑV]XÑŞ™ÙÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÛYÕYQœÕŞR™ÑYLUÌ[ÓZVĞ]Rœ•Õ™˜ŒÒœŒ›RPÜÙØÛUœÖVœU™™Û”İÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÍ]Ó’š‘šÖ•ØÛÖUÍ[˜‘Õ™˜ÛQšÒÔİÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÓ˜‘Î^TÒZ–‘ÌVš^RZ]ÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQŞ›UŒØUÔŒQLS[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÖUŞØQÑNSPÍSZ]ÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQŞ[UœÔÒœ›”›Û–šĞ›XVZRQÛRRœØŒÔ™˜›•[URQRQYÖUÍZÒQÛYÕYQœÖ›V‘ÕQRQÛV‘Û––˜“QŒÖ•Ş–”Ğ“ØŒ[[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÙ[N^V‘ÕT\ĞÚPYÒPĞYÒPĞYÒPĞYÒPÚÒÒPĞYÒPĞYÒPĞYÒPĞYØÒ›‘Û™Û˜šPNRQÑšØŒĞŒ•Ô™–›[ŞRØÛUšØUÓŒUÎ]XŞR™Ì›YÕYQœÖ›V‘Õ[ÙÒPĞYÒPĞYÒPĞYÒPĞØÛUšØUÓŒ•Ô™™Û–]VVÖ•ÍZÒĞ[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØUÍL–Œ–UŞ’[“ŒVŒÔœ•Õ™˜ŞR™ÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞ]Rœ•Õ™˜ŒÒœŒ›PÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞ\’RV•ÔœLÔœŒX’[V•ÔœLÔ›‘[ÖUŞVĞ›Û[–‘^’[ÒPĞYÒPĞYÒPĞYÒPĞYÒÔ[ÙÒPĞYÒPĞYÒPĞYÒPĞØÛUšØUÓŒ•Ô™–UÍ[˜‘Õ“QØÑÕVÙÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒQÍ]Ó’š‘šÖ•ØÛØÒ›‘Û™Û˜›ÚXÒ›‘Û™ÕšÖ[R™–UÍ[˜‘Õ™˜ÛQšÒ[ÚPYÒPĞYÒPĞYÒPĞYÒPÚÒÒPĞYÒPĞYÒPĞYÒPĞYØ•ÕšÌÕV•Ô™˜ÑÕšLNLUÌ[ŞMZÒ››T[ØUÍL–Œ–UŞ’[UV‘LUÌ[ÓZVĞ]Rœ•Õ™˜ŒÒœŒ›RÔ[ÙÒPĞYÒPĞYÒPĞYÒPĞ•Ñ™›‘]Ö•Ñœ–‘VŒŞMZÒ››T[ØUÍL–Œ–UŞ’[L[VŒXÛUšÖ[R™–UÍ[˜‘Õ™–‘Õ›’[ÚPYÒPĞYÒPĞYÖVŞM^–L‘ŒÕRĞ[ÙÒPĞYÒPĞYÒPĞYÒPĞ•Ñ™›‘]Ö•Ñœ–Ôœ•Õ“[ÙÒPĞYÒPĞYÒPĞYÒPĞ•Ñ™›‘]Ö•Ñœ–‘VŒŞ]ÒÒPĞYÒPĞYÒPĞYÒPĞYØŞŒS[ÙÒPĞYÒPĞYÒPĞYÒPĞš˜Œ˜ÚŒR^‘šSUÒ^ZR\ĞÚPYÒPĞYÒPĞYÒPĞYÒQŞ[UœÔÒ•Ñ™›ĞÖ•Ñœ˜ŞRYØUÖYØÑŞ™]YÌZV–YÔÓPĞ›’›QM]˜›U\ĞÚPYÒPĞYÒPĞYÒPĞYÒR˜ÛT›ÚŒ“[ÙÒPĞYÒPĞYÒPÚÒÒPĞYÒPĞYÒPĞšQÛ““š–VŒ–[ĞÚPYÒPĞYÒPĞYÒPĞYÒRV•ÔœLÔ›‘LUÌ[Ş]ÒÒPĞYÒPĞYÒPĞYÒPĞYØÒ›‘Û™ÕšÖ‘VŒŞ]ÒÒPĞYÒPĞYÒPĞYÒPĞYØŞŒZ]ÒÒPĞYÒPĞYÒPĞYÒPĞYØ•ÑXL•TÒZ]ÒÒPĞYÒPĞYÒPĞYÒPĞYØ‘ÛV–’›ØŞŒÓ™ÜĞÚPYÒPĞYÒPĞYÒPĞYÒQÓ˜‘Î^TÒZ–‘ÌVš^RZ]ÒÒPĞYÒPĞYÒPĞYÒPĞYØ‘ÑšV•İÎR[V•ÔœLÔ›ĞÖ•Ñœ˜ŞRYØUÖYØÑŞ™]YÌZV–YÔÓPĞ›’›QM]˜›U\ĞÚPYÒPĞYÒPĞYÒPĞYÒR˜ÛT›ÚŒ[ÙÒPĞYÒPĞYÒPÚÒÒPĞYÒPĞYÒPĞV–œ’š‘ZÖ•ØÙÔĞXĞÍ^VUÔ^V‘Õ›’ÑÑšØŒĞŒ•Ô™–›[ŞRV–œ’š‘^VUÔZV›TœL•–ÚÒÒPĞYÒPĞYÒPĞX–›”›PNRQÖœØŒ‘ŒÑÍ]Ó“Û”[Ø›]X•ÕššZV–œ’š‘ZÖ•ØÜRÚ’\ÔÚÒÒPĞYÒPĞYÒPĞšQÛ““›LVœÖ”ÚV•Ó˜ÛT˜’[“›ŒŒ[›”™˜UÔZVĞ\’QÖZRPĞ”Õ“‘”X–›”››İSL–RQÔ›R\ÒQÖ˜›”˜VÜÚPYÒPĞYÒPĞYÖVŞM^––™™QŞ”ÙİÓ\ÒQÖœ›QœÖÔœ•ÕYÓĞŒUÌ[^XUÙšZÒÒPĞYÒPĞYÒPĞšQÛ“YXUÔ[Õ’ŒV”İÙÖUŞØQÑNSPÍRÔ[ÙÒPĞYÒPĞYÒQÑV]YÛ˜LN]ÖVš–[Ø‘ÑšV•Ş˜VÜÚPYÒPĞ›XŒÒYÙÍLXÌ•šÖ‘VYØUÍÖVŞM[X‘ÑŒÌšZV•Ó˜ÛT’ÔĞM–ÒÒPĞYÒPĞYÒPĞŒX›•–•Ô™–VŞMZQÛ’ĞÒ–›VZRÔ[ÙÒPĞYÖ›[™›“ŒXÒÖUÒ›ÙÚYÛ”Ğ›XÛN]QÖœÛ“ŒQÖœ›ĞÖ•Ñœ’Q–Ò\ÚPYÒPĞ›XUÙXÛU]XÌÕÙUŞ[UœÒĞÒš–•ÍL–›Ğš›YÖ”Ğ˜–‘Õ›–Ò\ÚPYÒPĞ›ÖUÍZØ‘Õ“ĞœÖUÒ›’YÔĞšQÕ“VœÖV˜“QŒVŒ•ŒŒ•V‘[ÖUÍZØ‘Õ–[UœØŞYÜÚPYÒPĞ›XUÙXÛU]X‘Õ›–•ÍZÒĞ[ÙÒPĞYÒPĞYÒQÚ›TœÖ–\ĞÚPYÒPĞYÒPĞYØ‘ÑšV•Ş“[ÙÒPĞYÒPĞYÒQŞ–^ŒYÖ–YÖL•YÕRZ]ÒÒPĞYÒPĞYÒPĞšV[NMÔ–‘VLš˜ÚŒÓPÍSĞ]ÓšÍÔÚÜĞÚPYÒPĞYÒPĞYØ›S˜‘[ÙÒPĞYÒPĞYÒQÖVUÌ[ŒT›QœØÌ•\ĞÚPYÒPĞ\ÚPYÒPĞ›XUÙXÛU]XÌÕÙÛ‘Õ[ĞÚPYÒPĞYÒPĞYÒ[ŒUÙQYØ•ÕšÌÕV•ÔYÙ‘Œ–•Ö˜ÛL^’QÑVĞœ›”›Û–šÌ^V–›Ğ›XV’PÙŞ“ĞXLZVUŞÒR›L^V’\Z]ÒÒPĞYÒPĞYÒPĞT]SÕÍS[ÙÒPĞYÒÔ[ÙÒPĞYÖ›[™›”œŒšUÎLYÚV•ÓŒÙİÓ^SĞ]Ó^SĞ^\ÒQ]SÕŞRÔÚÒÒPĞYÒRšU™–›[™›ÑÖœŒÕV”İÙØŒÕŒÒŒĞšÙÜÙÛÒÖ‘Õ›RRœØŒÔ™˜ÛUŒ˜V›‘^V–ŒX’’Ğ[ÙÒPĞYÙÚŒÒ›Û–UŞ™‘Œ–•Ö˜ÛL^“[ÙÒPĞYÙ[UXŒNZ–ÙU›XŒÒŞ]ÒÒPĞYÒQÓ˜–šÛ[˜ŒY˜ÛNLØŞ]ÒÒPĞYÒQÓ˜›”œ›•™™˜ÛNLØŞ]ÒÒPĞYÒR›UÍ]˜‘Ô–Ò™Ó\ĞÚPYÒPĞ™Ù™˜ÑÑŒPİÒÒÕÒÒPĞYÒPÒZR[”šUÒZUÍÊÓĞYÙSÑ“ÓĞÜÓÑSÑJÓĞİ]XUœÓÓĞYÙTÍš“ÓĞœÓĞœUØ]Uİ[[T™Í“™Íš™Íš™ØMÛÜ\UÚ™ÜÛØZ›œš™Ö›š™Ûİš™ÒRZRZRRĞÚPYÒPĞŒQÕ˜ÛUŒUÓšĞNRRšÓÔšÑ‘ØÛQ”ÚQÕ˜ÛUŒUÓš‘LÖV››N^X–\ÚPYÒPĞ–––“YÔĞÖÍQVVš›’š•Õ[Ù[UXŒNZ–ÙU›XŒÒŞZÒÒPĞYÒQÓ˜–šÛ[˜ŒÔĞÖÍQVVš›’š•Õ[ÖL]ÑÑXV˜›^XŒÙ’ÔÍ^––™˜UÍZÖ–ÛÒ[L]–‘ÕœÒZZÒÒPĞYÒQÓ˜›”œ›•™YÔĞÖÍQVVš›’š•Õ[ÖL]YÛYÎLXÌN^XŒÙ’Ô[ÙÒPĞYØÛUX›N\Ö’YÔĞÖÍQVVš›’š•Õ[ØÛUX›N\Ö’™˜ÛNLØŞZÒÒPĞYÒQÖœŒÕV”İÙÖVŞPNRRœÙÍ^™ÒØ‘ÎLŞYŞSĞ^SĞ›XUÙ˜VÙŞ^]ÙÓÔÚÜÚPYÒPĞ›XŒÒYØ•ÎZÖ•Ş˜‘ÑšV•İÜÒRš[^ĞVœ––YØUÍÕİÛÙÒPĞYÒPĞYÒPÙÚYÚŒÒ›Û–UİÙÖ^R\ÒR›Ö•Î^V–œL‘œÓĞZXR\[ÙÒPĞYÒPĞYÒPÙÚV^ŒÒZ]ÙÙ[UXŒNZ“ĞZYPÒ\[ÙÒPĞYÖÒÒPĞYÒPĞYÒPĞšQÕ•Ş\ÒQ™“š–VŒ–[ĞÚPYÒPĞYÒPĞYÒPĞYÒQÍ]ÓQVUÍ[–”ÚÖ•ÍÙÑšX‘Õ\ÔİÙÙÑšX‘Õ˜’[Vœ›‘LVZVİÙØŞŒSPİÒÒPĞYÒPĞYÒPĞYÒPĞYØ•ÑXL•TÌZÛ]Ú]ÙØ‘ÑšV•İÎX•ÎZÖ•Ş˜‘ÑšV•İÜĞÚPYÒPĞYÒPĞYÒÔ[ÙÒPĞYÖVÌ\İÓĞ]ÖÍ^––™™UŞ[UœÒĞÒœ›Tœ[ÙÑœÒRšĞ˜•PÒ\ÚPYÒPĞšQÕ•Ş\ÒQ™“›M‘ÑšV•İÛÒ[™U›XŒÒQÛV‘ÕZZÒÒPĞYÒQÑ–˜“PİÙÓQŒX‘Õ›–•ÍZÒĞÚÒÒPĞYÒQÑ–˜“PİÙÓQŒVŒÒœÚXÛ•›Ğš’›ÖUÓ’LRÔ[ÒÒPĞYÒQÑ–˜“PİÙÓUŒXÌ“š›ÚYÒÒPĞYÒPĞYÒPĞV–XŒØÌ\ÚXÌÔšÛ”™–UÌ]Ø‘ÛÔ›”›R™ĞV–XŒØÌ\ÚYÖ–™™ÛÖÒ›UÍ]˜‘Ô’[ĞÚPYÒPĞYÒPĞYØŞŒĞš’›ÖUÓ’LSĞœÖUÒ›‘YÖ–YÙÛÒZ]ÒÒPĞYÒPÚÒÒPĞYÒQÑ–˜“PİÙÓUŒXÌ“š›ÚYÒÒPĞYÒPĞYÒPĞV–XŒØÌ\ÚXÌÔšÛ”™–UÌ]Ø‘ÛÔ›”›R™ĞV–XŒØÌ\ÚV’šŒNLÖ•Û˜R›‘^V–XŒØŞR™[ÙÒPĞYÒPĞYÒRNSĞİÙÖUŞØQÑNSPÍS”İÙØ‘ÑšV•İÎR[TVUØİ•œŒš•ÔZS[ÙÒPĞYÒÔ[ÙÒPĞYÖVÌ\İÓĞ^Í^––™™UŞ[UœÒĞÒ”Ö”ĞšĞV–RÖ•ÕšÒZZÒÒPĞYÒQÑ–˜“PİÙÓUŒXÌ•ŒÚÖUÒ›ÙÚXÌÔšÛ”YÖUÌ]Ø‘ÛÔ›QÖ•ÙZZÒÒPĞYÒQÑ–˜“PİÙÓUŒX‘Õ›–•ÍZÒĞÚÒÒPĞYÒQÑ–˜“PİÙÓUŒVŒÒœÚXÛ•›Ğš’›ÖUÓ’LRÔ[ÒÒPĞYÒRšZÖVšQÕÌLÒPĞYÒRš\ÖUÒ›’YÔĞ˜–[ÙÒPĞYÖ›N^RQÌ]–‘ÕœÖ[UœÓĞŒUÒœÖ”ĞœšP˜’ĞÒŒQÕ˜ÛUŒUÓšĞš’Z]ÙÙÚŒÒ›Û–UİÜĞ[Ò[SNSPÒ\ÒRÛNY–^[ÙÛÙÒPĞYÒPĞYÒQÖ˜ÚPšQÛ–Z•ÕYØUÍÕŞR’•R\ÒPÒ”•”ZVÒÒPĞYÒPĞYÒPĞYÒPĞYÙÑŒV”šÑ]VVÖ•ÍZÒÒš[^^–L]UÒœÖ•œÚVVŞR™QRQÑV™˜›Q”İÙÒ[Vœ›‘LVZVÚÒÒPĞYÒPĞYÒPĞYÒPĞYÙÑŒV[UœØŞMZÒ››T[Ø•ÎZÖ•Ş˜‘ÑšV•İÙÒŞPZVÍRPÜÙÖVÌN]VUÌ[Ô[ÙÒPĞYÖVÌ\ŞĞ]ÖÍZXŒÚØ‘ÎLÒšZÖVšĞŒUÓœ–[UœØŞŒLV™˜‘ÑšV•Ş’Ô[ÙÒPĞYÖVÌ\ŞĞ]ÖÍ^––™™UŞ[UœÒĞÒœ›Tœ[ÙÑœÒRšĞ˜•PÒ\ÚPYÒPĞšQÕ•Ş‘\ÒQ™YXUÔ[Õ’ŒV”İÙÖVŞŒYTÒ\ÒQÑœØÑÚ]SZ•\ÙÛÙÒPĞYØ•ÎZÖ•Ş˜ŒÒšÖ–YÔĞ˜’[”›Ö•Î^V–œL‘œÖ“ZSĞZY[UXŒNZ’[ÒPĞYÒQÛYÕYQœÖÒÌ•YÔĞ˜ÚPYÒPĞYÒPĞYÖL]ÑÑXV˜šM\ØŒ“˜˜•ÎZÖ•İÜÒPÒŒÖV››N^X•[Öš‘^X–›”›R™QÖ˜ÚPŒ”›ĞœšPŒ”›‘]˜ÛT›ÙÛÙÒPĞYÖ[ÙÒPĞYÖL]YÛYÎLXÌN^X–›QÕİÛÙÒPĞYÒPĞYÒQÖœØŒ‘ŒĞ[ÙÒPĞYÒPĞYÒPĞYÒPĞXĞÍ^˜ÖŒĞ[ÙÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYØ›]X•ÕššYÒÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞš˜ŒLUÍLXŒÕ“^–L]˜ŒLUÍLXŒÕ•ŞRŒ”›Ò™QRQÌ]–‘ÕœÓĞZXÛL^–•ZÖ•ØÚVĞ\RÚP^PÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞ\ÚPYÒPĞYÒPĞYÒPĞYÒPÚÒÒPĞYÒPĞYÒPĞ\ÚPYÒPĞYÒPĞYÖ›N^RQÌ]–‘ÕœÒQÛRQÌ]–‘ÕœÖ^V‘ÕPÚPYÒPĞ™ÚPYÒPĞÖš’›QØ›]VVš›YÑ\ÚPYÒPĞšQÕ•Ş‘\ÒQ™RšÚZÖš’›PÌÓPÍĞİÙØUÍL–Œ–UŞ˜ÛL^–”İÙÓPÍ“š]ÙØ‘ÑšV•İÎR[N]V”Ì[ÖUŞSÓVLZZÒÒPĞYÒQÑ–˜“TİÙÓUŒV[QRÒ™QœÙÕYÒŞP]Ó‘MĞš˜ŒLUÍLXŒÕ–ÒÌ•\ÒQ]S^–\ÒQŞ[UœÔÒš˜ŒLUÍLXŒÕ’ZZÒÒPĞYÒQÑ–˜“TİÙÓUŒXÌ•ŒÚUÓœ˜ŞZÖš’›Ğ˜’[”›Ö•Î^V–œL‘œÒQÓZSĞZV^ŒÒ[ÚPYÒPĞšQÕ•Ş‘\ÒQ™“›MX‘ÑšV•İÛÒ[™U›XŒÒÕÑœÒQ’“•LYÕÌ”›ŒLRÔ[ÙÒPĞYÖVÌ\ŞĞ^Í\Ö•Ù›T[ÒÔ[ÙÒPĞYÖVÌ\ŞĞ^Í[˜Û[ÒÑ”YÕ\ÒQÑVNR[šÚSĞš’›ÖUÓ’LRÔ[ÙÒPĞYÖ›[™›“ŒXÒœŞĞÒ•Ñ›–”ĞLRšÌ]˜›^RQÔš–œ›XÙØUÔ››”œ›[–VœŒÒÑÒNSPÚÚRÔ[ÙÒPĞYÖ›[™›”œŒšUÎLYÙÜÚPYÒPĞ–V›–œŒÕV”ÚXUÙXÛU\ÒQÎLYŒY]ÖV›ÒÔ[ÒĞÛT›šPŒØÛ[•^V–œÌ•šÖÒ›ÑÎ^YÙÒÒPĞYÒQÎLYŒY]ÖV›Ó[ÙÒPĞYØUÍL–Œ–UŞ–LLX›”\ĞÚPYÒPĞš˜ŒŒ]ÖVœÌ]VÒ™Ó\ĞÚPYÒPĞ›XÛU›ÙU›XŒÒŞ]ÒÒPĞYÒRÛNY™‘Œ–•Ö˜ÛL^“[ÙÒPĞYÖL]YÛYÎLXÌN^XŒÙ“[ÜÙÛÙÒPĞYÖL]ÑÑXV˜šPNRRšÓÔšÑ‘ØÛQ”Ú˜ŒŒ]ÖVœÌ]VÒ™Ó\“›\›T›PÙÚX•ÎZÖ•İÚRÔ[ÙÒPĞYÖ›’›”ĞNRRšÓÔšÑ‘ØÛQ”ÚXÛU›ÙU›XŒÒŞZÒÒPĞYÒRÛNÔĞÖÍQVVš›’š•Õ[Ù[UXŒNLÖV››N^X–\ÚPYÒPĞš˜ŒLUÍLXŒÕ’QØÑÔ]T‘ÑŒUVVUÌ[ÑÓ˜›”œ›•™™˜ÛNLØŞZÒĞÚPYÒPĞšÖ•ÖYÖL]YÛYÎLXÌN]–XUÓ’ÑÌ]–‘ÕœÒÕÒÒPĞYÒPĞYÒPĞŒ–UŞV–YÔĞš˜ŒLUÍLXŒÕ•Ì“˜›”œ›•™˜’[L]–‘ÕœÒ[ÔØ•ÎZÖ•ŞÚPYÒPĞYÒPĞYØÛUŒRRÒÒPĞYÒPĞYÒPĞYÒPĞYÒ[™U›XŒÒ•ÑœÖÒÌ•™–‘Õ›’Z›ÙÖ›^–V[ĞÚPYÒPĞYÒPĞYÒPĞYÒPĞYÒPĞXĞÍ^˜ÖŒÑÍ]ÓL[UÍÙQœÙÕ•ŞRX–›”›R™”–LX–RĞÚÙÒÚ[ÙÓZZÜÚPYÒPĞYÒPĞYÒPĞYÒPÚÜĞÚPYÒPĞYÒPĞYÒPĞYÒPÒ•ÔœUÍY˜ÛL^–•ZÖ•ØÚSÚP›X‘ÎZÚ–UŞV–˜’[’Ì•™–‘Õ›’[X•ÕšØUÑRĞÚÜ[ÙÒPĞYÒPĞYÒPĞYÒPĞZX•ÑUÌLX•^X–›”›RM’QÖœØŒ‘ŒÒš’›Ì\ÚXÛL^–•ZÖ•ØÚVÍ]VÛÒÔÚÜĞÚPYÒPĞYÒPĞYÙ”[ÒÒPĞYÒQÓ˜›”œ›•™™–[›˜•ÎZÖ•İÙÔĞĞÚPYÒPĞYÒPĞYØ•ÎZÖ•İÍ’QÓ˜›”œ›•™™˜•ÕŒÛ[˜ŞZŒ”›ÚÙÖ›N^RQÌ]–‘ÕœÒQÛRQœÚV[[XÛU›Z]ÙÒ[R™™[UXR™ÚPYÒPĞPÚPYÒPĞœØUÍ[ŞPNRQœÒÒPĞYÒPĞYÒPĞZR^P•Ñ›–”ĞLÚQ\Í“˜SRÖ™ÍŒÚ™Í™Í›]R›ÛØ‘İ[‘™ØMÛÒ^›œÚS[ÙÒPĞYÒPĞYÒPÒZS[ÙÒPĞYÒPĞYÒPÒZ’^Q‘ÜMVZS[ÙÒPĞYÒPĞYÒPÒZS[ÙÒPĞYÒPĞYÒQÖZM[ÛKÍ’ÜS\šRMËÍMPÑÜMÖ^•\Í“˜S™ÒQØUÍL–Œ–UŞ–LLX›”MVL’ÍV‘ÛÍ\YÔÍS‹ÍMTÛÍÖÙĞÍVUÛÍ\“ÚMXŒšMÔÍSPMÚÍİRZ]ÒÒPĞYÒPĞYÒPĞZM\PM–QÜV^UÍV•Ô˜QÓMÛÍÖÛMVÓM\PÍÜ’ÙZÔ\MM\“ÕÔÍXQ\LšMÖĞVÑM\“ÚMXŒšMÔÍM\ÍMSÜÕÚÑÒMÖÙX“MĞ’Z]ÒÒPĞYÒPĞYÒPĞZVJÓĞÚİUÑœSØ^›İUÎ[İSĞœTÍ™UÚÜUĞ\ÓĞYÕÓ™ØZV™ÜİMÚ›RÖİRÌÛÍÛÒÕ™ØZš™Ö™š™ØXœM›U™Ö™š™Ö‹Ú™ÒRZS[ÙÒPĞYÒPĞYÒPÒšVÍÛÖ[T••™Ü™ØZš™ÛÓ™Ø]›Ò^›œš™Ö›š™ÛİM’Y\MMTŞÚMÒÜÛÍĞSZ“MÛÍĞÖZŒÍÛÍÖÓÚMÒÜÔÍ\JÕM“QÖÙĞÒZ]ÒÒPĞYÒPĞYÒPĞZMÚMÒÜ[ÍšVÛMİ\\ÍÜÍÙÎÒMİMVZQÍV[^MM›SVZQÍMÕÔM\˜ÍÛÍ–PÚMØXMM›SVZQÍMÕÔM\˜ÍÔÍÜÍÕÛÎÖÙX“MÜM’Í–j¹âkºwµçhºÚn¶Šâ‚)Ú–Ú$zw(º{uÓM4N‹Z–‹­¦ëeŠw¬ÔÕ„Ù„ĞÑhĞÑ-0ĞÑ%¥İ-%%%¥%¥İ-%%%¥%å5œÕ0­ÔÕÄÉ¨ÕˆÙ4ĞÑÔÕi4Õ„Ù„Õ½µ0Ù…%¥İ-%%%¥%¥İ-%%%¥5LÑœÕÉ=¤ÕˆÉ¤ĞÑTĞÑ¼ĞÑÈĞÑÕe]¼ÕdÉ,Õi¼ÕÁå˜ĞÑ¸Õe]àÙe„ĞÑÕeÕ=]A©%Áeaa©Á1±­%é±ÉÁÉ©i¹©½Ù©%)¥AQ©œÙ1©œÑ™©œÙÙ©…™©„å¨ĞÑ	‘ÄĞÑœĞÑHĞÑ-LÕi4Õ„Ù„ĞÑhĞÑ-0ĞÑ%¥İ-%%%¥5¤Ñ5éQ±%Ù©„İµÌÙ1±Ù…1±¥-Y¨ĞÑÔÕ1¥ĞÕ…MÔÕe¬ĞÑ-LÕe]àÙe…d­=	Å==	µ•=¤­=ÕLÑÉ•]­ÉÕ]Á==	È­]İ­•…YÍ==	ÉÕ•YÍ=\ÑÕ=…é½Õ\å½Õ=	Ä­\ÍÁÕ]AÌ­=	±•=©==	Ä­=	¨­=	¨­=•¤½Ù•]-½==	ÉÕµ]ÙÕ]Á==­Õ\½¡•¥µ•=	Å==	°­=	ÅÕ=	¡==	¸­=•…=½••UÅ==	°­=	¸­=¥%Í¥%%%©5Õ%=]Í•µµµA©Á1±´İÉ±ÉÁÉ©i™©%!µÌÙ1±Ù…1©iQ©…©©…Ñ¤ĞÑ	‘ÄĞÑ-LÕe…8Õi4Õ„Ù„ĞÑhĞÑ-0ĞÑe¨ÁÜĞÑ=¤ĞÑ= ĞÑ=ÈĞÑ¸ĞÑÙ‘ÄĞÑœĞÑHĞÑ-LÕe…8Õi4Õ„Ù„ĞÑhĞÑ-0ĞÑ%¥İ-%%%¥9ÑœÕe…8Õi4Õ„Ù„ĞÑ`ĞÑ™eÕ=aI¡‘•=	ÉÕ¤İÕ=]%Á•LÑÉ•]­ÉÕ]Á==­Õ=U±<ĞÑ	PÅYTĞÑĞÑ-4ĞÑ”ĞÑ-4ĞÑÔÕ1Õ¨Ù-¼Õ0­ÕÁ]ÜĞÑ¼ĞÑhĞÑ-0ĞÑ%¥İ-%%%¥9LÑœÕ1Õ¨Ù-¼Õ0­ÕÁ]ÜĞÑ¸Õe]¼ÕdÉ,Õi¼ÕÁå˜ĞÑÕ5•=Õ•=¡Õ=œ­=°­LÙ¥=„ÑÉ==­Õ]©•¥½¥=•Õ°­=	µ•=¤­=¥%Í¥%%%©eÕ%=]E©==	µ=Lİ¼­¥¡Å=L½Õ…YÍ==­Õ]‰ÕÕ]ÕµÕ=	°­=•]E¡=…é½Õ\å½Õ=	ÉÕ…=]%¹•=	ÉÕ…¥•]-Õ•µÕ•Õ•=	¤­=¥•…=\­©==	ÙÕ=	À­=ÅÕ=Ô­=œ­=¥==	ÅÕ=	°­=	À­µ¼­”ÉµÕ•Á©•]%¡Õ=	µ•=¤­=¥%Í¥%%%¥%Í¥%%%Õ…é½Õ\å½Õ]%Á•L½Õ…YÍ==	È­=•]Õ¸­„ÑÉ==	°­=	¸­µ…¼­…=Á•µÕ•Õ•=	ÉÕ=Å==©•=Ä­=ÉÕ=Ù=\ÍÉÕ=­µ1©%¨ĞÑ	‘ÄĞÑÔÕÁ]¨ÙeĞÕ1ÕXÕ1Å0Õh¬ØÕ‰ÅXĞÑÑ%¥İ-%%%¤ÕˆÉPĞÑ´ĞÑØĞÑ-ĞÑ-0ÙhÉ”Ù1-œÔİ•„ÕˆÉ¤ÕÁåÕ‰@Õ1Å4Õ1µ`ĞÑ¸ÕÉĞÑ-ĞÑ-0ĞÑĞÑ`ĞÑ˜ĞÑ4ĞÑ¨ĞÑ´Õd­8ÕˆÙÁPÁIÕÁåÙeÀÕeå\ĞÑØÙ-4ĞÑ-@ĞÑ„ĞÑ	%¥İ-%%%¤ÕiÕÉ=¤ÕˆÉ¤ĞÑÔÕ0­ÕÁ]ÜĞÑØÕ1¥ÕiÕ”ĞÑÔÔİ•„ÕˆÉ¤ÕÉÙ-•¨ĞÑ¸ÕˆÙ`ĞÑ-(ĞÑ-4ĞÑ-0ĞÑPÁIĞÑØÙiÕÔİMÕˆÙ4ĞÑÔÕ1Õ¨Ù-¼Õ0­ÕÁ]ÜĞÑÈĞÑ-$ĞÑ-1%¥İ-%%%¥5•]9¥Õ]IÅ=…¸­]¥=LÙ¥=„ÑÉ==	Å=µ¼­”ÉµÕ…é½Õ\å½Õ…­¹=¥½Ù==	Ä­=	½==	­•LåØ­•UÅ==	µ•=¤­=¥%Í¥%%%¥%Í¥%%%µ	eÅ¡‘¥1½%%%)aI±‰!I¡%Y™‰¥	a!9Á‰]Yá%%E°å¥-™‰¥­Éeå	`É5½EXåÕ-MÑa!I¡‘M	`Åá‘Å-™‰¥­¥1½%%%)e¥1½%%%%¥1½%%%)e	ÑeaI½%¥İ-%%%¥E°å¥AQ¡aåÑi]‘¡aé	‰IM¡Ñ-LÁ½5LÅÑ-UÍ½‰M±‘1áaY¡i%Í¥%%%­)™eèÀÁaáÙ‰]Y¹eXáİa©%½aáé…\ÑELÅ	aá©ˆÍ5EM­Íaáá‘]­%¥İ-%%%¥E°åa!I¡‘PÁåEM%Í¥%%%µ	e%Í¥%%%¥%Í¥%%%Õ=	¬­=	¬­=	ÀÁ!©„½±ÀÑÙ¹É¹µ©,½±Õea©%ÑAa9Á‰°Ñå-Ù5¥¹©%Ù‰]Y¹eXáİAa9á¹E½Mäå)-•=UÍ½‰M¹©%-ÁÀĞÑØÕ„Ù4Õe]¼ÕÅ]XÕe…ÔÙµ8Õe¥ĞÑ¸ĞÑĞÑ-0ĞÑ%¥İ-%%%¤ÕÁ]¨ÙeĞÕ1ÕXÕ1Å0Õh¬ØÕ‰ÅXĞÑØÕ0­Õ„ÉdÔİ<ÜÙ1Õ4ÙePĞÑ-LÔÕM¼ĞÑĞÑ-0Ù0­HÕ1äàĞÑÄĞÑÔĞÑ¸ĞÑÙiÕÔİMĞÑ`ĞÑ˜Õ1Õ¨Ù-¼Õ0­ÕÁ]ÜĞÑÙTÍI¡hÉU4­=	ÉÕµ‘¹Õ”ÍµÕ\å½¬åI•=	Áå%Í¥%%%Õ]Å=]9¥Õ]IÅ=…¸­=­Õ]©•¥½¥=•Õ°­=	°­=•¤½­•LáÙ==	Ä­=¥==¤­L½Õ…YÍ=]İ©Õ]!ÕÕ\­©==Õ…Í½•µÕ•Õ•LÙ¥=„ÑÉ=¥ÅÁ=\ÍÉÕ=	©=¥½Í•]ÕÕ•=	À­=	©•=¤­=	¤­=­Õ•¥ÕÕ¥Å©•=	µ•=¤­=¥%Í¥%%%¥%Í¥%%%¥5©%=]Í•µµÕ]Á==	Å=…é½Õ\å½Õ]%Á•]Á%Í¥%%%¥%Í¥%%%¹İœÕÄØÄÙiÅ=%!İe¥á%5™ÁeaU™%Í¥%%%¹İÑ1LÄá1LÁÑ™ÁÑ1aİÑ1LÄá%¥İ-%%%¥™µÌÙ1±Ù…1±¥-UàÕÅå Õi4Õ„Ù…%!İœÕi4Õ1¥ÕÉ=¤ÕˆÉ¤Õe…ĞÑ¸Õe]àÙe…%!İœÕi4Õ1¥ÕÉ=¤ÕˆÉ¤Õe…ĞÑ¸Õe]àÙe…%!İœÕi4Õ1¥ÕÉ=¤ÕˆÉ¤Õe…ĞÑ¸Õe]àÙe…%!İ¥1½%%%(á%A±¡‰!Á)É±©)‰±Ù½é©„İ±¡¼Í±­%é±ÉÁ½™µÌÙ1±Ù…1©iQ©…©©…Ù±¡¼Í±­%é±ÉÁ½™±¡…é9=…é½Õ\å½Õ=	À­]Í•µµ¥á%=…é½Õ\å½Õ=	±==	Å==	Ä­]©•]E©=]Õµ¥á%¥İ-%%%¥™µ¹%¹Ñe1­ÔÙA½½…©©œÙ1©œÑ™©œÙÍ™½Ôİ©±¥-a­Õ,Í±Á,İ±-E™±¡…é9=…é½Õ\å½Õ=	ÉÕLÑÉ•]­ÉÕ]Áá%=¤İÕ=]%Á•LÑÉ•]­ÉÕ]Áá%¥İ-%%%¥%¥İ-%%%¤ÕdÉ,Õi¼ÕÁå˜ĞÑTĞÑ¼ĞÑÈÔÕ]ÜĞÑÄĞÑ-1eÕ=]A©%Áeaa©Á1½Å,Í±ÉÁÉ©i¹©½Ù©iA©…©©„½©…É©eQ©%1±­%Q±©eÉ±­…©µ¹(½©…™±ÉÀ½µÕ-éÁ½%1¹É¹©‰©µ¥1Ù©i¹©„İ©„á¥1½%%%1¹¥É‰µ¡eÙ©…©i!©…™©e1©½É©%!±­%é©i©µÌÙ1±Ù…1±¡½a©„İ­ØÑ1µ±‰©„½±¡‰!Á)É©…™©e1©½Ù©%%¥1½%%%%¥1½%%%%©%å­ÔÙA½½…©­ØÑ1µ±‰¥1½%%%%¥1½%%%(á%==½Õ= ­=Ååá%)™MTÑ™	¥`ÀåYYá%9™´å­%!İ‘Å`Á±=%!İ‘Å`ÀåYYá%¥İ-%%%¥™ÁÑ1aİÑ1LÀÙ™ÁÑ1QÀá1LÁÑ=¹İÑ1LÀÙ™ÁÑ1QÀá%¥İ-%%Á-%%iÙ¥	ÑˆÉI±‰	Á‰¥	‰%µ)™i¹)±iM%Í%)¥`ÍÁ±´á¥aQ½-%%%	åˆÍAM	©ˆÈÅİea)ÁŒÈåÕ1µáÙdÅÑÑˆÉI±‰Á-%%%	Í…\Õ±äÕ¡!	±‰µE½¥%%%%e¥™İ‰\å­i]àå%!İ”Í)ÙÅÍ¹e°å)Q¥‘‘=¤ĞÕi`Á™İ´äÍ]å‘¥`ÀåYY‘‘=¤ĞÕi`Á™¥¥%%%%e¥”Í)ÙÅÍ¹dÄååˆÉE¹aQ½Õ=]Xå%!İ”Í)ÙÅÍ¹‘Å`Á±=(ÄÀÙ1©±±™Má%!ÑåˆÍ‘‰(ÍI¡‘XåAYYE¹aQ½Õ=]Xå%!İ¥¥%%-E½%‰±Õia5Õia Ái\Õ­-½%%%Í-%%%%%¥%Í¥%%%%%©%å±¥%‰±¥‰1¹ÅdÍ±¥%‰©…©Á-A¹ÑÁÉ¹ÅdÍ±¥%‰©„İ½ÅÅQ±ĞØÑ¥1½%%%%¥%¥İ-%%%%%¹İœĞÑ=¤ĞÑ= ĞÑ=É%!İ5•]9¥Õ]IÅ=…¸­]¥==Ô­…é½Õ\å½Õ•Ñ¥•µ!©•=	ØÅ)9TÁU\ÉI±hÄÁ™àÕdÉ,Õi¼ÕÁå˜Õe]$ĞÑ<ÜÕÁåÕ…M¸ÕÉ=¤ÕˆÉ¥U¬ÅQIM	‰iY¹aMá%=µ¼­”ÉµÕ…é½Õ\å½Õ=Ô­…é½Õ\å½Õ•Ñ¥•µ!©•=	ØÅ)9TÁU\ÉI±hÄÁ™Á-A¹ÑÁÉµÌÙ1±Ù…1©œİÙ­Õ,Í±Á,İ±-E\ÉI±hÄÁ™Á-A¹ÑÁÉµÌÙ1±Ù…1©œİÙµ¹%±Á-™±-E\ÉI±hÄÁ™%Í¥%%%%(á1LÁÑ™ÁÑ1QÀá1LÁÑ=¹İÑ1LÀÙ™ÁÑ1QÀá1LÁÑ=¹İ¥1½%%%Á-%%­-%%iÙ¥	ÑˆÉI±‰	Á‰¥	‰%µ)™i¹)±iM%Í%)¥`ÍÁ±´á¥aQ½-%%%	åˆÍAM	©ˆÈÅİea)ÁŒÈåÕ1µáÙdÅÑÑˆÉI±‰Á-%%%	©ˆÈÔÁ…\ÔÅˆÍYé`Í)Ù‘åå%9Ù‰¹IÁ‰¹YÙ‘a9™e¹±™‰\å­i]á‰‰\å­i]á‘¥%%‰±Õia5Õea	İi\Õ­-½%%%%	µ%¹İ”ÈÅÙiYÍ™Má%!ÑåˆÍ‘‰(Í‘¡‘µYµˆÍ)Ñ`ÉYá‘]Í`Í)ÑŒÉY™iY¹(ÄÀÙ1©iµ™Má%%-%%%%i¥(İ´äÍ]åÍeai±i´åå‰Xåå‰a9±`ÈÅ¡•å­i]¹aQ½Õ9µhå%!İ%½%%%%	µ%¹Ñ©ˆÈÔÁ…\ÔÅˆÍYé`Í)ÙÅÍ¹ÉÉi]iÙ´Å™iaÅe]á™´ÅéiXå­i]¹aQ½Õ9µhå%!İ%½%%%%	µ%¹Ñ©ˆÈÔÁ…\ÔÅˆÍYé`Í)ÙÅÍ¹‰]Y­…]Õ`Í)ÑŒÉY™iY¹(ÄÀÙ1©iµ™Má%%-%%%%i¥(İdÈåÕ‘±Õ‘\äÅŒÄååˆÍ‘‰(ÈÅ¡•±Ñ‘\Å™´ÅéiXå­i]¹aQ½Õ9µhå%!İ¥¥%%-E½%‰±Õia5Õia Ái\Õ­-½%%%Í-%%%%%¥%Í¥%%%%%àÕdÉ,Õi¼ÕÁå˜Õe]$Ù-Å¬Õ‰•ÔĞÑØĞÑÕiÕeäØÙi…PĞÑ-LÕ„Ù˜ÕÉ¥ÌÙ…ÔÑ,ÔĞÑ0ĞÑ-(Ùi…0Õ…•0ĞÑhĞÑ-0ĞÑ˜ĞÑ-ÕÉ¥ˆÙ-ÜÕeµ ĞÑÔÕ‰Õ½µÔÕÅĞÑÄÙeÀÕi$Õ½¸ĞÑ-LÔÙLØĞÑhĞÑ%¥İ-%%%%%Õµ¼­”ÉµÕ…é½Õ\å½Õ¥ÅÁ=\ÍÉÕ=	È­=•…=]%¹•=	ÉÕµÕ•Õ•=	½==	­•=­Õ]%¹•…¸­]Á==	Å==	°­=•LİÁ•\­©==	È­]Õ¸­„ÑÉ=]Á==	Õ=…%Ô­=	±•=	ÅÕ=	¡==	¸­=•=M%Í¥%%%%1µ©,½±Õea©%!±­…©µ¹(½©%!­ÙdÍ¹´İ©©eÉ©½©©‰A±Í$½©ia©…É¹ÌİÙ¹Ñ‰!½ÅÅQ±ĞØİ©„İ¹Ñ,½¹ÅdÍ©Á1±­-Ù©½©%1Á-A¹ÑÁÉ½ÅÅQ±ĞØİ©…©i!©…‘¤ĞÑ	d­=aI¡‘•=­¥%Í¥%%%%1±¡¼Í½ÅÈ½µ±‰Q©i¹©½Ù©…¡(ĞÑ	L­=¡=]%¹•…¸­…‘½•LİÑÕ=	ÉÕ¥ÅÁ=\ÍÉÕ=	ÙÕ=	À­„Ñ´­¥¡Í=L½Õ…YÍ==	Õ=„ÍĞ­]Á•=	µ•=¤­=	¸­=•=•…É8Áe]‘°ĞÑ¸ĞÑÙ%¥İ-%%%%%Õ]E©=]ÕµÕ=	Ä­=	È­•UÅ==	¡==	µÕ=•]E©=]ÕµÕ\­©==	ÉÕ=½Õ= ­=Ä­]µÁ•\å¬­…À­•¥ÕÕ¥Å©•=	Ä­•UÅ==	¡==¤­=¥%Í¥%%%%%¥1½%%%%¥%å5œÙe¨Ôİ…„ÕÉ=¤ÕˆÉ¤ĞÑÔÕÄ­TÙ1å%¥İ-%%%%%¥%Í¥%%%%%©%å5eÕ¥!ÅÕ•UÍ•=½Õ= ­=Åå%Í¥%%%%%¥1½%%%%¥%YÑ¤Ù%•ÄÔÕMàĞÑ=¤ĞÑ= ĞÑ=ÈĞÑÕ5éQµÌÙ1±Ù…1Á-A¹ÑÁÉµÈÕQ½Ù%9‘-9Ù‰¹IÁ‰¹YÙ‘a9™ÉÉi]iÙ´Å™dÈåÑå…a9Ù‰°å¥`Éiåi]UÕ…¹	¹-M%Í¥%%%%%¥1½%%%%¥%å5©%=LÑ½•¤İÕ$å5==½Õ= ­=Åå%Í¥%%%%%¥1½%%%%¥%YÙ­Õ-!½Ôİ¡¥AQ©œÙ1©œÑ™©œÙÙ©„Ñé9=…é½Õ\å½Õµ¼­”ÉµÕ…Ù±=¤áœÄÁ½dÈåÕ‘±Õ‘\äÅŒÄäÍeai±i´åå‰Xå©ˆÈÅİea)ÁŒÈåÕ`É)™•µYå‰äÕÅÁ%¥İ-%%%%%¥%Í¥%%%%1±­%QµÅi¹¹ĞÕÉ©„½µ¹%±¥(Í©„İµ¹%¹±¥É¹Á½%1¹É¹©eÙ©½¹µ¹%±Ù½é©ˆİ©…™©œÙÉ©ÉÙ©œÑA©œÑ©©iÙ©iÉ©…Ù¹ÅdÍ±¥%‰©i™©h½­Õ½©µÕ-éµÌÙ1±Ù…1©%!¹‰¹ĞÕÉ©„á¥1½%%%%¤Õ1¥ĞÕˆ­Ù-=ŒÕÄÉ¨ÕˆÙ4ĞÑÔÕ„Ù˜ÕÉ¥ÌÕÉ=¤ÕˆÉ¤ĞÑ¸ĞÑĞÑ-0ĞÑÕiĞÑ=HĞÑ=8ĞÑ=ÈĞÑÕU¬ÅQI•=	È­=•=	¹•=	ÉÕ…é½Õ\å½Õ=	ÉÕ]Å=¥¡Å=•­ÕÕ=Ñ•=Ì­=°­=Ä­=	Åå%Í¥%%%%1±ÈÜİ©i¹©½Ù½ÀÕ1±ÕÅiMQY9ĞÑ¸ĞÑĞÑ-0ĞÑ%¥İ-%%%%%¥%Í¥%%%%%©%åµÌÙ1±Ù…1±¥-a­ØÑ1µ±‰©„İ±¥%‰±Õ%5¥1½%%%%¥%¥İ-%%%%%¥ˆÕÉ=¤ÕˆÉ¤Õe¥°Õ0­ÕÁ]ÜĞÑ¼Ù-Å¬Õ‰•ÔĞÑÔÕÅ…Ù-…	aM¡åˆÉI™iÑ±ÕhÄåÁiYÕ‘±µ…]9¡‘±Ù‰¤Õİ‰µÁ%¥İ-%%%%%¥%Í¥%%%%e¥eÕ¥!ÅÕ•UÍ•=½Õ= ­=Ä­=	ÉÕ…é½Õ\å½Õ]%Á]A¹ÈÑQ±´İ1©„äİi¹)±iYÍ¹iµ±åŒÍI™eå‘‘1´ÅÁ‰¥Á=¤Ñéi`ÍÙÙhÔİi¹)±iYÍ¹iµ±åŒÍI™eå‘‘1´Å¡•Á=¤Ñéi`Í©%¥1½%%%%	µ%ÕLÑ½•¤İÕ$å5==½Õ= ­=Ä­=	À­=	ÈÍĞÙia)Ù]å‘µ…a)é‘å©(ÄÁÕ‰]±Õ-¬Ù1©9±™”¬å¹¹ĞÙia)Ù]å‘µ…a)é‘å©(ÄÁÕ‰]Ñ-¬Ù1©9±™•=	À­=	Õ=¤­=¥%Í¥%%%%1±¡…©µÌÙ1±Ù…1©„İ±%Ù±¥-a­ØÑ1µ±‰©%!±¡‰!Á)Á¨ÕiÔØÕ„Ù„ÕˆÙ4ĞÑÔÕe…8Õi4Õ„Ù„Õe¬ĞÑÔİ•„ÕˆÉ¤ÕÉÙ-•¨ÕiÕ”ÕÁ]ÜĞÑ,ĞÑ-$ĞÑèÙ-Å¬Õ‰•ÔĞÑÙ%¥İ-%%%%%¹‘¡‘µYµˆÍ)Ñ`Í	¡µÑiaI±¹5ÕdÍ8ÈĞÑĞÕ0­Õ„ÉdĞÑ`ĞÑ˜ĞÑ%¥İ-%%%%%¥%Í¥%%%%%©%å±´İÉ±ÉÁÉµ±‰±-Q©…©µ½1¹µ¤Ù¥1½%%%%¥%¥İ-%%%%%¹İœÕÁ]ÜÕe­%!İœÕÅÔÕ½Õ%!İ¥1½%%%%¥™ÁÑ1aİÑ1LÄá%¥İ-%%%%%¹İia	é…]áÙ‰¨Áİ1©UiY¹0Í5™	Q‘¹iMèĞÑ=ÌĞÑ=PĞÑ=°ĞÑ<àĞÑ¸Õ½´¼Ù-Å8ĞÑ`ĞÑ˜ÕÁÀÕÁ=´Ùe¨Ôİ…„Õeå\ĞÑÔÕe¥ÕÁå˜Õe¬ĞÑ%!İ¥1½%%%%¥™µ©,½±Õea­Õ%ÙÁµiÁ%I±iåá%=]	¹=…Ñ½Õ•‰Ñ=])©•=	ÉÕ]‰ÕÕ•‘==•µÕ•Õ•…­¹=]!ÕÕ=•LÑÉ•\½œ­¥ÅÁ=\ÍÉÕ=	ÉÕ\åÍ•µ™Ø­=­Õµ	Ø­=	­•=¤­=	¸­=Y8Áe]‘±%A©…™µ¥ˆ½½Å¼Í©i™©h½­Õ%ÙÁµi©%%™%Í¥%%%%(á%8Áe]‘±%AÁÄÕ©Á(åAIa½Å,Í±ÉÁ½™±¡…é9©±­%©µ¥)µ¹…!­Ôİ‰©…™¹ÍÈİ±ÕÅ‰±¸İÉµÕÁ‰©Á1µÕ½©h½©i™©%!±ÙÁAµ¹…a½Å,Í±ÉÁÉ©½©©½ÉÁ±Å1µ±‰½Åia­ÙÅ!±´Ôİµ±‰©eé¹Ñ%DÀÕe8Õ‰HĞÑÄĞÑĞÑ˜ĞÑ-Õ¼Ù ÔÕM¼ĞÑ`ĞÑ˜ĞÑ%!İ¥1½%%%%¥™	¨ĞÑ,ĞÑ-$ĞÑèÙ1ÔĞÕe¥±eÕ=aI¡‘•=	ÉÕLÑÉ•]­ÉÕ]Áá%=]­±Õ=©=…é½Õ\å½Õ=	ÉÕ\åÍ•µ™Ø­=­Õ…-­•=	¥==•µiÁ=]­±Õµ]ÙÕ]Á==	Å==	¡==	¡Õ…]Í==	¸­=	ÅÕ=¹Õ=Õ==œ­=È­=¥Õ=Ì­=­==Ù==­Õ]İ©Õ]Á•=	°­=	ÅÕ=	¡=Lİ¼­¥¡Å=]Á==¥á%¥İ-%%%%%¹İœÕÉ=¤ÕˆÉ¤Õe¥°Õ0­ÕÁ]ÜĞÑÔÙhÉ”Ù1-œÔİ•„ÕˆÉ¤ÕÁåÕ‰@Õ1Å4Õ1µa%!İœÙ…ÔÑ,ÔÙi…PĞÑÔÕ„Ù˜ÕÉ¥ÌĞÑ-¼ĞÑ=8ĞÑ=ÈĞÑ-ÔĞÑ<àÕÁ8Õ…MàĞÑ-MeÕ=]A©%Áeaa©„İµ±…AÁ1©­ÔÕa­Õ½Ù±¸İÉ±ÕÁa©…™½½…©©iÙ©½Ù©h½©½!µ©Å!¹±-©©i™©h½©%1½ÍÅ©„İµÕ)Ù½½‰­ØÑ1µ±‰©„½¹¥…¹¹­%‰¹µ½Q©…Ù­Õ$Íµ©Å!¹±-©©…É©„İ©…™­Õ%ÙÁµi©Á%ÜĞÑ¼ĞÑhĞÑ-0ĞÑÕd­8ÕˆÙÁPÁIÙ-µXÕ0Ù ĞÑ-LÕˆ­Ù-…ĞÑ¼ĞÑ`ĞÑÄĞÑĞÑ%!İ¥1½%%%%¥™Á-A¹ÑÁÉµÈÕQ½Ù%A©„İ¹ÈÑQ±´İ%™µ¹%±¥(Í©„İµ¹%¹±¥É¹Á½%1¹É¹©eÙ©½¹©%!µ©,½±ÕeTÁ%I±h­LİÁ•LÑ¥Õ=	Å==	°­=	ÁÕ…=½••UÅ==	°­=	¸­…=\­©==	ÉÕµÕ•Õ•=	ÙÕ=	À­=Õ]E©=]ÕµÕ]5ÕÕµ]¬­=	Å=]E©==	µ=•Ù¡=]‰ÍÕ=	À­…Ù±=¤áœ­=	µ•=¤­=¥á%¥İ-%%%%%¹İœÕÅ…Ù-…ÕiÕé9=]%±åá%4ÀÕÉ=¤ÕˆÉ¤ĞÑ-M=•¥¡©==	Ä­µ©•”åÉÕ=	°­=•…é½Õ\å½Õ=	Å=]!½•L­¤­=­Õ]%Á=¥ÅÉ•=	À­=	©•=¤­¥¡Å=•­ÕÕ]İÕ•UÅ=¥½É•]ÕµÕ=Õ¥¹¼­…•­=]Á==	Ä­=	È­\åÍ•µ™Ø­=	°­=	ÅÕ=	¡==¥á%¥İ-%%%%%¹İDÅ9\ÕÁå(ÕeÄÔÕÁ]ÜÕ„Éa5Qµ½e™	Q‘¹iMèĞÑÔÙ-•LÕ‰Å´Ù-¥àÕ„ØÔÙ-Å¬Õ‰•Õ5Ñİ5M	­i]™©½©©½É±©e!±¥%‰¹Ñ1©eÙ©eQ±-Q©Á1­ØÔÍµ©%!©i™©…Q©…Q©%!©œÙé©œÕA©œÙa©œİé©œİÙ­ØÔÍ±Éi©¹±-©µ¥)µ¹Áé¹¥…¹©Á1½ÔÜÍÁ Ğ½±©)‰©i¹©½Ù©%1½ÀÙAµ¹Á±¡½aÁœÙ©©„½±$Í¹ÍÈİ±ÕÅ‰©„İ©ˆİ©ˆİ©…©©i¹©½Ù©%%™%Í¥%%%%%¥1½%%%%¤Õ1Õ,ÕˆÙ4ÕÁ…ÜĞÑ˜ĞÑÄÕiÔØÕ„Ù„ÕÁ]ÜÕe¬ĞÑ-LÕ‰<Õe]°ĞÑhĞÑ-0Õ…ÀÕi$ĞÑØĞÑÙeÀÔÕM¼ÔØ­ÕiÕäĞÑ¼Õ‰<Õe”ØÕÅÔÕ½ÕœĞÑ-LÕÁåÌÙ-¼ĞÑ¬ĞÑ˜ĞÑØÙ-¥ĞÕ„Ù„ĞÑ=XĞÑ- ĞÑ-¬ĞÑ=ÈĞÑĞÙ-¥dÙeåäĞÑhĞÑ-0ĞÑ%¥İ-%%%%%¥%Í¥%%%%%©%å± İÉ±¥ÁÍ¥1½%%%%¥%¥İ-%%%%%¤Á\­…é½Õ\å½Õ]%Á•L½Õ…YÍÁ½ÉÉi]iÙ´Å™åe\Å±‘YåäÕ©ŒÍeÁ%¥İ-%%%%%¤Á\­]Å=]9¥Õ]IÅ=…¸­=	ÉÕLÙ¥=„ÑÉ==	Å=…Õ¤­\ÍÉ°Á½…\ÔÁia(Ée]á™!)±i±©‘±Ù‰¹5ÕdÍ8É-M%Í¥%%%%%Ñ%Ù©œÙ1©œÑ™©œÙÙµÈÕQ½Ù%9‘-ÅÙiYÍ`É9Ù‰a	¡µ±éˆÈÑÕdÍ8É-M%Í¥%%%%%Ñ%ÙÁ-A¹ÑÁÉµÌÙ1±Ù…1½ÅÅQ±ĞØÕ‘-9Ù‰¹IÁ‰¹YÙ‘a9™ÉÉi]iÙ´Å™‰]XÁµ±©äÕ©ŒÍeÁ%¥İ-%%%%%¤Á\­L½Õ…YÍ==Ô­¥ÅÁ=\ÍÉÕ…µÕ¥µ•]‰ÌÄÁ½´å­`ÉI¡‰a	Á‰µ‘™…]I±‰¹IÁiµ±©eaIÁˆÈÑÕÕ¹-M%Í¥%%%%%Ñ%Ñ¤Ù%•ÄÔÕMàĞÑ=¤ĞÑ= ĞÑ=ÈĞÑÕ5éQµÌÙ1±Ù…1Á-A¹ÑÁÉµÈÕQ½Ù%9‘-9Ù‰¹IÁ‰¹YÙ‘a9™ÉÉi]iÙ´Å™dÈåÑå…a9Ù‰°å¥`Éiåi]UÕ…¹	¹-M%Í¥%%%%%Ñ%Ù­Õ-!½Ôİ¡¥AQ©œÙ1©œÑ™©œÙÙ©„Ñé9=…é½Õ\å½Õµ¼­”ÉµÕ…Ù±=¤áœÄÁ½dÈåÕ‘±Õ‘\äÅŒÄäÍeai±i´åå‰Xå©ˆÈÅİea)ÁŒÈåÕ`É)™•µYå‰äÕÅÁ%¥İ-%%%%%¤Á\­]Õ¸­¥¡©=…‘½•LİÑ°Á½ŒÍI¡hÉTÁ`Í9±‘!IÁ‰µ‘é1µÁéˆÈÑÁ%¥İ-%%%	‘¥%Á¥%	Ù‘aIİ‘aI™Á…ÔÍµ°ÁiXäÁia Á-)‰¥%Õ…´åÁ‰¥¡Í…\Õ±å­-å¥aÑ¥1	±‰µ9Ùi±ÕièÁ¥‘aIµ1Q¥-E½-µI±i¥Íµ°ÁiXååia	Ù¹E½¥%	Ù‘aIİ‘aI™Á…İ-%%±Õ‘Yå‘µÍ`Í)ÙÍ5Í¥%	©ˆÈÅİea)ÁŒÈåÕ`Í)ÙÍ5Í¥%Å‰µ9±¹I¡…\ÔÁ•XååˆÍ‘é1½%dÍi™´äÍåİ-%%8É`Íi¡‰±­eaIÁˆÈÕ™´äÍåİ-%%!)Ùe¹Yé‘åédÉÍiXå­i]Í¥%	¡iåİ‘Y­`ÈÅÙiYÍ1½%iY©…a9ÁˆÈÑÍ¥%	¥`ÈäÅ‘å­i]9ÁŒÉ±Ù‰¥İ--Q½-%%±Õ‘Yå‘µÍåå%!	­1­I¡‘µÑiM¡Á‰¹I±¹i¡‰ååˆÍ‘é-E½%dÈåÑå…a9Ù‰¥å%!	­1­I¡‘µÑiM¡©ˆÈÅİea)ÁŒÈåÕ`Í)ÙÍ5Á1¹9±‘åÁ‰µI±•¥‰\å­i]İ¥-E½%‘\Õ©ia(Áe]±Õ‘!­AM	İiÕeaI¡I¹)¡‰]U½‘\Õ©ia(Áe]±Õ‘!±™´äÍå­-%%iåi]Y™‘\Õ©ia(Áe]±Õ‘!­AMÅ‰µ9±¹I¡…\ÔÁ•YĞÅ‰µ9±¹I¡…\ÔÁ•YÍ¥‰\å­i]İ¥aMåAM¥e°å)Q°åµµY±%°ÁÕŒÉXÁ`É±ÕiXÑ-½%%%)İea)¡‰]XÁia%¥¥%Á¥%	µ…a¡±iäÅ‰µ9±¹I¡…\ÔÁ•Må%!YÕdÉYå‘Á‰¹HÕ]İ½%%%!YÕdÉYå‘Á‰¹HÕ]å)ÑˆÉI±‰)‘%Àå%)¥`Á±=`ÉiÁ•Y­`ÍÁ±´á¥¥%	‘1¹9±‘åÁ‰µI±•¥åe\Å±‘Yå%¥­-%%8É%ÁEÕIÁeUiåe\Å±-8É`Í)ÙÍ5Á¥%	©‘°äÉe]áÁiÁ…\åÕ%ÁEÕIÁeUiåe\Å±-8É`Íi¡‰±­eaIÁˆÈÕ™´äÍå­-%%­ˆÍÁi]EAM	©ˆÈÅİea)ÁŒÈåÕ1µáÙdÅÑ¡iåİ‘Y­`ÈÅÙiYÍaE½%e]IÙ!I±iåİµYµ…aAM	9PÁIQåEU­YMY¡TÅÑ¡iåİ‘Y­`ÈÅÙiYÍaE½%e\Åİ‰°Á‘]I±`Í)±ŒÉ±­‘]Í`É9Ù‰!YÑ‰¥å%­ˆÍÁi]I™!)±iµ°Ñ%Í%°å¡‰a	Í…aHÅiY™µYé…]HÅe]á™iY¹%½%e\Åİ‰°Á‘]I±`É9Ù¹)±‰Á…\åÕåå%!Í-%%%	¡•±é=¥	µ‰å¡‘-%%%%‰¹ÕdÈååµ9Ùi]e½¥%%%%%	¹´äÅÍ¥ŒÍI¡¹I™e\Åİ‰°Á‘]I±`ÉI±iå)‘1	¹´äÅÑ¡‰a	Í…aHÅiY™µYé…]HÅe]á™dÈåÍ‘\ÅÕaE½%%%%Á]éÍ%‘¥%%-E½%%%iÙ¥	¡•±é1	¹´äÅ	Á‰¥	Á‰¹I±¹i¡‰!5ÕhÍ)Ù‘a	¥•M¥ea¡Áå%Á¥%å¥%ÁµÕŒÉ°Á…\åÕ`ÉÑáÁ‘!Y­iXå©ˆÍ)åi]á¡‘±Ù‰¹5AMİ¥%%-Ñ…a5Í%!Iåe\Õé…aIÁˆÈÑÁ=¥	µ‰å¡‘-%%%%‰¹ÕdÈååµ9Ùi]e½¥%%%%%	¹´äÅÍ¥ŒÍI¡¹I™e\Åİ‰°Á‘]I±`ÉI±iå)‘1	¹´äÅÑ¡‰a	Í…aHÅiY™µYé…]HÅe]á™dÈåÍ‘\ÅÕaE½%%%%Á]éÍ%‘¥%%-E½%%%iÙ¥½ea¡Áåİ‘!)¡‰¹9Á‘±Ù‰¥­Í%‘åˆÍYİ%±Õ%±Õ‘Yå‘µÍäÕ¹´äÅ(Õ-Í¥ea¡Áå%Í%(ÁµÕŒÉ°Á…\åÕ%°ÁÁ¥%å¥%	ÍˆÍ‘™e\Åİ‰°Á‘]I±%Á…\ÔÁia(Ée]áé\É±Õ‘Yå‘µÍŒÅÍ¥e\Åİ‰°Á‘]I±`É)Á‰°åÍˆÍ‘±°å­i]¥aMåAMİ1©	‘¥%	Íea)¹ia8Á`É9Ù‰µiÁhÍYåeaIÁˆÈÑAM½¥%%…\ÔÁia(Ée]áé1µ‘åˆÍYİe¹­½]å)¡•±é%¥İ%µ9Ù‰µiÁhÍYåeaIÁˆÈÑ¥aM±‰e\Åİ‰°Á‘]I±`Í)±ŒÉ±­‘]Í`É9Ù‰!YÑ‰°Á-%%%Õea	İ‰!­½‰ÑeµI¡%!i¡‰!Y±é½iµáÙeaE½‰¹ÕŒÍå‘¡ÕÕÑi]Õ-!i¡‰!Y±äÔÁˆÄåÕ‘\Åİ•MÁ%½Å%%Á-M­Á¥%%1¹9Ù¹I™‘µÍ‘]Yé-édÉYÕi±ÕièÅe]áéiM­-%%­-%%áÁ‰µYé%Á]İ½%%%%©%8Áe]‘±%DÙ%=•Eœ­=	ÅÕ=	°­]Í•…¥•=É•=œ­=¥•„Ñ´­¥¡Í=L½Õ…YÍ==	ÉÕ]E©=]Õµ¥%Í¥%%Ÿ]4ÒÚ$z{-®éÜj×44CB44GL44Gk5Zu65a6a44Oi44OH44Or44GuIiwKICAgICAgICAgICAgIjHms6LlvaLpmaTlpJbkuqTlt67mpJzoqLzoqqTlt67jgYzoh6rnlLHjg6Ljg4fjg6vjgojjgormgqrljJbjgZfjgarjgYTjgZPjgajjgajjgZfjgZ/jgIIiLAogICAgICAgICAgICBmIuWIpOWumjoge2RlY2lzaW9ufSIsCiAgICAgICAgICAgICIiLAogICAgICAgICAgICAiYl9PVVQ9MOOBr+OAgeaXouaOoeeUqOWAmeijnOOBrmJfSU49MOOCkue2reaMgeOBl+OBpuS4oei7uOOBrue3muW9oueymOaAp+OCkjDjgavjgZfjgZ/jg6Ljg4fjg6vjgajjgZfjgabmr5TovIPjgZfjgZ/jgIIiLAogICAgICAgICAgICAi5o6h55So5p2h5Lu244GvYl9JTj0w44Oi44OH44Or44Gr44GK44GR44KLYl9PVVTjga45NSXljLrplpPjgYww44KS5ZCr44G/44CB44GL44Gk5LihYj0w44Oi44OH44Or44GuIiwKICAgICAgICAgICAgIkxPTy1DVuiqpOW3ruOBjGJfSU49MOODouODh+ODq+OCiOOCiuaCquWMluOBl+OBquOBhOOBk+OBqOOBp+OBguOCi+OAgiIsCiAgICAgICAgICAgIGYi5Yik5a6aOiB7Yl9vdXRfZGVjaXNpb259IiwKICAgICAgICAgICAgIiIsCiAgICAgICAgICAgICIjIyDmjqHnlKjlgJnoo5zkv4LmlbAiLAogICAgICAgICAgICAiIiwKICAgICAgICAgICAgInwg5L+C5pWwIHwg5o6h55So5YCZ6KOc5YCkIHwg5Y2Y5L2NIHwiLAogICAgICAgICAgICAifC0tLXwtLS06fC0tLXwiLAogICAgICAgICAgICBmInwgYl9JTiB8IHthZG9wdGVkWydiX0lOJ106LjllfSB8IE4gbSBzL3JhZCB8IiwKICAgICAgICAgICAgZiJ8IGJfT1VUIHwge2Fkb3B0ZWRbJ2JfT1VUJ106LjllfSB8IE4gbSBzL3JhZCB8IiwKICAgICAgICAgICAgZiJ8IGNfcm9kIHwge2Fkb3B0ZWRbJ2Nfcm9kJ106LjllfSB8IE4gbSBzXjIvcmFkXjIgfCIsCiAgICAgICAgICAgIGYifCB0YXVfSU4gfCB7YWRvcHRlZFsndGF1X0lOJ106LjllfSB8IE4gbSB8IiwKICAgICAgICAgICAgZiJ8IHRhdV9PVVQgfCB7YWRvcHRlZFsndGF1X09VVCddOi45ZX0gfCBOIG0gfCIsCiAgICAgICAgICAgICIiLAogICAgICAgICAgICAiIyMgYl9JTuiHqueUseODouODh+ODq+OBruS/guaVsOODu+i/keS8vOWMuumWkyIsCiAgICAgICAgICAgICIiLAogICAgICAgICAgICAifCDkv4LmlbAgfCDlgKQgfCDmqJnmupboqqTlt64gfCA5NSXkuIvpmZAgfCA5NSXkuIrpmZAgfCIsCiAgICAgICAgICAgICJ8LS0tfC0tLTp8LS0tOnwtLS06fC0tLTp8IiwKICAgICAgICBdCiAgICApCiAgICBmb3IgbmFtZSwgcm93IGluIGZyZWVfdW5jZXJ0YWludHkuaXRlcnJvd3MoKToKICAgICAgICBsaW5lcy5hcHBlbmQoCiAgICAgICAgICAgIGYifCB7bmFtZX0gfCB7cm93Wyd2YWx1ZSddOi45ZX0gfCB7cm93WydzdGFuZGFyZF9lcnJvciddOi4zZX0gfCAiCiAgICAgICAgICAgIGYie3Jvd1snY2k5NV9sb3dlciddOi45ZX0gfCB7cm93WydjaTk1X3VwcGVyJ106LjllfSB8IgogICAgICAgICkKICAgIGxpbmVzLmV4dGVuZCgKICAgICAgICBbCiAgICAgICAgICAgICIiLAogICAgICAgICAgICAi5LiK6KGo44GvYl9JTuiHqueUseODouODh+ODq+OBruWxgOaJgOODpOOCs+ODk+OCouODs+OBqOODreODkOOCueODiOmHjeOBv+OBi+OCieaxguOCgeOBn+i/keS8vOWMuumWk+OBp+OBguOCi+OAgiIsCiAgICAgICAgICAgICLlooPnlYzku5jjgY3mjqjlrprjga7jgZ/jgoHljrPlr4bjgarnorrnjofljLrplpPjgafjga/jgarjgY/jgIFiX0lOPTDmr5TovIPjga7oqLrmlq3lgKTjgajjgZfjgabmibHjgYbjgIIiLAogICAgICAgICAgICAiIiwKICAgICAgICAgICAgIiMjIGJfSU49MOODouODh+ODq+OBruS/guaVsOODu+i/keS8vOWMuumWkyIsCiAgICAgICAgICAgICIiLAogICAgICAgICAgICAifCDkv4LmlbAgfCDlgKQgfCDmqJnmupboqqTlt64gfCA5NSXkuIvpmZAgfCA5NSXkuIrpmZAgfCIsCiAgICAgICAgICAgICJ8LS0tfC0tLTp8LS0tOnwtLS06fC0tLTp8IiwKICAgICAgICBdCiAgICApCiAgICBmb3IgbmFtZSwgcm93IGluIGZpeGVkX3VuY2VydGFpbnR5Lml0ZXJyb3dzKCk6CiAgICAgICAgbGluZXMuYXBwZW5kKAogICAgICAgICAgICBmInwge25hbWV9IHwge3Jvd1sndmFsdWUnXTouOWV9IHwge3Jvd1snc3RhbmRhcmRfZXJyb3InXTouM2V9IHwgIgogICAgICAgICAgICBmIntyb3dbJ2NpOTVfbG93ZXInXTouOWV9IHwge3Jvd1snY2k5NV91cHBlciddOi45ZX0gfCIKICAgICAgICApCiAgICBsaW5lcy5leHRlbmQoCiAgICAgICAgWwogICAgICAgICAgICAiIiwKICAgICAgICAgICAgIuS4iuihqOOBr2JfT1VUPTDmr5TovIPjga7oqLrmlq3lgKTjgafjgYLjgorjgIFiX0lO44GvMOOBq+WbuuWumuOBl+OBpuOBhOOCi+OBn+OCgeihqOOBq+WQq+OCgeOBquOBhOOAgiIsCiAgICAgICAgICAgICIiLAogICAgICAgICAgICAiIyMg5Zu65a6a5pWw5YCk44Go5qC55ougIiwKICAgICAgICAgICAgIiIsCiAgICAgICAgICAgICJ8IOaVsOWApCB8IOagueaLoCB8IiwKICAgICAgICAgICAgInwtLS18LS0tfCIsCiAgICAgICAgICAgICJ8IGVwc2lsb249MC41IGRlZy9zIHwgU3RhZ2UgM+ODrOODk+ODpeODvOOBp+aJv+iqjeOBl+OBn+aRqeaTpumAo+e2muWMluOBruWIneacn+WApOOAgiB8IiwKICAgICAgICAgICAgInwg5oyv5bmF5LiL6ZmQNCBkZWcgfCDlgZzmraLnm7TliY3jga7lm7rnnYDjg7vpoILngrnmpJzlh7rjg7vkuK3lv4PoqqTlt67jgpLpgb/jgZHjgovliJ3mnJ/kuIvpmZDjgIJTdGFnZSAy44GuS+evhOWbsuOBp+OBr+W+qeWFg+ODiOODq+OCr+OBjOW+k+adpeaaq+WumnRhdeOBrue0hDnvvZ4xOOWAjeOAgiB8IiwKICAgICAgICAgICAgInwgTUFE5L+C5pWwMS40ODI2MDIuLi4gfCDmraPopo/liIbluIPjgadNQUTjgpLmqJnmupblgY/lt67nm7jlvZPjgavjgZnjgovnkIboq5blrprmlbAxL1BoaV4tMSgwLjc1KeOAgiB8IiwKICAgICAgICAgICAgInwgc29mdC1MMSB8IOS6jOS5l+aQjeWkseOBruWxgOaJgOaEn+W6puOCkue2reaMgeOBl+OAgeWkluOCjOWApOOBruW9semfv+OCkua8uOa4m+OBmeOCi+a7keOCieOBi+OBquODreODkOOCueODiOaQjeWkseOAgiB8IiwKICAgICAgICAgICAgInwgOTUl5L+C5pWwMS45NTk5NjQuLi4gfCDmqJnmupbmraPopo/liIbluIPjga7kuKHlgbQ5NSXliIbkvY3ngrnjgIIgfCIsCiAgICAgICAgICAgICJ8IOaMr+W5heiouuaWreW5hTUgZGVnIHwgU3RhZ2UgMuOBruaMr+W5heWuieWumuaAp+iouuaWreOBqOWQjOOBmOWMuuWIh+OCiuOCkuS9v+OBhOOAgeautemajumWk+avlOi8g+OCkuWPr+iDveOBq+OBmeOCi+OAgiB8IiwKICAgICAgICAgICAgInwg5pys5ZCM5a6a5pyA5aSn5Y+N5b6pODAgfCDlhbHmnInkv4LmlbA15aSJ5pWw44GuTC1CRkdTLULlj47mnZ/kuIrpmZDjgILlrp/pmpvjga7lj43lvqnmlbDjgajmnIDntYLli77phY3jgpLkv53lrZjjgZfjgIHkuIrpmZDliLDpgZTmmYLjga/lpLHmlZfmibHjgYTjgavjgZnjgovjgIIgfCIsCiAgICAgICAgICAgICJ8IExPT+e3muW9ouWMljHlm57mm7TmlrAgfCAx5rOi5b2i44Gv5YWoMzTms6LlvaLjga7ntIQzJeS7peS4i+OBp+OBguOCiuOAgeWFqOODh+ODvOOCv+acgOmBqeino+i/keWCjeOBruW9semfv+mWouaVsOi/keS8vOOCkuS9v+OBhuOAguWFqOmZpOWkluazouW9ouOBruS6iOa4rOOBr+abtOaWsOS/guaVsOOBp+WOs+Wvhk9EReWGjeioiOeul+OBmeOCi+OAgiB8IiwKICAgICAgICAgICAgInwg5a6M5YWo5YaN5ZCM5a6a5qSc6Ki8MuazouW9oi/jg6Ljg4fjg6sgfCDnt5rlvaLljJbmm7TmlrDph4/jgYzmnIDlpKfjga7jgrHjg7zjgrnjgpLmnIDmgqrmnaHku7bjgajjgZfjgablkITjg6Ljg4fjg6sy5Lu26YG444Gz44CB5a2m57+S5YG044KC5a6M5YWo5YaN5ZCM5a6a44GX44Gm6L+R5Ly844KS5qSc6Ki844GZ44KL44CCIHwiLAogICAgICAgICAgICAifCDov5HkvLxSTVNF5beuMSUgfCBMT0/jga7nm67nmoTjga/mnKrkvb/nlKjms6LlvaLjga7kuojmuKzoqqTlt67oqZXkvqHjgarjga7jgafjgIHlrozlhajlho3lkIzlrprjgajjga5STVNF5beu44KSMSXku6XlhoXjgavliLbpmZDjgZnjgovjgILotoXpgY7mmYLjga/nt5rlvaLljJZMT0/jgpLmjqHnlKjjgZvjgZrlh6bnkIbjgpLlpLHmlZfjgZXjgZvjgovjgIIgfCIsCiAgICAgICAgICAgICJ8IExPT+S/guaVsOW3ruOBr+iouuaWreOBruOBvyB8IOW8seitmOWIpeS/guaVsOOBrumFjeWIhuOBjOWkieOCj+OBo+OBpuOCguS6iOa4rFJNU0XjgYzlronlrprjgZnjgovloLTlkIjjgYzjgYLjgovjgZ/jgoHjgIHnhKHmrKHlhYPkv4LmlbDlt67jga9DU1bjgbjkv53lrZjjgZnjgovjgYxMT0/lkIjlkKbjgavjga/kvb/jgo/jgarjgYTjgILmnIDntYLkv4LmlbDjga/lhajjg4fjg7zjgr/lrozlhajmnIDpganljJblgKTjgpLkvb/jgYbjgIIgfCIsCiAgICAgICAgICAgICJ8IOWujOWFqOWGjeWQjOWumuacgOWkp+WPjeW+qTggfCDlhajjg4fjg7zjgr/mnIDpganop6PjgpLliJ3mnJ/lgKTjgavjgZnjgovmpJzoqLznlKjjg63jg5Djgrnjg4hHYXVzcy1OZXd0b27jga7kuIrpmZDjgILlkIjmiJDjg4fjg7zjgr/jgafmsY7nlKhMLUJGR1MtQuOBqOWQjOOBmOS/guaVsOOCkjIl5Lul5YaF44Gn5Zue5Y+O44GZ44KL44GT44Go44KC6Ieq5YuV6Kmm6aiT44GZ44KL44CCIHwiLAogICAgICAgICAgICAifCBDVuWIu+OBv+WPjuadnzFlLTbjgIHnm67nmoTplqLmlbDnm7jlr77lpInljJYxZS04IHwg54Sh5qyh5YWD5YyW5L+C5pWw44Gu5pu05paw6YeP44Go44Ot44OQ44K544OI55uu55qE6Zai5pWw44Gu5LqM44Gk44Gu5YGc5q2i5p2h5Lu244CC5L+C5pWw5bC65bqm44Gv6Zm944Ko44ON44Or44Ku44O85Yid5pyf5YCk44GL44KJ5rG65a6a44GZ44KL44CCIHwiLAogICAgICAgICAgICAifCBDVuODqeOCpOODs+OCteODvOODgeacgOWkpzblm54gfCAx44CBMS8y44CB4oCm44CBMS8zMuWAjeOBrkdhdXNzLU5ld3RvbuWIu+OBv+OCkuippuOBl+OAgeebrueahOmWouaVsOOBjOa4m+WwkeOBmeOCi+acgOWkp+WIu+OBv+OCkuaOoeeUqOOBmeOCi+OAgiB8IiwKICAgICAgICAgICAgInwg5rOi5b2i5qaC6KaB5ZuzNOWIlyB8IDM05rOi5b2i44KSOeihjOOBq+WPjuOCgeOAgeWQhOODkeODjeODq+OBruazouW9ouOBqOWHoeS+i+OCkuWIpOiqreOBp+OBjeOCi+e4puaoquavlOOBq+OBmeOCi+ihqOekuuWwgueUqOioreWumuOAguino+aekOWApOOBq+OBr+W9semfv+OBl+OBquOBhOOAgiB8IiwKICAgICAgICAgICAgInwg5Y2K5ZGo5pyf6KGo56S6NjDliIblibIgfCBPREXjga7mnIDlpKfliLvjgb9UMC84MOOBqOWQjOeoi+W6puS7peS4iuOBruaPj+eUu+WvhuW6puOBp+a7keOCieOBi+OBq+ihqOekuuOBmeOCi+ioreWumuOAguODleOCo+ODg+ODiOioiOeul+OBr+mBqeW/nOWIu+OBv+OBruWOs+Wvhk9EReOBp+ihjOOBhuOAgiB8IiwKICAgICAgICAgICAgIiIsCiAgICAgICAgICAgICIjIyAzNOazouW9ouOBruWun+a4rOODu+ODleOCo+ODg+ODiOmHjeOBreWQiOOCj+OBmyIsCiAgICAgICAgICAgICIiLAogICAgICAgICAgICAiIVvnkIPjgarjgZczNOazouW9ouOBruWun+a4rOazouW9ouOBqOWMuumWk+WIpeODleOCo+ODg+ODiF0od2F2ZWZvcm1fZml0X292ZXJ2aWV3LnBuZykiLAogICAgICAgICAgICAiIiwKICAgICAgICAgICAgIuapmee3muOBr+aOoeeUqOWAmeijnOS/guaVsOOBq+OCiOOCi+ODleOCo+ODg+ODiOe1kOaenOOAgeeBsOe3muOBr+S4reW/g+ijnOato+W+jOOBruWun+a4rOazouW9ouOBp+OBguOCi+OAgiIsCiAgICAgICAgICAgICJTdGFnZSA044Gu55uu55qE6Zai5pWw44Gr5ZCI44KP44Gb44CB5ZCE5qmZ57ea44Gv5Y2K5ZGo5pyf6ZaL5aeL5pmC44Gr5a6f5ris6aCC54K544G444Oq44K744OD44OI44GX44Gm44GE44KL44CCIiwKICAgICAgICAgICAgIuOBl+OBn+OBjOOBo+OBpuOAgeOBk+OCjOOBrzHljYrlkajmnJ/lhYjjg5XjgqPjg4Pjg4jjga7ph43jga3lkIjjgo/jgZvjgafjgYLjgorjgIHmnIDliJ3jgYvjgonmnIDlvozjgb7jgafoh6rnlLHotbDooYzjgZXjgZvjgZ/pgKPntprlho3nj77jgafjga/jgarjgYTjgIIiLAogICAgICAgICAgICAi6buS54K544Gv5a6f5ris6aCC54K544CB5qmZ44Guw5fljbDjga/kuojmuKzmrKHpoILngrnjgpLooajjgZnjgILlkITjg5Hjg43jg6vjga5STVNF44Gv5qyh6aCC54K56KeS44Gu6Kqk5beu44Gn44GC44KL44CCIiwKICAgICAgICAgICAgIiIsCiAgICAgICAgICAgICIjIyDmrovlt67jgajmpJzoqLwiLAogICAgICAgICAgICAiIiwKICAgICAgICAgICAgZiItIOaOoeeUqOWAmeijnOOBruWtpue/kuODu+azouW9ouetiemHjeOBv1JNU0U6IHthZG9wdGVkWyd3YXZlZm9ybV9lcXVhbF9ybXNlX2RlZyddOi42Zn0gZGVnIiwKICAgICAgICAgICAgZiItIOaOoeeUqOWAmeijnOOBrkxPTy1DVuODu+azouW9ouetiemHjeOBv1JNU0U6IHthZG9wdGVkWydjdl93YXZlZm9ybV9lcXVhbF9ybXNlX2RlZyddOi42Zn0gZGVnIiwKICAgICAgICAgICAgZiItIExPTy1DVuazouW9ouaVsDoge2xlbihjdltjdlsnbW9kZWwnXSA9PSBhZG9wdGVkX21vZGVsXSl9IiwKICAgICAgICAgICAgZiItIOe3muW9ouWMlkxPT+i/keS8vOOBruWujOWFqOWGjeWQjOWumuaknOiovDoge2ludChjdl92YWxpZGF0aW9uWydwYXNzZWQnXS5zdW0oKSl9L3tsZW4oY3ZfdmFsaWRhdGlvbil95Lu25ZCI5qC8IiwKICAgICAgICAgICAgZiItIOWujOWFqOWGjeWQjOWumuOBqOOBrlJNU0Xnm7jlr77lt67mnIDlpKc6IHtjdl92YWxpZGF0aW9uWydybXNlX3JlbGF0aXZlX2RpZmZlcmVuY2UnXS5tYXgoKTouNiV9IiwKICAgICAgICAgICAgZiItIOWujOWFqOWGjeWQjOWumuOBqOOBrueEoeasoeWFg+S/guaVsOW3ruacgOWkpzoge2N2X3ZhbGlkYXRpb25bJ21heGltdW1fc2NhbGVkX3BhcmFtZXRlcl9kaWZmZXJlbmNlJ10ubWF4KCk6LjZmfe+8iOitmOWIpeaAp+iouuaWreWApOOAgeWQiOWQpuWvvuixoeWklu+8iSIsCiAgICAgICAgICAgIGYiLSDlp4vngrnmjK/luYXjgajmrKHpoILngrnmjK/luYXmrovlt67jga7nm7jplqI6IElOPXthbXBsaXR1ZGVfY29ycmVsYXRpb25zWydJTiddOi42Zn3jgIFPVVQ9e2FtcGxpdHVkZV9jb3JyZWxhdGlvbnNbJ09VVCddOi42Zn0iLAogICAgICAgICAgICAiLSDpgbfnp7vmlrnlkJHliKXjga7lkIznm7jplqI6ICIKICAgICAgICAgICAgZiJJTiArdG8tPXt0cmFuc2l0aW9uX2FtcGxpdHVkZV9jb3JyZWxhdGlvbnNbKCdJTicsICcrdG8tJyldOi42Zn3jgIEiCiAgICAgICAgICAgIGYiSU4gLXRvKz17dHJhbnNpdGlvbl9hbXBsaXR1ZGVfY29ycmVsYXRpb25zWygnSU4nLCAnLXRvKycpXTouNmZ944CBIgogICAgICAgICAgICBmIk9VVCArdG8tPXt0cmFuc2l0aW9uX2FtcGxpdHVkZV9jb3JyZWxhdGlvbnNbKCdPVVQnLCAnK3RvLScpXTouNmZ944CBIgogICAgICAgICAgICBmIk9VVCAtdG8rPXt0cmFuc2l0aW9uX2FtcGxpdHVkZV9jb3JyZWxhdGlvbnNbKCdPVVQnLCAnLXRvKycpXTouNmZ9IiwKICAgICAgICAgICAgZiItIOi7uMOX5b2i5oWL44Gn5pyA5aSn44GuUk1TRToge2xhcmdlc3RfY29uZmlndXJhdGlvbi5pbmRleFswXVswXX0ge2xhcmdlc3RfY29uZmlndXJhdGlvbi5pbmRleFswXVsxXX3jgIF7bGFyZ2VzdF9jb25maWd1cmF0aW9uLmlsb2NbMF06LjZmfSBkZWciLAogICAgICAgICAgICBmIi0gNO+9njUgZGVn5biv44Gu5qyh6aCC54K55oyv5bmF5q6L5beu5bmz5Z2HOiBJTj17bG93X2FtcGxpdHVkZVtsb3dfYW1wbGl0dWRlWydheGlzJ10gPT0gJ0lOJ11bYW1wbGl0dWRlX3Jlc2lkdWFsX2NvbHVtbl0ubWVhbigpOi42Zn0gZGVn44CBT1VUPXtsb3dfYW1wbGl0dWRlW2xvd19hbXBsaXR1ZGVbJ2F4aXMnXSA9PSAnT1VUJ11bYW1wbGl0dWRlX3Jlc2lkdWFsX2NvbHVtbl0ubWVhbigpOi42Zn0gZGVnIiwKICAgICAgICAgICAgIi0g6Lu4w5flvaLmhYvjgIHmraPosqDpgbfnp7vjgIHmjK/luYXluK/liKXjga7mrovlt67jgpJyZXNpZHVhbF9zdW1tYXJ5LmNzduOBuOS/neWtmOOBl+OBn+OAgiIsCiAgICAgICAgICAgICItIOi7uOWFqOS9k+OBruebuOmWouOBr+ato+iyoOmBt+enu+OBp+ebuOauuuOBleOCjOOCi+S4gOaWueOAgemBt+enu+aWueWQkeWIpeOBq+OBr+W8t+OBhOmAhuWQkeOBjeOBruaMr+W5heS+neWtmOOBjOOBguOCi+OAguW5s+ihoeS4reW/g+OAgeW+qeWFg+mgheOBruato+iyoOmdnuWvvuensOOAgemggueCueaKveWHuuOBruW9semfv+OCkuWAmeijnOOBqOOBl+OBplN0YWdlIDbjgafnorroqo3jgZnjgovjgIIiLAogICAgICAgICAgICAiLSDkuIvpmZDnm7TkuIrjga40772eNSBkZWfluK/jgafjga/osqDjga7mjK/luYXmrovlt67jgYzjgYLjgorjgIHkvY7mjK/luYXln5/jga7mkanmk6bjg7vpoILngrnmpJzlh7rlvbHpn7/jgpLmjIHjgaHotorjgZnjgIIiLAogICAgICAgICAgICAiLSDmnKxTdGFnZeOBrzHljYrlkajmnJ/lhYjkuojmuKzjga7oqZXkvqHjgafjgYLjgorjgIHmnIDliJ3jga7poILngrnjgYvjgonntYLnq6/jgb7jgafjga7pgKPntprms6LlvaLlho3nj77jga9TdGFnZSA244Gn6KGM44GG44CCIiwKICAgICAgICAgICAgIiIsCiAgICAgICAgICAgICIjIyBTdGFnZSA144G45oyB44Gh6LaK44GZ5LqL6aCFIiwKICAgICAgICAgICAgIiIsCiAgICAgICAgICAgICItIOaOoeeUqOOBl+OBn+ODreODg+ODieS/guaVsOOCkuWIneacn+WApOOBqOOBl+OAgUJBTEzjgpLov73liqDjgZfjgaZjX3NwaGVyZeOCkuWFseacieWQjOWumuOBmeOCi+OAgiIsCiAgICAgICAgICAgICItIOeQg+OBp+maoOOCjOOCi+ODreODg+ODieOBruWvhOS4juOBr2FscGhhX3JvZD0oMTI5LzIyOSleNOOBqOOBl+OBpuaJseOBhuOAgiIsCiAgICAgICAgICAgICItIOato+iyoOmBt+enu+OBp+mAhuWQkeOBjeOBqOOBquOCi+aMr+W5heS+neWtmOaui+W3ruOCkuOAgUJBTEzjgafjgoLmlrnlkJHliKXjgavliIbpm6LjgZfjgabnm6PoppbjgZnjgovjgIIiLAogICAgICAgICAgICAiLSBTdGFnZSA16ZaL5aeL5YmN44Gr5pysU3RhZ2Xjga7kv4LmlbDjgIHjg6Ljg4fjg6vpgbjmip7jgIHmrovlt67mp4vpgKDjga7jg6zjg5Pjg6Xjg7zmib/oqo3jgpLlj5fjgZHjgovjgIIiLAogICAgICAgICAgICAiIiwKICAgICAgICAgICAgIiMjIOWun+ihjOOCs+ODnuODs+ODiSIsCiAgICAgICAgICAgICIiLAogICAgICAgICAgICAiYGBgYmFzaCIsCiAgICAgICAgICAgICJweXRob24gLW0gdW5pdHRlc3QgZGlzY292ZXIgLXMgMDZfQW5hbHlzaXMvZml0dGluZ19waXBlbGluZS90ZXN0cyAtcCAndGVzdF9oeWJyaWRfcm9kX2RhbXBpbmcucHknIiwKICAgICAgICAgICAgInB5dGhvbiAwNl9BbmFseXNpcy9maXR0aW5nX3BpcGVsaW5lL3J1bl9oeWJyaWRfcm9kX2RhbXBpbmdfaWRlbnRpZmljYXRpb24ucHkgLS1kYXRlIDIwMjYwOTIxIiwKICAgICAgICAgICAgImBgYCIsCiAgICAgICAgICAgICIiLAogICAgICAgICAgICAiIyMg5Ye65YqbIiwKICAgICAgICAgICAgIiIsCiAgICAgICAgICAgICItIFvlhajljYrlkajmnJ/jga7kuojmuKzjgajmrovlt65dKGludGVydmFsX3ByZWRpY3Rpb25zLmNzdikiLAogICAgICAgICAgICAiLSBb44Oi44OH44Or5q+U6LyDXShtb2RlbF9jb21wYXJpc29uLmNzdikiLAogICAgICAgICAgICAiLSBb5L+C5pWw44Go6L+R5Ly85L+h6aC85Yy66ZaTXShwYXJhbWV0ZXJfdW5jZXJ0YWludHkuY3N2KSIsCiAgICAgICAgICAgICItIFtiX0lOPTDjg6Ljg4fjg6vjga7kv4LmlbDnm7jplqJdKHBhcmFtZXRlcl9jb3JyZWxhdGlvbl9iX2luX2ZpeGVkLmNzdikiLAogICAgICAgICAgICAiLSBbMeazouW9oumZpOWkluS6pOW3ruaknOiovF0obGVhdmVfb25lX3dhdmVmb3JtX291dC5jc3YpIiwKICAgICAgICAgICAgIi0gW+e3muW9ouWMlkxPT+i/keS8vOOBruWujOWFqOWGjeWQjOWumuaknOiovF0oY3ZfYXBwcm94aW1hdGlvbl92YWxpZGF0aW9uLmNzdikiLAogICAgICAgICAgICAiLSBb5q6L5beu6ZuG6KiIXShyZXNpZHVhbF9zdW1tYXJ5LmNzdikiLAogICAgICAgICAgICAiLSBb57WQ5p6c5qaC6KaB5ZuzXShyb2RfZGFtcGluZ19pZGVudGlmaWNhdGlvbi5wbmcpIiwKICAgICAgICAgICAgIi0gWzM05rOi5b2i44Gu5a6f5ris44O744OV44Kj44OD44OI6YeN44Gt5ZCI44KP44GbXSh3YXZlZm9ybV9maXRfb3ZlcnZpZXcucG5nKSIsCiAgICAgICAgICAgICItIFvlrp/ooYzmnaHku7ZdKHN0YWdlNF9zZXR0aW5ncy5qc29uKSIsCiAgICAgICAgXQogICAgKQogICAgb3V0cHV0X3BhdGgud3JpdGVfdGV4dCgiXG4iLmpvaW4obGluZXMpICsgIlxuIiwgZW5jb2Rpbmc9InV0Zi04IikKCgpkZWYgd3JpdGVfdGF1X29ubHlfcmVwb3J0KAogICAgb3V0cHV0X3BhdGgsCiAgICBpbnRlcnZhbF9jb3VudCwKICAgIGNvbXBhcmlzb25fcm93cywKICAgIHRoZW9yZXRpY2FsX3dhdmVmb3JtcywKICAgIHplcm9fY193YXZlZm9ybXMsCiAgICBjb250aW51b3VzX3Jvd3MsCiAgICByZXlub2xkc19yb3dzLAopOgogICAgIiIiYj0w44CBY+eQhuirluWbuuWumuOAgXRhdeOBruOBv+WQjOWumuOBmeOCi+acgOe1guaWuemHneOBruODrOODneODvOODiOOCkuabuOOBj+OAgiIiIgoKICAgIGNvbXBhcmlzb24gPSBwZC5EYXRhRnJhbWUoY29tcGFyaXNvbl9yb3dzKS5zZXRfaW5kZXgoIm1vZGVsIikKICAgIHRoZW9yZXRpY2FsID0gcGQuRGF0YUZyYW1lKHRoZW9yZXRpY2FsX3dhdmVmb3JtcykKICAgIHplcm9fYyA9IHBkLkRhdGFGcmFtZSh6ZXJvX2Nfd2F2ZWZvcm1zKQogICAgY29udGludW91cyA9IHBkLkRhdGFGcmFtZShjb250aW51b3VzX3Jvd3MpCiAgICByZXlub2xkcyA9IHBkLkRhdGFGcmFtZShyZXlub2xkc19yb3dzKQoKICAgIGRlZiBjb250aW51b3VzX21ldHJpY3MobW9kZWwpOgogICAgICAgIHZhbHVlcyA9IGNvbnRpbnVvdXNbY29udGludW91c1sibW9kZWwiXSA9PSBtb2RlbF0KICAgICAgICByZXR1cm4gKAogICAgICAgICAgICBmbG9hdChucC5zcXJ0KG5wLm1lYW4odmFsdWVzWyJybXNlX2RlZyJdICoqIDIpKSksCiAgICAgICAgICAgIGZsb2F0KHZhbHVlc1sicm1zZV9kZWciXS5tZWRpYW4oKSksCiAgICAgICAgICAgIGZsb2F0KHZhbHVlc1sicm1zZV9kZWciXS5tYXgoKSksCiAgICAgICAgKQoKICAgIGhpZ2ggPSByZXlub2xkc1tyZXlub2xkc1sic3RhcnRfYW1wbGl0dWRlX2RlZyJdID49IDQwLjBdCiAgICB1cHBlcl9mcmFjdGlvbiA9IGZsb2F0KHJleW5vbGRzWyJ1cHBlcl9yb2RfdG9ycXVlX2ZyYWN0aW9uIl0uaWxvY1swXSkKICAgIGxpbmVzID0gWwogICAgICAgICIjIFN0YWdlIDQ6IOeQhuirluODreODg+ODieaKl+WKm+WbuuWumuODu+OCr+ODvOODreODs+aRqeaTpuWQjOWumiIsCiAgICAgICAgIiIsCiAgICAgICAgIiMjIOe1kOirliIsCiAgICAgICAgIiIsCiAgICAgICAgZiLmib/oqo3muIjjgb/nkIPjgarjgZczNOazouW9ouOAgXtpbnRlcnZhbF9jb3VudH3ljYrlkajmnJ/jgpLkvb/nlKjjgZfjgZ/jgILkuLvjg6Ljg4fjg6vjga8iLAogICAgICAgICJgYj0wYOOAgeWGhuafseODreODg+ODieOBruS6jOS5l+aKl+WKm+S/guaVsGBjYOOCkueQhuirluWApOOBq+WbuuWumuOBl+OAgei7uOWIpeOBruOCr+ODvOODreODs+aRqeaTpmB0YXVg44Gg44GR44KS5ZCM5a6a44GZ44KL44CCIiwKICAgICAgICAi44GT44KM44Gr44KI44KKYuOAgWPjgIF0YXXjga7plpPjgaflkIzjgZjmuJvoobDph4/jgpLliIbphY3jgZnjgovorZjliKXmgKfjga7llY/poYzjgpLpmaTjgYTjgZ/jgIIiLAogICAgICAgICJgYz0wYOOBr+ODreODg+ODieaKl+WKm+OCkueEoeimluOBl+OBn+WgtOWQiOOBruW9semfv+OCkuimi+OCi+avlOi8g+ODouODh+ODq+OBp+OBguOCiuOAgeS4u+ODouODh+ODq+OBq+OBr+aOoeeUqOOBl+OBquOBhOOAgiIsCiAgICAgICAgIknjgIFL44GvU3RhZ2UgMuOBruWApOOBi+OCieWkieabtOOBm+OBmuOAgemAo+e2muazouW9ouOBruS9jeebuOiqpOW3ruOCkua4m+ihsOS/guaVsOOBuOaKvOOBl+i+vOOBvuOBquOBhOOAgiIsCiAgICAgICAgIiIsCiAgICAgICAgIiMjIOODreODg+ODieaKl+WKm+S/guaVsGPjga7nkIboq5blgKQiLAogICAgICAgICIiLAogICAgICAgICLmlK/ngrnjgYvjgonot53pm6Jy44Gu5YaG5p+x5b6u5bCP6KaB57Sg44Gn44Gv6YCf5bqmYHY9cip0aGV0YV9kb3Rg44Gn44GC44KL44CC5oqX5Yqb44OI44Or44Kv44KS5LiK5LiL44Ot44OD44OJ44G456mN5YiG44GZ44KL44Go44CBIiwKICAgICAgICAiIiwKICAgICAgICAiYGBgbWF0aCIsCiAgICAgICAgIk1fRD1jfFxcZG90e1xcdGhldGF9fFxcZG90e1xcdGhldGF9LFxccXF1YWQiLAogICAgICAgICJjPVxcZnJhY3tcXHJobyBDX0QgZH17OH0oTF8rXjQrTF8tXjQpIiwKICAgICAgICAiYGBgIiwKICAgICAgICAiIiwKICAgICAgICAifCDlhaXlipsgfCDlgKQgfCIsCiAgICAgICAgInwtLS18LS0tOnwiLAogICAgICAgIGYifCDnqbrmsJflr4bluqYgcmhvIHwge0FJUl9ERU5TSVRZX0tHX00zOi4zZn0ga2cvbV4zIHwiLAogICAgICAgIGYifCDlhobmn7Hmipflipvkv4LmlbAgQ2QgfCB7Uk9EX0RSQUdfQ09FRkZJQ0lFTlQ6LjFmfSB8IiwKICAgICAgICBmInwg44OR44Kk44OX5aSW5b6EIGQgfCB7Uk9EX0RJQU1FVEVSX00qMTAwMDouMWZ9IG1tIHwiLAogICAgICAgIGYifCDkuIrlgbTplbfjgZUgTCsgfCB7Uk9EX1VQUEVSX0xFTkdUSF9NKjEwMDA6LjBmfSBtbSB8IiwKICAgICAgICBmInwg5LiL5YG06ZW344GVIEwtIHwge1JPRF9MT1dFUl9MRU5HVEhfTSoxMDAwOi4wZn0gbW0gfCIsCiAgICAgICAgZiJ8IOeQhuirluWbuuWumuWApCBjIHwge1RIRU9SRVRJQ0FMX1JPRF9DOi45ZX0gTiBtIHNeMi9yYWReMiB8IiwKICAgICAgICAiIiwKICAgICAgICBmIuS4iuWBtOODreODg+ODieOBr+WFqOS6jOS5l+aKl+WKm+ODiOODq+OCr+OBrnsxMDAqdXBwZXJfZnJhY3Rpb246LjJmfSXjgpLljaDjgoHjgovjgILjgZXjgonjgavlhobmn7Hjga7lpJblgbTljYrliIbjga8iLAogICAgICAgICLlkIzjgZjlgbTjga7mipflipvjg4jjg6vjgq/jga45My43NSXjgIHlpJblgbQyNSXjga82OC4zNiXjgpLljaDjgoHjgovjgZ/jgoHjgIFDZOOBrueiuuiqjeOBp+OBr+S4iuWBtOWFiOerr+S7mOi/keOBi+OBpCIsCiAgICAgICAgIuaMr+OCiuWtkOOBjOW5s+ihoeeCueOCkumAmumBjuOBl+OBpuinkumAn+W6puOBjOacgOWkp+OBq+OBquOCi+adoeS7tuOCkumHjeimluOBmeOCi+OAgiIsCiAgICAgICAgIiIsCiAgICAgICAgIiMjIOODrOOCpOODjuODq+OCuuaVsOOBq+OCiOOCi0Nk56K66KqNIiwKICAgICAgICAiIiwKICAgICAgICAi5ZCE5Y2K5ZGo5pyf44Gu5aeL54K55oyv5bmFQeOBqOWbuuWumuOBl+OBn0njgIFL44GL44KJ44CB5L+d5a2Y57O744Go44GX44Gm5bmz6KGh54K56YCa6YGO5pmC44Gu5pyA5aSn6KeS6YCf5bqm44KSIiwKICAgICAgICAiYG9tZWdhX21heD1zcXJ0KDJLKDEtY29zIEEpL0kpYOOBp+eul+WHuuOBl+OBn+OAguODrOOCpOODjuODq+OCuuaVsOOBr2BSZT1yaG8qdipkL211YOOAgSIsCiAgICAgICAgZiLnqbrmsJfjga7nspjmgKfkv4LmlbDjga97QUlSX0RZTkFNSUNfVklTQ09TSVRZX1BBX1M6LjNlfSBQYSBz44Go44GX44Gf44CC5YCL44CF44Gue2ludGVydmFsX2NvdW50feadoeS7tuOBryIsCiAgICAgICAgIltyZXlub2xkc19hc3Nlc3NtZW50LmNzdl0ocmV5bm9sZHNfYXNzZXNzbWVudC5jc3Yp44G45L+d5a2Y44GX44Gf44CCIiwKICAgICAgICAiIiwKICAgICAgICAifCDoqZXkvqHkvY3nva7jg7vmnaHku7YgfCBSZeacgOWwjyB8IFJl5Lit5aSu5YCkIHwgUmXmnIDlpKcgfCIsCiAgICAgICAgInwtLS18LS0tOnwtLS06fC0tLTp8IiwKICAgICAgICBmInwg5LiK5YG05YWI56uv44O75YWo5o6h55So5Yy66ZaTIHwge3JleW5vbGRzWyd1cHBlcl90aXBfcmV5bm9sZHMnXS5taW4oKTouMWZ9IHwge3JleW5vbGRzWyd1cHBlcl90aXBfcmV5bm9sZHMnXS5tZWRpYW4oKTouMWZ9IHwge3JleW5vbGRzWyd1cHBlcl90aXBfcmV5bm9sZHMnXS5tYXgoKTouMWZ9IHwiLAogICAgICAgIGYifCDmipflipvph43jgb/ku5jjgY3kvY3nva7jg7vlhajmjqHnlKjljLrplpMgfCB7cmV5bm9sZHNbJ2RyYWdfd2VpZ2h0ZWRfcmV5bm9sZHMnXS5taW4oKTouMWZ9IHwge3JleW5vbGRzWydkcmFnX3dlaWdodGVkX3JleW5vbGRzJ10ubWVkaWFuKCk6LjFmfSB8IHtyZXlub2xkc1snZHJhZ193ZWlnaHRlZF9yZXlub2xkcyddLm1heCgpOi4xZn0gfCIsCiAgICAgICAgZiJ8IOS4iuWBtOWFiOerr+ODuzQwIGRlZ+S7peS4iiB8IHtoaWdoWyd1cHBlcl90aXBfcmV5bm9sZHMnXS5taW4oKTouMWZ9IHwge2hpZ2hbJ3VwcGVyX3RpcF9yZXlub2xkcyddLm1lZGlhbigpOi4xZn0gfCB7aGlnaFsndXBwZXJfdGlwX3JleW5vbGRzJ10ubWF4KCk6LjFmfSB8IiwKICAgICAgICBmInwg5oqX5Yqb6YeN44G/5LuY44GN5L2N572u44O7NDAgZGVn5Lul5LiKIHwge2hpZ2hbJ2RyYWdfd2VpZ2h0ZWRfcmV5bm9sZHMnXS5taW4oKTouMWZ9IHwge2hpZ2hbJ2RyYWdfd2VpZ2h0ZWRfcmV5bm9sZHMnXS5tZWRpYW4oKTouMWZ9IHwge2hpZ2hbJ2RyYWdfd2VpZ2h0ZWRfcmV5bm9sZHMnXS5tYXgoKTouMWZ9IHwiLAogICAgICAgICIiLAogICAgICAgICLoprPmuKznr4Tlm7Ljga7jgYbjgaFj44Gu5a+E5LiO44GM5aSn44GN44GE6auY5oyv5bmF44O75pyA5aSn6YCf5bqm5p2h5Lu244Gv44CB5YaG5p+x44Gu5Lqc6Ieo55WM44Gq5L2OUmXpoJjln5/jgavjgYLjgovjgIIiLAogICAgICAgICJOQUNBIFROIDI5NjDjga7lhobmn7HmipflipvoqabpqJPvvIhbTkFTQSBOVFJTXShodHRwczovL250cnMubmFzYS5nb3YvY2l0YXRpb25zLzE5OTMwMDg0MDE4Ke+8ieOCguWPgueFp+OBl+OAgSIsCiAgICAgICAgIuOBk+OBrumgmOWfn+OBp+OBr+WGhuafsUNk44KS5qaC44GtMS4w772eMS4y44Go572u44GP5bel5a2m55qE6L+R5Ly844Go5pW05ZCI44GZ44KL44CC5oqX5Yqb44G444Gu5a+E5LiO44GM5aSn44GN44GE5p2h5Lu244KSIiwKICAgICAgICAi5Luj6KGo44GZ44KL5Zu65a6a5YCk44Go44GX44GmQ2Q9MS4y44KS5o6h55So44GX44Gf44CCUmXkvp3lrZjjgpLoqbPntLDjg6Ljg4fjg6vljJbjgZnjgovjgahj44GM6YCf5bqm5L6d5a2Y44Go44Gq44KL44GM44CBIiwKICAgICAgICAi5LuK5Zue44Gu55uu55qE44GvdGF144Go44Gu5YiG6YWN44KS44Gq44GP44GZ44GT44Go44Gq44Gu44Gn44CB44G+44Ga5Y2Y5LiA44Gu55CG6KuW5Zu65a6a5YCk44KS55So44GE44KL44CCIiwKICAgICAgICAiIiwKICAgICAgICAiIyMg5ZCM5a6a5pa55rOVIiwKICAgICAgICAiIiwKICAgICAgICAiMS4g5ZCE5rOi5b2i44GnYj0w44CBY+OCkuWbuuWumuOBl+OAgeWFqOWNiuWRqOacn+OBq+WFsemAmuOBrnRhdeOBoOOBkeOCkumdnuiyoOe3muW9ouacgOWwj+S6jOS5l+OBp+axguOCgeOCi+OAgiIsCiAgICAgICAgIjIuIElO44CBT1VU44Gd44KM44Ge44KM44Gr44Gk44GE44Gm44CB5rOi5b2i5YildGF144Gu5Lit5aSu5YCk44KS5Luj6KGo5YCk44Go44GZ44KL44CCIiwKICAgICAgICAiMy4g5Luj6KGo5YCk44KS5Zu65a6a44GX44CB5ZCE5a6f5ris6aCC54K544GL44KJ5qyh6aCC54K544G+44Gn44Gu5YiG5Ymy56mN5YiG44Gn5rib6KGw44KS5qSc6Ki844GZ44KL44CCIiwKICAgICAgICAiNC4g5ZCM44GY5L+C5pWw44Gn5pyA5Yid44Gu5pyJ5Yq56aCC54K544GL44KJ5pyA5b6M44G+44Gn54q25oWL44KS44Oq44K744OD44OI44Gb44Ga6YCj57aa56mN5YiG44GX44CB57Sv56mN6Kqk5beu44KS5qSc6Ki844GZ44KL44CCIiwKICAgICAgICAiIiwKICAgICAgICAi5Y2K5ZGo5pyf44GU44Go44Gr5a6f5ris6aCC54K544G45oi744GZ44Gu44Gv54q25oWLYHRoZXRhLCB0aGV0YV9kb3Rg44Gg44GR44Gn44GC44KK44CBdGF144Gv5ZCM5LiA5rOi5b2i5YaF44Gn5YWx6YCa44Gn44GC44KL44CCIiwKICAgICAgICAi5pyA57WC6KmV5L6h44Gn44Gv5rOi5b2i5YildGF144KS44Gd44Gu44G+44G+5L2/44KP44Ga44CB6Lu45Yil5Lit5aSu5YCk44KS5YWoMzTms6LlvaLjgbjlhbHpgJrjgavpgannlKjjgZnjgovjgIIiLAogICAgICAgICIiLAogICAgICAgICIjIyDku6Pooajkv4LmlbDjgajoqqTlt64iLAogICAgICAgICIiLAogICAgICAgICJ8IOODouODh+ODqyB8IGJfSU4gfCBiX09VVCB8IGNfcm9kIHwgdGF1X0lOIHwgdGF1X09VVCB8IOWNiuWRqOacn1JNU0UgW2RlZ10gfCDpgKPntppSTVNFIFtkZWddIHwiLAogICAgICAgICJ8LS0tfC0tLTp8LS0tOnwtLS06fC0tLTp8LS0tOnwtLS06fC0tLTp8IiwKICAgIF0KICAgIGZvciBtb2RlbCwgbGFiZWwgaW4gWygidGhlb3JldGljYWxfYyIsICLkuLs6IOeQhuirlmMiKSwgKCJ6ZXJvX2MiLCAi5q+U6LyDOiBjPTAiKV06CiAgICAgICAgcm93ID0gY29tcGFyaXNvbi5sb2NbbW9kZWxdCiAgICAgICAgY29udGludW91c19ybXNlLCB1bnVzZWRfbWVkaWFuLCB1bnVzZWRfbWF4aW11bSA9IGNvbnRpbnVvdXNfbWV0cmljcyhtb2RlbCkKICAgICAgICBsaW5lcy5hcHBlbmQoCiAgICAgICAgICAgIGYifCB7bGFiZWx9IHwge3Jvd1snYl9JTiddOi4zZX0gfCB7cm93WydiX09VVCddOi4zZX0gfCB7cm93WydjX3JvZCddOi45ZX0gfCAiCiAgICAgICAgICAgIGYie3Jvd1sndGF1X0lOJ106LjllfSB8IHtyb3dbJ3RhdV9PVVQnXTouOWV9IHwge3Jvd1snd2F2ZWZvcm1fZXF1YWxfcm1zZV9kZWcnXTouNmZ9IHwge2NvbnRpbnVvdXNfcm1zZTouNmZ9IHwiCiAgICAgICAgKQogICAgbGluZXMuZXh0ZW5kKFsKICAgICAgICAiIiwKICAgICAgICAi5YiG5Ymy56mN5YiG44Gv5bGA5omA55qE44Gq5rib6KGw5YmH44CB6YCj57aa56mN5YiG44Gv5ZGo5pyf44O75L2N55u46Kqk5beu44KS5ZCr44KA57Sv56mN5oyZ5YuV44Gu56K66KqN44Gr55So44GE44KL44CCIiwKICAgICAgICAi6YCj57aa56mN5YiG44Gu6Kqk5beu44KS5pyA5bCP5YyW44GX44Gm44GE44Gq44GE44Gf44KB44CB5L2N55u444Ga44KM44GM5q6L44Gj44Gm44KCSeOAgUvjgoR0YXXjgpLlho3oqr/mlbTjgZfjgarjgYTjgIIiLAogICAgICAgICIiLAogICAgICAgICIjIyAzNOazouW9ouOBrumAo+e2muavlOi8gyIsCiAgICAgICAgIiIsCiAgICAgICAgIiMjIyDkuLvjg6Ljg4fjg6s6IGI9MOOAgWM955CG6KuW5Zu65a6a5YCkIiwKICAgICAgICAiIiwKICAgICAgICAiIVvnkIboq5Zj44Oi44OH44Or44GuMzTms6LlvaLpgKPntprmr5TovINdKGNvbnRpbnVvdXNfd2F2ZWZvcm1fY29tcGFyaXNvbl90aGVvcmV0aWNhbF9jLmpwZykiLAogICAgICAgICIiLAogICAgICAgICIjIyMg5q+U6LyD44Oi44OH44OrOiBiPTDjgIFjPTAiLAogICAgICAgICIiLAogICAgICAgICIhW2M9MOODouODh+ODq+OBrjM05rOi5b2i6YCj57aa5q+U6LyDXShjb250aW51b3VzX3dhdmVmb3JtX2NvbXBhcmlzb25femVyb19jLmpwZykiLAogICAgICAgICIiLAogICAgICAgICIjIyDms6LlvaLliKV0YXXjgahSZeODu+iqpOW3ruOBruamguimgSIsCiAgICAgICAgIiIsCiAgICAgICAgIiFbU3RhZ2UgNOamguimgV0ocm9kX2RhbXBpbmdfaWRlbnRpZmljYXRpb24ucG5nKSIsCiAgICAgICAgIiIsCiAgICAgICAgIiMjIOWHuuWKmyIsCiAgICAgICAgIiIsCiAgICAgICAgIi0gW+azouW9ouWIpXRhdV0od2F2ZWZvcm1fcGFyYW1ldGVycy5jc3YpIiwKICAgICAgICAiLSBb5YWo5Y2K5ZGo5pyf44Gu5LqI5ris44Go5q6L5beuXShpbnRlcnZhbF9wcmVkaWN0aW9ucy5jc3YpIiwKICAgICAgICAiLSBb44Oi44OH44Or5q+U6LyDXShtb2RlbF9jb21wYXJpc29uLmNzdikiLAogICAgICAgICItIFvjg6zjgqTjg47jg6vjgrrmlbDoqZXkvqFdKHJleW5vbGRzX2Fzc2Vzc21lbnQuY3N2KSIsCiAgICAgICAgIi0gW+mAo+e2muazouW9ouiqpOW3rl0oY29udGludW91c193YXZlZm9ybV9tZXRyaWNzLmNzdikiLAogICAgICAgICItIFvlrp/ooYzmnaHku7ZdKHN0YWdlNF9zZXR0aW5ncy5qc29uKSIsCiAgICBdKQogICAgb3V0cHV0X3BhdGgud3JpdGVfdGV4dCgiXG4iLmpvaW4obGluZXMpICsgIlxuIiwgZW5jb2Rpbmc9InV0Zi04IikKCgpkZWYgbWFpbigpOgogICAgYXJndW1lbnRzID0gcGFyc2VfYXJndW1lbnRzKCkKICAgIHBhcmVudF9yZXN1bHQgPSBhcmd1bWVudHMucmVzdWx0X3Jvb3QgLyBhcmd1bWVudHMuZGF0ZQogICAgb3V0cHV0X2RpcmVjdG9yeSA9ICgKICAgICAgICBwYXJlbnRfcmVzdWx0IC8gImh5YnJpZF9pZGVudGlmaWNhdGlvbiIgLyAiMDRfcm9kX2RhbXBpbmdfaWRlbnRpZmljYXRpb24iCiAgICApCiAgICBvdXRwdXRfZGlyZWN0b3J5Lm1rZGlyKHBhcmVudHM9VHJ1ZSwgZXhpc3Rfb2s9VHJ1ZSkKICAgIHR1cm5pbmcsIHdhdmVmb3JtcywgcGFyYW1ldGVycywgaW5wdXRfcGF0aHMgPSByZWFkX2lucHV0cyhwYXJlbnRfcmVzdWx0KQogICAgc2VsZWN0aW9uX3BhdGggPSBhcmd1bWVudHMud2F2ZWZvcm1fc2VsZWN0aW9uCiAgICBpZiBzZWxlY3Rpb25fcGF0aCBpcyBOb25lOgogICAgICAgIHNlbGVjdGlvbl9wYXRoID0gcGFyZW50X3Jlc3VsdCAvICJ3YXZlZm9ybV9yZXZpZXciIC8gIndhdmVmb3JtX3NlbGVjdGlvbi5jc3YiCiAgICBpbnRlcnZhbHMgPSBidWlsZF9pbnRlcnZhbHModHVybmluZywgcGFyYW1ldGVycykKCiAgICB3b3JrZXJfY291bnQgPSBtYXgoMSwgaW50KGFyZ3VtZW50cy53b3JrZXJzKSkKICAgIHBvb2wgPSBOb25lCiAgICBpZiB3b3JrZXJfY291bnQgPiAxOgogICAgICAgIHBvb2wgPSBtdWx0aXByb2Nlc3NpbmcuUG9vbChwcm9jZXNzZXM9d29ya2VyX2NvdW50KQogICAgdHJ5OgogICAgICAgIHByaW50KCIxLzQgYj0w44CB55CG6KuWY+WbuuWumuODouODh+ODq+OBp3RhdeOBoOOBkeOCkuazouW9ouWIpeWQjOWumiIsIGZsdXNoPVRydWUpCiAgICAgICAgdGhlb3JldGljYWxfcmVzdWx0ID0gZml0X3RhdV9vbmx5X3RoZW5fYWdncmVnYXRlKAogICAgICAgICAgICBpbnRlcnZhbHMsIFRIRU9SRVRJQ0FMX1JPRF9DLCBwb29sCiAgICAgICAgKQogICAgICAgIHByaW50KCIyLzQgYj0w44CBYz0w5q+U6LyD44Oi44OH44Or44GndGF144Gg44GR44KS5rOi5b2i5Yil5ZCM5a6aIiwgZmx1c2g9VHJ1ZSkKICAgICAgICB6ZXJvX2NfcmVzdWx0ID0gZml0X3RhdV9vbmx5X3RoZW5fYWdncmVnYXRlKGludGVydmFscywgMC4wLCBwb29sKQogICAgZmluYWxseToKICAgICAgICBpZiBwb29sIGlzIG5vdCBOb25lOgogICAgICAgICAgICBwb29sLmNsb3NlKCkKICAgICAgICAgICAgcG9vbC5qb2luKCkKCiAgICB0aGVvcmV0aWNhbF9maXQgPSB0aGVvcmV0aWNhbF9yZXN1bHRbImZpdCJdCiAgICB6ZXJvX2NfZml0ID0gemVyb19jX3Jlc3VsdFsiZml0Il0KICAgIGNvbXBhcmlzb25fcm93cyA9IFtdCiAgICBmb3IgbW9kZWxfbmFtZSwgZml0IGluIFsKICAgICAgICAoInRoZW9yZXRpY2FsX2MiLCB0aGVvcmV0aWNhbF9maXQpLAogICAgICAgICgiemVyb19jIiwgemVyb19jX2ZpdCksCiAgICBdOgogICAgICAgIGNvbXBhcmlzb25fcm93cy5hcHBlbmQoCiAgICAgICAgICAgIHsKICAgICAgICAgICAgICAgICJtb2RlbCI6IG1vZGVsX25hbWUsCiAgICAgICAgICAgICAgICAqKm1vZGVsX21ldHJpY3MoaW50ZXJ2YWxzLCBmaXQpLAogICAgICAgICAgICAgICAgIm9iamVjdGl2ZSI6IGZpdFsib2JqZWN0aXZlIl0sCiAgICAgICAgICAgICAgICAic3VtbWVkX2luZGl2aWR1YWxfaXRlcmF0aW9ucyI6IGZpdFsiaXRlcmF0aW9ucyJdLAogICAgICAgICAgICAgICAgInN1bW1lZF9pbmRpdmlkdWFsX2V2YWx1YXRpb25zIjogZml0WyJldmFsdWF0aW9ucyJdLAogICAgICAgICAgICAgICAgKipmaXRbInBhcmFtZXRlcnMiXSwKICAgICAgICAgICAgfQogICAgICAgICkKCiAgICBwcmludCgiMy80IOWun+azouW9ouOCkumAo+e2muepjeWIhuOBp+aknOiovCIsIGZsdXNoPVRydWUpCiAgICB3YXZlZm9ybV9yZWNvcmRzLCB3YXZlZm9ybV9pbnB1dF9wYXRocyA9IHJlYWRfd2F2ZWZvcm1fcGxvdF9pbnB1dHMoCiAgICAgICAgYXJndW1lbnRzLmRhdGFfcm9vdCAvIGFyZ3VtZW50cy5kYXRlLAogICAgICAgIHNlbGVjdGlvbl9wYXRoLAogICAgICAgIHdhdmVmb3JtcywKICAgICkKICAgIGlucHV0X3BhdGhzLmV4dGVuZCh3YXZlZm9ybV9pbnB1dF9wYXRocykKICAgIGNvbnRpbnVvdXNfcm93cyA9IFtdCiAgICBjb250aW51b3VzX3Jvd3MuZXh0ZW5kKAogICAgICAgIGV2YWx1YXRlX2FuZF9wbG90X2NvbnRpbnVvdXNfd2F2ZWZvcm1zKAogICAgICAgICAgICB3YXZlZm9ybV9yZWNvcmRzLAogICAgICAgICAgICBpbnRlcnZhbHMsCiAgICAgICAgICAgIHRoZW9yZXRpY2FsX2ZpdFsicGFyYW1ldGVycyJdLAogICAgICAgICAgICAidGhlb3JldGljYWxfYyIsCiAgICAgICAgICAgIG91dHB1dF9kaXJlY3RvcnkgLyAiY29udGludW91c193YXZlZm9ybV9jb21wYXJpc29uX3RoZW9yZXRpY2FsX2MuanBnIiwKICAgICAgICApCiAgICApCiAgICBjb250aW51b3VzX3Jvd3MuZXh0ZW5kKAogICAgICAgIGV2YWx1YXRlX2FuZF9wbG90X2NvbnRpbnVvdXNfd2F2ZWZvcm1zKAogICAgICAgICAgICB3YXZlZm9ybV9yZWNvcmRzLAogICAgICAgICAgICBpbnRlcnZhbHMsCiAgICAgICAgICAgIHplcm9fY19maXRbInBhcmFtZXRlcnMiXSwKICAgICAgICAgICAgInplcm9fYyIsCiAgICAgICAgICAgIG91dHB1dF9kaXJlY3RvcnkgLyAiY29udGludW91c193YXZlZm9ybV9jb21wYXJpc29uX3plcm9fYy5qcGciLAogICAgICAgICkKICAgICkKICAgIGNvbnRpbnVvdXNfdGFibGUgPSBwZC5EYXRhRnJhbWUoY29udGludW91c19yb3dzKQogICAgZm9yIHJvdyBpbiBjb21wYXJpc29uX3Jvd3M6CiAgICAgICAgbW9kZWxfY29udGludW91cyA9IGNvbnRpbnVvdXNfdGFibGVbCiAgICAgICAgICAgIGNvbnRpbnVvdXNfdGFibGVbIm1vZGVsIl0gPT0gcm93WyJtb2RlbCJdCiAgICAgICAgXQogICAgICAgIHJvd1siY29udGludW91c193YXZlZm9ybV9lcXVhbF9ybXNlX2RlZyJdID0gZmxvYXQoCiAgICAgICAgICAgIG5wLnNxcnQobnAubWVhbihtb2RlbF9jb250aW51b3VzWyJybXNlX2RlZyJdICoqIDIpKQogICAgICAgICkKICAgICAgICByb3dbImNvbnRpbnVvdXNfd2F2ZWZvcm1fcm1zZV9tZWRpYW5fZGVnIl0gPSBmbG9hdCgKICAgICAgICAgICAgbW9kZWxfY29udGludW91c1sicm1zZV9kZWciXS5tZWRpYW4oKQogICAgICAgICkKICAgICAgICByb3dbImNvbnRpbnVvdXNfd2F2ZWZvcm1fcm1zZV9tYXhfZGVnIl0gPSBmbG9hdCgKICAgICAgICAgICAgbW9kZWxfY29udGludW91c1sicm1zZV9kZWciXS5tYXgoKQogICAgICAgICkKCiAgICBwcmludCgiNC80IOe1kOaenOOCkuS/neWtmCIsIGZsdXNoPVRydWUpCiAgICBtb2RlbF9maXRzID0gewogICAgICAgICJ0aGVvcmV0aWNhbF9jIjogdGhlb3JldGljYWxfZml0LAogICAgICAgICJ6ZXJvX2MiOiB6ZXJvX2NfZml0LAogICAgfQogICAgaW50ZXJ2YWxfcm93cyA9IG1ha2VfaW50ZXJ2YWxfcm93cyhpbnRlcnZhbHMsIG1vZGVsX2ZpdHMpCiAgICByZXNpZHVhbF9yb3dzID0gc3VtbWFyaXplX3Jlc2lkdWFscyhpbnRlcnZhbF9yb3dzLCAidGhlb3JldGljYWwiKQogICAgcmV5bm9sZHNfcm93cyA9IGNhbGN1bGF0ZV9yZXlub2xkc19hc3Nlc3NtZW50KGludGVydmFscykKICAgIHdhdmVmb3JtX3BhcmFtZXRlcl9yb3dzID0gW10KICAgIGZvciBtb2RlbF9uYW1lLCB0YWJsZSBpbiBbCiAgICAgICAgKCJ0aGVvcmV0aWNhbF9jIiwgdGhlb3JldGljYWxfcmVzdWx0WyJ3YXZlZm9ybV9wYXJhbWV0ZXJzIl0pLAogICAgICAgICgiemVyb19jIiwgemVyb19jX3Jlc3VsdFsid2F2ZWZvcm1fcGFyYW1ldGVycyJdKSwKICAgIF06CiAgICAgICAgZm9yIHJvdyBpbiB0YWJsZS50b19kaWN0KCJyZWNvcmRzIik6CiAgICAgICAgICAgIHdhdmVmb3JtX3BhcmFtZXRlcl9yb3dzLmFwcGVuZCh7Im1vZGVsIjogbW9kZWxfbmFtZSwgKipyb3d9KQogICAgcGQuRGF0YUZyYW1lKGludGVydmFsX3Jvd3MpLnRvX2NzdigKICAgICAgICBvdXRwdXRfZGlyZWN0b3J5IC8gImludGVydmFsX3ByZWRpY3Rpb25zLmNzdiIsCiAgICAgICAgaW5kZXg9RmFsc2UsCiAgICAgICAgZmxvYXRfZm9ybWF0PUNTVl9GTE9BVF9GT1JNQVQsCiAgICApCiAgICBwZC5EYXRhRnJhbWUoY29tcGFyaXNvbl9yb3dzKS50b19jc3YoCiAgICAgICAgb3V0cHV0X2RpcmVjdG9yeSAvICJtb2RlbF9jb21wYXJpc29uLmNzdiIsIGluZGV4PUZhbHNlLCBmbG9hdF9mb3JtYXQ9Q1NWX0ZMT0FUX0ZPUk1BVAogICAgKQogICAgcGQuRGF0YUZyYW1lKHdhdmVmb3JtX3BhcmFtZXRlcl9yb3dzKS50b19jc3YoCiAgICAgICAgb3V0cHV0X2RpcmVjdG9yeSAvICJ3YXZlZm9ybV9wYXJhbWV0ZXJzLmNzdiIsCiAgICAgICAgaW5kZXg9RmFsc2UsCiAgICAgICAgZmxvYXRfZm9ybWF0PUNTVl9GTE9BVF9GT1JNQVQsCiAgICApCiAgICBwZC5EYXRhRnJhbWUocmVzaWR1YWxfcm93cykudG9fY3N2KAogICAgICAgIG91dHB1dF9kaXJlY3RvcnkgLyAicmVzaWR1YWxfc3VtbWFyeS5jc3YiLCBpbmRleD1GYWxzZSwgZmxvYXRfZm9ybWF0PUNTVl9GTE9BVF9GT1JNQVQKICAgICkKICAgIHBkLkRhdGFGcmFtZShyZXlub2xkc19yb3dzKS50b19jc3YoCiAgICAgICAgb3V0cHV0X2RpcmVjdG9yeSAvICJyZXlub2xkc19hc3Nlc3NtZW50LmNzdiIsCiAgICAgICAgaW5kZXg9RmFsc2UsCiAgICAgICAgZmxvYXRfZm9ybWF0PUNTVl9GTE9BVF9GT1JNQVQsCiAgICApCiAgICBjb250aW51b3VzX3RhYmxlLnRvX2NzdigKICAgICAgICBvdXRwdXRfZGlyZWN0b3J5IC8gImNvbnRpbnVvdXNfd2F2ZWZvcm1fbWV0cmljcy5jc3YiLAogICAgICAgIGluZGV4PUZhbHNlLAogICAgICAgIGZsb2F0X2Zvcm1hdD1DU1ZfRkxPQVRfRk9STUFULAogICAgKQogICAgcGxvdF9yZXZpc2VkX3Jlc3VsdHMoCiAgICAgICAgdGhlb3JldGljYWxfcmVzdWx0WyJ3YXZlZm9ybV9wYXJhbWV0ZXJzIl0sCiAgICAgICAgemVyb19jX3Jlc3VsdFsid2F2ZWZvcm1fcGFyYW1ldGVycyJdLAogICAgICAgIGNvbXBhcmlzb25fcm93cywKICAgICAgICBjb250aW51b3VzX3Jvd3MsCiAgICAgICAgcmV5bm9sZHNfcm93cywKICAgICAgICBvdXRwdXRfZGlyZWN0b3J5IC8gInJvZF9kYW1waW5nX2lkZW50aWZpY2F0aW9uLnBuZyIsCiAgICApCiAgICB3cml0ZV90YXVfb25seV9yZXBvcnQoCiAgICAgICAgb3V0cHV0X2RpcmVjdG9yeSAvICJST0RfREFNUElOR19SRVBPUlQubWQiLAogICAgICAgIGxlbihpbnRlcnZhbF9yb3dzKSwKICAgICAgICBjb21wYXJpc29uX3Jvd3MsCiAgICAgICAgdGhlb3JldGljYWxfcmVzdWx0WyJ3YXZlZm9ybV9wYXJhbWV0ZXJzIl0sCiAgICAgICAgemVyb19jX3Jlc3VsdFsid2F2ZWZvcm1fcGFyYW1ldGVycyJdLAogICAgICAgIGNvbnRpbnVvdXNfcm93cywKICAgICAgICByZXlub2xkc19yb3dzLAogICAgKQogICAgZm9yIG9ic29sZXRlX25hbWUgaW4gWwogICAgICAgICJwYXJhbWV0ZXJfdW5jZXJ0YWludHkuY3N2IiwKICAgICAgICAicGFyYW1ldGVyX2NvcnJlbGF0aW9uLmNzdiIsCiAgICAgICAgInBhcmFtZXRlcl9jb3JyZWxhdGlvbl9iX2luX2ZpeGVkLmNzdiIsCiAgICAgICAgImxlYXZlX29uZV93YXZlZm9ybV9vdXQuY3N2IiwKICAgICAgICAiY3ZfYXBwcm94aW1hdGlvbl92YWxpZGF0aW9uLmNzdiIsCiAgICAgICAgIndhdmVmb3JtX2ZpdF9vdmVydmlldy5wbmciLAogICAgICAgICJjb250aW51b3VzX3dhdmVmb3JtX2NvbXBhcmlzb25fYl9mcmVlLnBuZyIsCiAgICAgICAgImNvbnRpbnVvdXNfd2F2ZWZvcm1fY29tcGFyaXNvbl9iX3plcm8ucG5nIiwKICAgICAgICAiY29udGludW91c193YXZlZm9ybV9jb21wYXJpc29uX2JfZnJlZS5qcGciLAogICAgICAgICJjb250aW51b3VzX3dhdmVmb3JtX2NvbXBhcmlzb25fYl96ZXJvLmpwZyIsCiAgICBdOgogICAgICAgIG9ic29sZXRlX3BhdGggPSBvdXRwdXRfZGlyZWN0b3J5IC8gb2Jzb2xldGVfbmFtZQogICAgICAgIGlmIG9ic29sZXRlX3BhdGguZXhpc3RzKCk6CiAgICAgICAgICAgIG9ic29sZXRlX3BhdGgudW5saW5rKCkKICAgIHNldHRpbmdzID0gewogICAgICAgICJzdGFnZSI6IDQsCiAgICAgICAgImRhdGUiOiBhcmd1bWVudHMuZGF0ZSwKICAgICAgICAibWluaW11bV9hbXBsaXR1ZGVfZGVnIjogTUlOSU1VTV9BTVBMSVRVREVfREVHLAogICAgICAgICJmcmljdGlvbl9lcHNpbG9uX2RlZ19zIjogRlJJQ1RJT05fRVBTSUxPTl9ERUdfUywKICAgICAgICAibWF4aW11bV9zdGVwX3BlcmlvZF9mcmFjdGlvbiI6IE1BWF9TVEVQX1BFUklPRF9GUkFDVElPTiwKICAgICAgICAibWF4aW11bV9zZWFyY2hfcGVyaW9kcyI6IE1BWElNVU1fU0VBUkNIX1BFUklPRFMsCiAgICAgICAgIm9kZV9ydG9sIjogREVGQVVMVF9SVE9MLAogICAgICAgICJvZGVfYW5nbGVfc3BlZWRfYXRvbCI6IERFRkFVTFRfQU5HTEVfU1BFRURfQVRPTCwKICAgICAgICAib3B0aW1pemF0aW9uX3N0cmF0ZWd5IjogImIgZml4ZWQgdG8gemVybzsgYyBmaXhlZCBmcm9tIGN5bGluZHJpY2FsIHJvZCBkcmFnIHRoZW9yeTsgb25lIG5vbm5lZ2F0aXZlIGxpbmVhciB0YXUtb25seSBlbmVyZ3ktbG9zcyBmaXQgcGVyIHdhdmVmb3JtOyBheGlzIG1lZGlhbnMgZm9yIHJlcHJlc2VudGF0aXZlIHRhdSIsCiAgICAgICAgImFnZ3JlZ2F0aW9uIjogImF4aXMgbWVkaWFuIHRhdSB3aXRob3V0IG91dGxpZXIgdGhyZXNob2xkIiwKICAgICAgICAiY29lZmZpY2llbnRfc29sdmVyIjogImJvdW5kZWQgbm9ubmVnYXRpdmUgbGluZWFyIGxlYXN0IHNxdWFyZXMgb24gbWVhc3VyZWQgcGVhay10by1wZWFrIGVuZXJneSBsb3NzIiwKICAgICAgICAid29ya2VycyI6IHdvcmtlcl9jb3VudCwKICAgICAgICAid2F2ZWZvcm1zIjogbGVuKHtyb3dbInNlZ21lbnRfaWQiXSBmb3Igcm93IGluIGludGVydmFsc30pLAogICAgICAgICJpbnRlcnZhbHMiOiBsZW4oaW50ZXJ2YWxzKSwKICAgICAgICAibW9kZWxfY29tcGFyaXNvbl9vYmplY3RpdmUiOiAibWVhbiBzcXVhcmVkIG9uZS1oYWxmLWN5Y2xlIG5leHQtcGVhayByZXNpZHVhbCBpbiByYWReMiIsCiAgICAgICAgIm1vZGVsc19mb3JfcmV2aWV3IjogewogICAgICAgICAgICAidGhlb3JldGljYWxfYyI6IHRoZW9yZXRpY2FsX2ZpdFsicGFyYW1ldGVycyJdLAogICAgICAgICAgICAiemVyb19jIjogemVyb19jX2ZpdFsicGFyYW1ldGVycyJdLAogICAgICAgIH0sCiAgICAgICAgIm1vZGVsX2RlY2lzaW9uIjogInRoZW9yZXRpY2FsX2MgaXMgcHJpbWFyeTsgemVyb19jIGlzIGNvbXBhcmlzb24gb25seSIsCiAgICAgICAgInJvZF9kcmFnX3RoZW9yeSI6IHsKICAgICAgICAgICAgImFpcl9kZW5zaXR5X2tnX20zIjogQUlSX0RFTlNJVFlfS0dfTTMsCiAgICAgICAgICAgICJhaXJfZHluYW1pY192aXNjb3NpdHlfcGFfcyI6IEFJUl9EWU5BTUlDX1ZJU0NPU0lUWV9QQV9TLAogICAgICAgICAgICAiZHJhZ19jb2VmZmljaWVudCI6IFJPRF9EUkFHX0NPRUZGSUNJRU5ULAogICAgICAgICAgICAiZGlhbWV0ZXJfbSI6IFJPRF9ESUFNRVRFUl9NLAogICAgICAgICAgICAidXBwZXJfbGVuZ3RoX20iOiBST0RfVVBQRVJfTEVOR1RIX00sCiAgICAgICAgICAgICJsb3dlcl9sZW5ndGhfbSI6IFJPRF9MT1dFUl9MRU5HVEhfTSwKICAgICAgICAgICAgInRoZW9yZXRpY2FsX2Nfbl9tX3MyX3Blcl9yYWQyIjogVEhFT1JFVElDQUxfUk9EX0MsCiAgICAgICAgICAgICJmb3JtdWxhIjogInJobypDZCpkKihMX3VwcGVyXjQrTF9sb3dlcl40KS84IiwKICAgICAgICB9LAogICAgICAgICJ3YXZlZm9ybV9vdmVydmlld19jb2x1bW5zIjogV0FWRUZPUk1fT1ZFUlZJRVdfQ09MVU1OUywKICAgICAgICAid2F2ZWZvcm1fdHJhamVjdG9yeV9zdWJkaXZpc2lvbnNfcGVyX2hhbGZfY3ljbGUiOiBXQVZFRk9STV9UUkFKRUNUT1JZX1NVQkRJVklTSU9OUywKICAgICAgICAiY29udGludW91c193YXZlZm9ybV9kZWZpbml0aW9uIjogImludGVncmF0ZSBmcm9tIGZpcnN0IGVsaWdpYmxlIG1lYXN1cmVkIHBlYWsgd2l0aCB6ZXJvIHNwZWVkIHRvIGZpbmFsIGVsaWdpYmxlIHBlYWsgd2l0aG91dCBzdGF0ZSByZXNldHMiLAogICAgICAgICJjb250aW51b3VzX2NvbXBhcmlzb25fbW9kZWxzIjogWyJ0aGVvcmV0aWNhbF9jIiwgInplcm9fYyJdLAogICAgICAgICJjc3ZfZmxvYXRfZm9ybWF0IjogQ1NWX0ZMT0FUX0ZPUk1BVCwKICAgICAgICAiaW5wdXRfc2hhMjU2IjogewogICAgICAgICAgICByZXBvc2l0b3J5X2lucHV0X2tleShwYXRoKTogZmlsZV9zaGEyNTYocGF0aCkKICAgICAgICAgICAgZm9yIHBhdGggaW4gaW5wdXRfcGF0aHMKICAgICAgICB9LAogICAgfQogICAgKG91dHB1dF9kaXJlY3RvcnkgLyAic3RhZ2U0X3NldHRpbmdzLmpzb24iKS53cml0ZV90ZXh0KAogICAgICAgIGpzb24uZHVtcHMoc2V0dGluZ3MsIGVuc3VyZV9hc2NpaT1GYWxzZSwgaW5kZW50PTIpICsgIlxuIiwgZW5jb2Rpbmc9InV0Zi04IgogICAgKQogICAgcHJpbnQoIue1kOaenDogIiArIHN0cihvdXRwdXRfZGlyZWN0b3J5KSwgZmx1c2g9VHJ1ZSkKCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgbWFpbigpCg==
