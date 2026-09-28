@@ -1,0 +1,40 @@
+{
+  "stage": 5,
+  "date": "20260921",
+  "sphere_c_n_m_s2_per_rad2": 1.4620931274953638e-05,
+  "sphere_c_cluster_bootstrap_95pct": [
+    1.3698863914845792e-05,
+    1.5454596640054133e-05
+  ],
+  "sphere_cd_equivalent": 0.5769408851228351,
+  "sphere_cd_cluster_bootstrap_95pct": [
+    0.5405561741301228,
+    0.6098372598196553
+  ],
+  "fit_rmse_half_cycle_deg": 0.48727607738565576,
+  "objective_equal_waveform_mse_rad2": 5.667375896411565e-09,
+  "waveforms": 12,
+  "intervals": 379,
+  "tau_Nm_IN": 8.659189535494277e-05,
+  "tau_Nm_OUT": 0.0001715241008975902,
+  "b_IN": 0.0,
+  "b_OUT": 0.0,
+  "rod_c_n_m_s2_per_rad2_no_ball": 2.5486754169187504e-06,
+  "rod_exposed_upper_m_ball": 0.129,
+  "rod_alpha_ball": 0.10069708804857956,
+  "rod_c_n_m_s2_per_rad2_ball": 2.5664419286471763e-07,
+  "sphere_mass_kg": 0.0039,
+  "sphere_diameter_m": 0.1,
+  "sphere_center_arm_m": 0.174,
+  "sphere_area_m2": 0.007853981633974483,
+  "sphere_reynolds_min": 595.7966971229819,
+  "sphere_reynolds_median": 2831.5691458465017,
+  "sphere_reynolds_max": 7671.5253761575805,
+  "brown_lawler_cd_min": 0.38950192270126843,
+  "brown_lawler_cd_median": 0.3967363862004756,
+  "brown_lawler_cd_max": 0.5352033360561775,
+  "brown_lawler_cd_energy_weighted": 0.41804167045025575,
+  "fit_algorithm": "explicit half-cycle dissipated-energy balance with equal waveform weight; shared nonnegative sphere c; exact nonlinear ODE endpoint prediction used for validation",
+  "bootstrap": "1000 cluster resamples of waveform-level weighted least-squares numerator/denominator; deterministic seed 20260921",
+  "rod_reynolds_note": "Stage 4 rod theoretical c scaled by exposed-rod rotational drag length^4 ratio alpha=(129/229)^4"
+}
