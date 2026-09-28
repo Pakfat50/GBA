@@ -1,1 +1,94 @@
-IyBTdGFnZSA0OiDnkIboq5bjg63jg4Pjg4nmipflipvlm7rlrprjg7vjgq/jg7zjg63jg7Pmkanmk6blkIzlrpoKCiMjIOe1kOirlgoK5om/6KqN5riI44G/55CD44Gq44GXMzTms6LlvaLjgIExNzk05Y2K5ZGo5pyf44KS5L2/55So44GX44Gf44CC5Li744Oi44OH44Or44GvCmBiPTBg44CB5YaG5p+x44Ot44OD44OJ44Gu5LqM5LmX5oqX5Yqb5L+C5pWwYGNg44KS55CG6KuW5YCk44Gr5Zu65a6a44GX44CB6Lu45Yil44Gu44Kv44O844Ot44Oz5pGp5pOmYHRhdWDjgaDjgZHjgpLlkIzlrprjgZnjgovjgIIK44GT44KM44Gr44KI44KKYuOAgWPjgIF0YXXjga7plpPjgaflkIzjgZjmuJvoobDph4/jgpLliIbphY3jgZnjgovorZjliKXmgKfjga7llY/poYzjgpLpmaTjgYTjgZ/jgIIKYGM9MGDjga/jg63jg4Pjg4nmipflipvjgpLnhKHoppbjgZfjgZ/loLTlkIjjga7lvbHpn7/jgpLopovjgovmr5TovIPjg6Ljg4fjg6vjgafjgYLjgorjgIHkuLvjg6Ljg4fjg6vjgavjga/mjqHnlKjjgZfjgarjgYTjgIIKSeOAgUvjga9TdGFnZSAy44Gu5YCk44GL44KJ5aSJ5pu044Gb44Ga44CB6YCj57aa5rOi5b2i44Gu5L2N55u46Kqk5beu44KS5rib6KGw5L+C5pWw44G45oq844GX6L6844G+44Gq44GE44CCCgojIyDjg63jg4Pjg4nmipflipvkv4LmlbBj44Gu55CG6KuW5YCkCgrmlK/ngrnjgYvjgonot53pm6Jy44Gu5YaG5p+x5b6u5bCP6KaB57Sg44Gn44Gv6YCf5bqmYHY9cip0aGV0YV9kb3Rg44Gn44GC44KL44CC5oqX5Yqb44OI44Or44Kv44KS5LiK5LiL44Ot44OD44OJ44G456mN5YiG44GZ44KL44Go44CBCgpgYGBtYXRoCk1fRD1jfFxkb3R7XHRoZXRhfXxcZG90e1x0aGV0YX0sXHFxdWFkCmM9XGZyYWN7XHJobyBDX0QgZH17OH0oTF8rXjQrTF8tXjQpCmBgYAoKfCDlhaXlipsgfCDlgKQgfAp8LS0tfC0tLTp8Cnwg56m65rCX5a+G5bqmIHJobyB8IDEuMjI1IGtnL21eMyB8Cnwg5YaG5p+x5oqX5Yqb5L+C5pWwIENkIHwgMS4yIHwKfCDjg5HjgqTjg5flpJblvoQgZCB8IDUuMCBtbSB8Cnwg5LiK5YG06ZW344GVIEwrIHwgMjI5IG1tIHwKfCDkuIvlgbTplbfjgZUgTC0gfCA3MCBtbSB8Cnwg55CG6KuW5Zu65a6a5YCkIGMgfCAyLjU0ODY3NTQxN2UtMDYgTiBtIHNeMi9yYWReMiB8CgrkuIrlgbTjg63jg4Pjg4njga/lhajkuozkuZfmipflipvjg4jjg6vjgq/jga45OS4xMyXjgpLljaDjgoHjgovjgILjgZXjgonjgavlhobmn7Hjga7lpJblgbTljYrliIbjga8K5ZCM44GY5YG044Gu5oqX5Yqb44OI44Or44Kv44GuOTMuNzUl44CB5aSW5YG0MjUl44GvNjguMzYl44KS5Y2g44KB44KL44Gf44KB44CBQ2Tjga7norroqo3jgafjga/kuIrlgbTlhYjnq6/ku5jov5HjgYvjgaQK5oyv44KK5a2Q44GM5bmz6KGh54K544KS6YCa6YGO44GX44Gm6KeS6YCf5bqm44GM5pyA5aSn44Gr44Gq44KL5p2h5Lu244KS6YeN6KaW44GZ44KL44CCCgojIyDjg6zjgqTjg47jg6vjgrrmlbDjgavjgojjgotDZOeiuuiqjQoK5ZCE5Y2K5ZGo5pyf44Gu5aeL54K55oyv5bmFQeOBqOWbuuWumuOBl+OBn0njgIFL44GL44KJ44CB5L+d5a2Y57O744Go44GX44Gm5bmz6KGh54K56YCa6YGO5pmC44Gu5pyA5aSn6KeS6YCf5bqm44KSCmBvbWVnYV9tYXg9c3FydCgySygxLWNvcyBBKS9JKWDjgafnrpflh7rjgZfjgZ/jgILjg6zjgqTjg47jg6vjgrrmlbDjga9gUmU9cmhvKnYqZC9tdWDjgIEK56m65rCX44Gu57KY5oCn5L+C5pWw44GvMS44MTBlLTA1IFBhIHPjgajjgZfjgZ/jgILlgIvjgIXjga4xNzk05p2h5Lu244GvCltyZXlub2xkc19hc3Nlc3NtZW50LmNzdl0ocmV5bm9sZHNfYXNzZXNzbWVudC5jc3Yp44G45L+d5a2Y44GX44Gf44CCCgp8IOipleS+oeS9jee9ruODu+adoeS7tiB8IFJl5pyA5bCPIHwgUmXkuK3lpK7lgKQgfCBSZeacgOWkpyB8CnwtLS18LS0tOnwtLS06fC0tLTp8Cnwg5LiK5YG05YWI56uv44O75YWo5o6h55So5Yy66ZaTIHwgMzUuMCB8IDI2MC4wIHwgNzcyLjEgfAp8IOaKl+WKm+mHjeOBv+S7mOOBjeS9jee9ruODu+WFqOaOoeeUqOWMuumWkyB8IDI3LjkgfCAyMDYuNyB8IDYxMy45IHwKfCDkuIrlgbTlhYjnq6/jg7s0MCBkZWfku6XkuIogfCAyNzUuNSB8IDQ5Ny4zIHwgNzcyLjEgfAp8IOaKl+WKm+mHjeOBv+S7mOOBjeS9jee9ruODuzQwIGRlZ+S7peS4iiB8IDIxOS4xIHwgMzk1LjQgfCA2MTMuOSB8CgroprPmuKznr4Tlm7Ljga7jgYbjgaFj44Gu5a+E5LiO44GM5aSn44GN44GE6auY5oyv5bmF44O75pyA5aSn6YCf5bqm5p2h5Lu244Gv44CB5YaG5p+x44Gu5Lqc6Ieo55WM44Gq5L2OUmXpoJjln5/jgavjgYLjgovjgIIKTkFDQSBUTiAyOTYw44Gu5YaG5p+x5oqX5Yqb6Kmm6aiT77yIW05BU0EgTlRSU10oaHR0cHM6Ly9udHJzLm5hc2EuZ292L2NpdGF0aW9ucy8xOTkzMDA4NDAxOCnvvInjgoLlj4LnhafjgZfjgIEK44GT44Gu6aCY5Z+f44Gn44Gv5YaG5p+xQ2TjgpLmpoLjga0xLjDvvZ4xLjLjgajnva7jgY/lt6XlrabnmoTov5HkvLzjgajmlbTlkIjjgZnjgovjgILmipflipvjgbjjga7lr4TkuI7jgYzlpKfjgY3jgYTmnaHku7bjgpIK5Luj6KGo44GZ44KL5Zu65a6a5YCk44Go44GX44GmQ2Q9MS4y44KS5o6h55So44GX44Gf44CCUmXkvp3lrZjjgpLoqbPntLDjg6Ljg4fjg6vljJbjgZnjgovjgahj44GM6YCf5bqm5L6d5a2Y44Go44Gq44KL44GM44CBCuS7iuWbnuOBruebrueahOOBr3RhdeOBqOOBruWIhumFjeOCkuOBquOBj+OBmeOBk+OBqOOBquOBruOBp+OAgeOBvuOBmuWNmOS4gOOBrueQhuirluWbuuWumuWApOOCkueUqOOBhOOCi+OAggoKIyMg5ZCM5a6a5pa55rOVCgoxLiDlkITms6LlvaLjgadiPTDjgIFj44KS5Zu65a6a44GX44CB5YWo5Y2K5ZGo5pyf44Gr5YWx6YCa44GudGF144Gg44GR44KS6Z2e6LKg57ea5b2i5pyA5bCP5LqM5LmX44Gn5rGC44KB44KL44CCCjIuIElO44CBT1VU44Gd44KM44Ge44KM44Gr44Gk44GE44Gm44CB5rOi5b2i5YildGF144Gu5Lit5aSu5YCk44KS5Luj6KGo5YCk44Go44GZ44KL44CCCjMuIOS7o+ihqOWApOOCkuWbuuWumuOBl+OAgeWQhOWun+a4rOmggueCueOBi+OCieasoemggueCueOBvuOBp+OBruWIhuWJsuepjeWIhuOBp+a4m+ihsOOCkuaknOiovOOBmeOCi+OAggo0LiDlkIzjgZjkv4LmlbDjgafmnIDliJ3jga7mnInlirnpoILngrnjgYvjgonmnIDlvozjgb7jgafnirbmhYvjgpLjg6rjgrvjg4Pjg4jjgZvjgZrpgKPntprnqY3liIbjgZfjgIHntK/nqY3oqqTlt67jgpLmpJzoqLzjgZnjgovjgIIKCuWNiuWRqOacn+OBlOOBqOOBq+Wun+a4rOmggueCueOBuOaIu+OBmeOBruOBr+eKtuaFi2B0aGV0YSwgdGhldGFfZG90YOOBoOOBkeOBp+OBguOCiuOAgXRhdeOBr+WQjOS4gOazouW9ouWGheOBp+WFsemAmuOBp+OBguOCi+OAggrmnIDntYLoqZXkvqHjgafjga/ms6LlvaLliKV0YXXjgpLjgZ3jga7jgb7jgb7kvb/jgo/jgZrjgIHou7jliKXkuK3lpK7lgKTjgpLlhagzNOazouW9ouOBuOWFsemAmuOBq+mBqeeUqOOBmeOCi+OAggoKIyMg5Luj6KGo5L+C5pWw44Go6Kqk5beuCgp8IOODouODh+ODqyB8IGJfSU4gfCBiX09VVCB8IGNfcm9kIHwgdGF1X0lOIHwgdGF1X09VVCB8IOWNiuWRqOacn1JNU0UgW2RlZ10gfCDpgKPntppSTVNFIFtkZWddIHwKfC0tLXwtLS06fC0tLTp8LS0tOnwtLS06fC0tLTp8LS0tOnwtLS06fAp8IOS4uzog55CG6KuWYyB8IDAuMDAwZSswMCB8IDAuMDAwZSswMCB8IDIuNTQ4Njc1NDE3ZS0wNiB8IDguNjU5MTg5NTM1ZS0wNSB8IDEuNzE1MjQxMDA5ZS0wNCB8IDAuNTE0NjQ0IHwgOS4wNDU1NzYgfAp8IOavlOi8gzogYz0wIHwgMC4wMDBlKzAwIHwgMC4wMDBlKzAwIHwgMC4wMDAwMDAwMDBlKzAwIHwgMS40MTU5NzMyNTFlLTA0IHwgMi4xNzg0ODc1MThlLTA0IHwgMC42MTYwMDcgfCAxMS42MDEzNjkgfAoK5YiG5Ymy56mN5YiG44Gv5bGA5omA55qE44Gq5rib6KGw5YmH44CB6YCj57aa56mN5YiG44Gv5ZGo5pyf44O75L2N55u46Kqk5beu44KS5ZCr44KA57Sv56mN5oyZ5YuV44Gu56K66KqN44Gr55So44GE44KL44CCCumAo+e2muepjeWIhuOBruiqpOW3ruOCkuacgOWwj+WMluOBl+OBpuOBhOOBquOBhOOBn+OCgeOAgeS9jeebuOOBmuOCjOOBjOaui+OBo+OBpuOCgknjgIFL44KEdGF144KS5YaN6Kq/5pW044GX44Gq44GE44CCCgojIyAzNOazouW9ouOBrumAo+e2muavlOi8gwoKIyMjIOS4u+ODouODh+ODqzogYj0w44CBYz3nkIboq5blm7rlrprlgKQKCiFb55CG6KuWY+ODouODh+ODq+OBrjM05rOi5b2i6YCj57aa5q+U6LyDXShjb250aW51b3VzX3dhdmVmb3JtX2NvbXBhcmlzb25fdGhlb3JldGljYWxfYy5qcGcpCgojIyMg5q+U6LyD44Oi44OH44OrOiBiPTDjgIFjPTAKCiFbYz0w44Oi44OH44Or44GuMzTms6LlvaLpgKPntprmr5TovINdKGNvbnRpbnVvdXNfd2F2ZWZvcm1fY29tcGFyaXNvbl96ZXJvX2MuanBnKQoKIyMg5rOi5b2i5YildGF144GoUmXjg7voqqTlt67jga7mpoLopoEKCiFbU3RhZ2UgNOamguimgV0ocm9kX2RhbXBpbmdfaWRlbnRpZmljYXRpb24ucG5nKQoKIyMg5Ye65YqbCgotIFvms6LlvaLliKV0YXVdKHdhdmVmb3JtX3BhcmFtZXRlcnMuY3N2KQotIFvlhajljYrlkajmnJ/jga7kuojmuKzjgajmrovlt65dKGludGVydmFsX3ByZWRpY3Rpb25zLmNzdikKLSBb44Oi44OH44Or5q+U6LyDXShtb2RlbF9jb21wYXJpc29uLmNzdikKLSBb44Os44Kk44OO44Or44K65pWw6KmV5L6hXShyZXlub2xkc19hc3Nlc3NtZW50LmNzdikKLSBb6YCj57aa5rOi5b2i6Kqk5beuXShjb250aW51b3VzX3dhdmVmb3JtX21ldHJpY3MuY3N2KQotIFvlrp/ooYzmnaHku7ZdKHN0YWdlNF9zZXR0aW5ncy5qc29uKQo=
+# Stage 4: 理論ロッド抗力固定・クーロン摩擦同定
+
+## 結論
+
+承認済み球なし34波形、1794半周期を使用した。主モデルは
+`b=0`、円柱ロッドの二乗抗力係数`c`を理論値に固定し、軸別のクーロン摩擦`tau`だけを同定する。
+これによりb、c、tauの間で同じ減衰量を分配する識別性の問題を除いた。
+`c=0`はロッド抗力を無視した場合の影響を見る比較モデルであり、主モデルには採用しない。
+I、KはStage 2の値から変更せず、連続波形の位相誤差を減衰係数へ押し込まない。
+
+## ロッド抗力係数cの理論値
+
+支点から距離rの円柱微小要素では速度`v=r*theta_dot`である。抗力トルクを上下ロッドへ積分すると、
+
+```math
+M_D=c|\dot{\theta}|\dot{\theta},\qquad
+c=\frac{\rho C_D d}{8}(L_+^4+L_-^4)
+```
+
+| 入力 | 値 |
+|---|---:|
+| 空気密度 rho | 1.225 kg/m^3 |
+| 円柱抗力係数 Cd | 1.2 |
+| パイプ外径 d | 5.0 mm |
+| 上側長さ L+ | 229 mm |
+| 下側長さ L- | 70 mm |
+| 理論固定値 c | 2.548675417e-06 N m s^2/rad^2 |
+
+上側ロッドは全二乗抗力トルクの99.13%を占める。さらに円柱の外側半分は
+同じ側の抗力トルクの93.75%、外側25%は68.36%を占めるため、Cdの確認では上側先端付近かつ
+振り子が平衡点を通過して角速度が最大になる条件を重視する。
+
+## レイノルズ数によるCd確認
+
+各半周期の始点振幅Aと固定したI、Kから、保存系として平衡点通過時の最大角速度を
+`omega_max=sqrt(2K(1-cos A)/I)`で算出した。レイノルズ数は`Re=rho*v*d/mu`、
+空気の粘性係数は1.810e-05 Pa sとした。個々の1794条件は
+[reynolds_assessment.csv](reynolds_assessment.csv)へ保存した。
+
+| 評価位置・条件 | Re最小 | Re中央値 | Re最大 |
+|---|---:|---:|---:|
+| 上側先端・全採用区間 | 35.0 | 260.0 | 772.1 |
+| 抗力重み付き位置・全採用区間 | 27.9 | 206.7 | 613.9 |
+| 上側先端・40 deg以上 | 275.5 | 497.3 | 772.1 |
+| 抗力重み付き位置・40 deg以上 | 219.1 | 395.4 | 613.9 |
+
+観測範囲のうちcの寄与が大きい高振幅・最大速度条件は、円柱の亜臨界な低Re領域にある。
+NACA TN 2960の円柱抗力試験（[NASA NTRS](https://ntrs.nasa.gov/citations/19930084018)）も参照し、
+この領域では円柱Cdを概ね1.0～1.2と置く工学的近似と整合する。抗力への寄与が大きい条件を
+代表する固定値としてCd=1.2を採用した。Re依存を詳細モデル化するとcが速度依存となるが、
+今回の目的はtauとの分配をなくすことなので、まず単一の理論固定値を用いる。
+
+## 同定方法
+
+1. 各波形でb=0、cを固定し、全半周期に共通のtauだけを非負線形最小二乗で求める。
+2. IN、OUTそれぞれについて、波形別tauの中央値を代表値とする。
+3. 代表値を固定し、各実測頂点から次頂点までの分割積分で減衰を検証する。
+4. 同じ係数で最初の有効頂点から最後まで状態をリセットせず連続積分し、累積誤差を検証する。
+
+半周期ごとに実測頂点へ戻すのは状態`theta, theta_dot`だけであり、tauは同一波形内で共通である。
+最終評価では波形別tauをそのまま使わず、軸別中央値を全34波形へ共通に適用する。
+
+## 代表係数と誤差
+
+| モデル | b_IN | b_OUT | c_rod | tau_IN | tau_OUT | 半周期RMSE [deg] | 連続RMSE [deg] |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 主: 理論c | 0.000e+00 | 0.000e+00 | 2.548675417e-06 | 8.659189535e-05 | 1.715241009e-04 | 0.514644 | 9.045576 |
+| 比較: c=0 | 0.000e+00 | 0.000e+00 | 0.000000000e+00 | 1.415973251e-04 | 2.178487518e-04 | 0.616007 | 11.601369 |
+
+分割積分は局所的な減衰則、連続積分は周期・位相誤差を含む累積挙動の確認に用いる。
+連続積分の誤差を最小化していないため、位相ずれが残ってもI、Kやtauを再調整しない。
+
+## 34波形の連続比較
+
+### 主モデル: b=0、c=理論固定値
+
+![理論cモデルの34波形連続比較](continuous_waveform_comparison_theoretical_c.jpg)
+
+### 比較モデル: b=0、c=0
+
+![c=0モデルの34波形連続比較](continuous_waveform_comparison_zero_c.jpg)
+
+## 波形別tauとRe・誤差の概要
+
+![Stage 4概要](rod_damping_identification.png)
+
+## 出力
+
+- [波形別tau](waveform_parameters.csv)
+- [全半周期の予測と残差](interval_predictions.csv)
+- [モデル比較](model_comparison.csv)
+- [レイノルズ数評価](reynolds_assessment.csv)
+- [連続波形誤差](continuous_waveform_metrics.csv)
+- [実行条件](stage4_settings.json)

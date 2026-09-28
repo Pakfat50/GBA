@@ -1,1 +1,294 @@
-IiIiU3RhZ2UgNOOBruWFseacieODreODg+ODiea4m+ihsOWQjOWumuOCkuWQiOaIkOadoeS7tuOBp+aknOiovOOBmeOCi+OAgiIiIgoKaW1wb3J0IHN5cwppbXBvcnQgdW5pdHRlc3QKZnJvbSBwYXRobGliIGltcG9ydCBQYXRoCgppbXBvcnQgbnVtcHkgYXMgbnAKaW1wb3J0IHBhbmRhcyBhcyBwZAoKCk1PRFVMRV9ESVJFQ1RPUlkgPSBQYXRoKF9fZmlsZV9fKS5yZXNvbHZlKCkucGFyZW50c1sxXQpzeXMucGF0aC5pbnNlcnQoMCwgc3RyKE1PRFVMRV9ESVJFQ1RPUlkpKQoKZnJvbSBwZWFrX3RvX3BlYWtfc29sdmVyIGltcG9ydCBzb2x2ZV9uZXh0X3R1cm5pbmdfcG9pbnQKZnJvbSBydW5faHlicmlkX3JvZF9kYW1waW5nX2lkZW50aWZpY2F0aW9uIGltcG9ydCBGUkVFX1BBUkFNRVRFUl9OQU1FUwpmcm9tIHJ1bl9oeWJyaWRfcm9kX2RhbXBpbmdfaWRlbnRpZmljYXRpb24gaW1wb3J0IFRIRU9SRVRJQ0FMX1JPRF9DCmZyb20gcnVuX2h5YnJpZF9yb2RfZGFtcGluZ19pZGVudGlmaWNhdGlvbiBpbXBvcnQgYnVpbGRfaW50ZXJ2YWxzCmZyb20gcnVuX2h5YnJpZF9yb2RfZGFtcGluZ19pZGVudGlmaWNhdGlvbiBpbXBvcnQgY2FsY3VsYXRlX3JleW5vbGRzX2Fzc2Vzc21lbnQKZnJvbSBydW5faHlicmlkX3JvZF9kYW1waW5nX2lkZW50aWZpY2F0aW9uIGltcG9ydCBlbmVyZ3lfZml0X3dpdGhfZml4ZWRfYwpmcm9tIHJ1bl9oeWJyaWRfcm9kX2RhbXBpbmdfaWRlbnRpZmljYXRpb24gaW1wb3J0IGV4cGxpY2l0X2VuZXJneV9iYXNpcwpmcm9tIHJ1bl9oeWJyaWRfcm9kX2RhbXBpbmdfaWRlbnRpZmljYXRpb24gaW1wb3J0IGZpdF9tb2RlbApmcm9tIHJ1bl9oeWJyaWRfcm9kX2RhbXBpbmdfaWRlbnRpZmljYXRpb24gaW1wb3J0IGZpdF9tb2RlbF9nYXVzc19uZXd0b24KZnJvbSBydW5faHlicmlkX3JvZF9kYW1waW5nX2lkZW50aWZpY2F0aW9uIGltcG9ydCBmaXRfdGF1X29ubHlfdGhlbl9hZ2dyZWdhdGUKZnJvbSBydW5faHlicmlkX3JvZF9kYW1waW5nX2lkZW50aWZpY2F0aW9uIGltcG9ydCBwYXJhbWV0ZXJfc2NhbGVzCmZyb20gcnVuX2h5YnJpZF9yb2RfZGFtcGluZ19pZGVudGlmaWNhdGlvbiBpbXBvcnQgc29sdmVfaW50ZXJ2YWxfdHJhamVjdG9yeQpmcm9tIHJ1bl9oeWJyaWRfcm9kX2RhbXBpbmdfaWRlbnRpZmljYXRpb24gaW1wb3J0IHNvbHZlX2ludGVydmFsX3dpdGhfc2Vuc2l0aXZpdGllcwoKCmNsYXNzIEh5YnJpZFJvZERhbXBpbmdUZXN0KHVuaXR0ZXN0LlRlc3RDYXNlKToKICAgIGRlZiBtYWtlX2ludGVydmFsKHNlbGYsIGF4aXM9IklOIiwgYW5nbGVfZGVnPTQwLjApOgogICAgICAgIHJldHVybiB7CiAgICAgICAgICAgICJpbnRlcnZhbF9pZCI6IGF4aXMgKyAiX1RFU1QiLAogICAgICAgICAgICAic2VnbWVudF9pZCI6IGF4aXMgKyAiX1RFU1QiLAogICAgICAgICAgICAiYXhpcyI6IGF4aXMsCiAgICAgICAgICAgICJjb25maWd1cmF0aW9uIjogIlNQMDAiLAogICAgICAgICAgICAiZGlyZWN0aW9uIjogIlAiLAogICAgICAgICAgICAic3RhcnRfYW5nbGVfcmFkIjogbnAuZGVnMnJhZChhbmdsZV9kZWcpLAogICAgICAgICAgICAibWVhc3VyZWRfbmV4dF9hbmdsZV9yYWQiOiBucC5kZWcycmFkKC0zMC4wKSwKICAgICAgICAgICAgInN0YXJ0X2FuZ2xlX2RlZyI6IGFuZ2xlX2RlZywKICAgICAgICAgICAgIm1lYXN1cmVkX25leHRfYW5nbGVfZGVnIjogLTMwLjAsCiAgICAgICAgICAgICJzdGFydF9hbXBsaXR1ZGVfZGVnIjogYWJzKGFuZ2xlX2RlZyksCiAgICAgICAgICAgICJlbmRfYW1wbGl0dWRlX2RlZyI6IDMwLjAsCiAgICAgICAgICAgICJpbmVydGlhX2tnX20yIjogMy4wZS00LAogICAgICAgICAgICAicmVzdG9yaW5nX25fbV9wZXJfcmFkIjogMS44ZS0yLAogICAgICAgICAgICAid2F2ZWZvcm1faW50ZXJ2YWxfY291bnQiOiAxLAogICAgICAgIH0KCiAgICBkZWYgdGVzdF9hdWdtZW50ZWRfc29sdmVyX21hdGNoZXNfc3RhZ2UzX3NvbHZlcihzZWxmKToKICAgICAgICBpbnRlcnZhbCA9IHNlbGYubWFrZV9pbnRlcnZhbCgpCiAgICAgICAgcGh5c2ljYWwgPSB7CiAgICAgICAgICAgICJiX0lOIjogMy4wZS01LAogICAgICAgICAgICAiYl9PVVQiOiA0LjBlLTUsCiAgICAgICAgICAgICJjX3JvZCI6IDIuMGUtNiwKICAgICAgICAgICAgInRhdV9JTiI6IDcuMGUtNSwKICAgICAgICAgICAgInRhdV9PVVQiOiA4LjBlLTUsCiAgICAgICAgfQogICAgICAgIGF1Z21lbnRlZCA9IHNvbHZlX2ludGVydmFsX3dpdGhfc2Vuc2l0aXZpdGllcyhpbnRlcnZhbCwgcGh5c2ljYWwpCiAgICAgICAgZGlyZWN0ID0gc29sdmVfbmV4dF90dXJuaW5nX3BvaW50KAogICAgICAgICAgICBpbnRlcnZhbFsic3RhcnRfYW5nbGVfcmFkIl0sCiAgICAgICAgICAgIGludGVydmFsWyJpbmVydGlhX2tnX20yIl0sCiAgICAgICAgICAgIGludGVydmFsWyJyZXN0b3Jpbmdfbl9tX3Blcl9yYWQiXSwKICAgICAgICAgICAgcGh5c2ljYWxbImJfSU4iXSwKICAgICAgICAgICAgcGh5c2ljYWxbImNfcm9kIl0sCiAgICAgICAgICAgIHBoeXNpY2FsWyJ0YXVfSU4iXSwKICAgICAgICAgICAgbnAuZGVnMnJhZCgwLjUpLAogICAgICAgICkKICAgICAgICBzZWxmLmFzc2VydEFsbW9zdEVxdWFsKAogICAgICAgICAgICBhdWdtZW50ZWRbInByZWRpY3RlZF9uZXh0X2FuZ2xlX3JhZCJdLAogICAgICAgICAgICBkaXJlY3RbIm5leHRfYW5nbGVfcmFkIl0sCiAgICAgICAgICAgIGRlbHRhPW5wLmRlZzJyYWQoMS4wZS0yKSwKICAgICAgICApCgogICAgZGVmIHRlc3Rfc2Vuc2l0aXZpdGllc19tYXRjaF9jZW50cmFsX2RpZmZlcmVuY2Uoc2VsZik6CiAgICAgICAgaW50ZXJ2YWwgPSBzZWxmLm1ha2VfaW50ZXJ2YWwoKQogICAgICAgIHBoeXNpY2FsID0gewogICAgICAgICAgICAiYl9JTiI6IDMuMGUtNSwKICAgICAgICAgICAgImJfT1VUIjogNC4wZS01LAogICAgICAgICAgICAiY19yb2QiOiAyLjBlLTYsCiAgICAgICAgICAgICJ0YXVfSU4iOiA3LjBlLTUsCiAgICAgICAgICAgICJ0YXVfT1VUIjogOC4wZS01LAogICAgICAgIH0KICAgICAgICByZXN1bHQgPSBzb2x2ZV9pbnRlcnZhbF93aXRoX3NlbnNpdGl2aXRpZXMoaW50ZXJ2YWwsIHBoeXNpY2FsKQogICAgICAgIGZvciBuYW1lLCBzZW5zaXRpdml0eV9uYW1lLCBzdGVwIGluIFsKICAgICAgICAgICAgKCJiX0lOIiwgInNlbnNpdGl2aXR5X2IiLCAxLjBlLTgpLAogICAgICAgICAgICAoImNfcm9kIiwgInNlbnNpdGl2aXR5X2MiLCAxLjBlLTkpLAogICAgICAgICAgICAoInRhdV9JTiIsICJzZW5zaXRpdml0eV90YXUiLCAxLjBlLTgpLAogICAgICAgIF06CiAgICAgICAgICAgIHBsdXMgPSBkaWN0KHBoeXNpY2FsKQogICAgICAgICAgICBtaW51cyA9IGRpY3QocGh5c2ljYWwpCiAgICAgICAgICAgIHBsdXNbbmFtZV0gKz0gc3RlcAogICAgICAgICAgICBtaW51c1tuYW1lXSAtPSBzdGVwCiAgICAgICAgICAgIHBsdXNfYW5nbGUgPSBzb2x2ZV9pbnRlcnZhbF93aXRoX3NlbnNpdGl2aXRpZXMoaW50ZXJ2YWwsIHBsdXMpWwogICAgICAgICAgICAgICAgInByZWRpY3RlZF9uZXh0X2FuZ2xlX3JhZCIKICAgICAgICAgICAgXQogICAgICAgICAgICBtaW51c19hbmdsZSA9IHNvbHZlX2ludGVydmFsX3dpdGhfc2Vuc2l0aXZpdGllcyhpbnRlcnZhbCwgbWludXMpWwogICAgICAgICAgICAgICAgInByZWRpY3RlZF9uZXh0X2FuZ2xlX3JhZCIKICAgICAgICAgICAgXQogICAgICAgICAgICBmaW5pdGVfZGlmZmVyZW5jZSA9IChwbHVzX2FuZ2xlIC0gbWludXNfYW5nbGUpIC8gKDIuMCAqIHN0ZXApCiAgICAgICAgICAgIHNlbGYuYXNzZXJ0QWxtb3N0RXF1YWwoCiAgICAgICAgICAgICAgICByZXN1bHRbc2Vuc2l0aXZpdHlfbmFtZV0gLyBmaW5pdGVfZGlmZmVyZW5jZSwgMS4wLCBkZWx0YT0yLjBlLTQKICAgICAgICAgICAgKQoKICAgIGRlZiB0ZXN0X3Bsb3RfdHJhamVjdG9yeV9lbmRzX2F0X3NhbWVfdHVybmluZ19wb2ludChzZWxmKToKICAgICAgICBpbnRlcnZhbCA9IHNlbGYubWFrZV9pbnRlcnZhbCgpCiAgICAgICAgcGh5c2ljYWwgPSB7CiAgICAgICAgICAgICJiX0lOIjogMy4wZS01LAogICAgICAgICAgICAiYl9PVVQiOiA0LjBlLTUsCiAgICAgICAgICAgICJjX3JvZCI6IDIuMGUtNiwKICAgICAgICAgICAgInRhdV9JTiI6IDcuMGUtNSwKICAgICAgICAgICAgInRhdV9PVVQiOiA4LjBlLTUsCiAgICAgICAgfQogICAgICAgIHRyYWplY3RvcnlfdGltZSwgdHJhamVjdG9yeV9hbmdsZSA9IHNvbHZlX2ludGVydmFsX3RyYWplY3RvcnkoCiAgICAgICAgICAgIGludGVydmFsLCBwaHlzaWNhbAogICAgICAgICkKICAgICAgICBhdWdtZW50ZWQgPSBzb2x2ZV9pbnRlcnZhbF93aXRoX3NlbnNpdGl2aXRpZXMoaW50ZXJ2YWwsIHBoeXNpY2FsKQogICAgICAgIHNlbGYuYXNzZXJ0RXF1YWwobGVuKHRyYWplY3RvcnlfdGltZSksIDYxKQogICAgICAgIHNlbGYuYXNzZXJ0QWxtb3N0RXF1YWwoCiAgICAgICAgICAgIHRyYWplY3RvcnlfdGltZVstMV0sCiAgICAgICAgICAgIGF1Z21lbnRlZFsicHJlZGljdGVkX2hhbGZfcGVyaW9kX3MiXSwKICAgICAgICAgICAgZGVsdGE9MS4wZS00LAogICAgICAgICkKICAgICAgICBzZWxmLmFzc2VydEFsbW9zdEVxdWFsKAogICAgICAgICAgICB0cmFqZWN0b3J5X2FuZ2xlWy0xXSwKICAgICAgICAgICAgYXVnbWVudGVkWyJwcmVkaWN0ZWRfbmV4dF9hbmdsZV9yYWQiXSwKICAgICAgICAgICAgZGVsdGE9bnAuZGVnMnJhZCgxLjBlLTIpLAogICAgICAgICkKCiAgICBkZWYgdGVzdF9pbnRlcnZhbF9zZWxlY3Rpb25fZXhjbHVkZXNfYmFsbF9hbmRfYmVsb3dfZm91cl9kZWdyZWVzKHNlbGYpOgogICAgICAgIHR1cm5pbmcgPSBwZC5EYXRhRnJhbWUoCiAgICAgICAgICAgIFsKICAgICAgICAgICAgICAgIFsiSU5fU1AwMF9QX1IwMSIsICJJTiIsICJTUDAwIiwgIlAiLCAwLCAwLjAsIDEwLjAsIDEwLjAsIDEsIDFdLAogICAgICAgICAgICAgICAgWyJJTl9TUDAwX1BfUjAxIiwgIklOIiwgIlNQMDAiLCAiUCIsIDEsIDAuNSwgLTguMCwgOC4wLCAwLCAxXSwKICAgICAgICAgICAgICAgIFsiSU5fU1AwMF9QX1IwMSIsICJJTiIsICJTUDAwIiwgIlAiLCAyLCAxLjAsIC0zLjUsIDMuNSwgMCwgMF0sCiAgICAgICAgICAgICAgICBbIklOX1NQMDBfUF9SMDEiLCAiSU4iLCAiU1AwMCIsICJQIiwgMywgMS41LCA1LjAsIDUuMCwgMCwgMV0sCiAgICAgICAgICAgICAgICBbIklOX0JBTExfUF9SMDEiLCAiSU4iLCAiQkFMTCIsICJQIiwgMCwgMC4wLCAxMC4wLCAxMC4wLCAxLCAxXSwKICAgICAgICAgICAgICAgIFsiSU5fQkFMTF9QX1IwMSIsICJJTiIsICJCQUxMIiwgIlAiLCAxLCAwLjUsIC04LjAsIDguMCwgMCwgMV0sCiAgICAgICAgICAgIF0sCiAgICAgICAgICAgIGNvbHVtbnM9WwogICAgICAgICAgICAgICAgInNlZ21lbnRfaWQiLAogICAgICAgICAgICAgICAgImF4aXMiLAogICAgICAgICAgICAgICAgImNvbmZpZ3VyYXRpb24iLAogICAgICAgICAgICAgICAgImRpcmVjdGlvbiIsCiAgICAgICAgICAgICAgICAicGVha19udW1iZXIiLAogICAgICAgICAgICAgICAgInBlYWtfdGltZV9zIiwKICAgICAgICAgICAgICAgICJjZW50ZXJlZF9wZWFrX2FuZ2xlX2RlZyIsCiAgICAgICAgICAgICAgICAiYW1wbGl0dWRlX2RlZyIsCiAgICAgICAgICAgICAgICAiaXNfaW5pdGlhbF9wZWFrIiwKICAgICAgICAgICAgICAgICJlbGlnaWJsZV9mb3JfbGF0ZXJfc3RhZ2VzIiwKICAgICAgICAgICAgXSwKICAgICAgICApCiAgICAgICAgcGFyYW1ldGVycyA9IHBkLkRhdGFGcmFtZSgKICAgICAgICAgICAgWwogICAgICAgICAgICAgICAgWyJJTiIsICJTUDAwIiwgMy4wZS00LCAxLjhlLTJdLAogICAgICAgICAgICAgICAgWyJJTiIsICJCQUxMIiwgNC4wZS00LCAxLjVlLTJdLAogICAgICAgICAgICBdLAogICAgICAgICAgICBjb2x1bW5zPVsKICAgICAgICAgICAgICAgICJheGlzIiwKICAgICAgICAgICAgICAgICJjb25maWd1cmF0aW9uIiwKICAgICAgICAgICAgICAgICJpbmVydGlhX2tnX20yIiwKICAgICAgICAgICAgICAgICJyZXN0b3Jpbmdfbl9tX3Blcl9yYWQiLAogICAgICAgICAgICBdLAogICAgICAgICkKICAgICAgICBpbnRlcnZhbHMgPSBidWlsZF9pbnRlcnZhbHModHVybmluZywgcGFyYW1ldGVycykKICAgICAgICBzZWxmLmFzc2VydEVxdWFsKGxlbihpbnRlcnZhbHMpLCAxKQogICAgICAgIHNlbGYuYXNzZXJ0RXF1YWwoaW50ZXJ2YWxzWzBdWyJjb25maWd1cmF0aW9uIl0sICJTUDAwIikKCiAgICBkZWYgdGVzdF9zaGFyZWRfZml0X3JlY292ZXJzX3N5bnRoZXRpY19jb2VmZmljaWVudHMoc2VsZik6CiAgICAgICAgdHJ1dGggPSB7CiAgICAgICAgICAgICJiX0lOIjogMy4wZS01LAogICAgICAgICAgICAiYl9PVVQiOiA0LjBlLTUsCiAgICAgICAgICAgICJjX3JvZCI6IDIuMGUtNiwKICAgICAgICAgICAgInRhdV9JTiI6IDcuMGUtNSwKICAgICAgICAgICAgInRhdV9PVVQiOiA4LjBlLTUsCiAgICAgICAgfQogICAgICAgIGludGVydmFscyA9IFtdCiAgICAgICAgZm9yIGF4aXMgaW4gWyJJTiIsICJPVVQiXToKICAgICAgICAgICAgZm9yIHdhdmVmb3JtIGluIHJhbmdlKDIpOgogICAgICAgICAgICAgICAgc2VnbWVudF9pZCA9IGF4aXMgKyAiX1NZTl8iICsgc3RyKHdhdmVmb3JtKQogICAgICAgICAgICAgICAgZm9yIGFuZ2xlX2RlZyBpbiBbMTUuMCwgMjUuMCwgNDAuMCwgNTUuMF06CiAgICAgICAgICAgICAgICAgICAgaW50ZXJ2YWwgPSBzZWxmLm1ha2VfaW50ZXJ2YWwoYXhpcywgYW5nbGVfZGVnKQogICAgICAgICAgICAgICAgICAgIGludGVydmFsWyJpbnRlcnZhbF9pZCJdID0gc2VnbWVudF9pZCArICJfIiArIHN0cihhbmdsZV9kZWcpCiAgICAgICAgICAgICAgICAgICAgaW50ZXJ2YWxbInNlZ21lbnRfaWQiXSA9IHNlZ21lbnRfaWQKICAgICAgICAgICAgICAgICAgICBpbnRlcnZhbFsid2F2ZWZvcm1faW50ZXJ2YWxfY291bnQiXSA9IDQKICAgICAgICAgICAgICAgICAgICBwcmVkaWN0aW9uID0gc29sdmVfaW50ZXJ2YWxfd2l0aF9zZW5zaXRpdml0aWVzKGludGVydmFsLCB0cnV0aCkKICAgICAgICAgICAgICAgICAgICBpbnRlcnZhbFsibWVhc3VyZWRfbmV4dF9hbmdsZV9yYWQiXSA9IHByZWRpY3Rpb25bCiAgICAgICAgICAgICAgICAgICAgICAgICJwcmVkaWN0ZWRfbmV4dF9hbmdsZV9yYWQiCiAgICAgICAgICAgICAgICAgICAgXQogICAgICAgICAgICAgICAgICAgIGludGVydmFscy5hcHBlbmQoaW50ZXJ2YWwpCiAgICAgICAgaW5pdGlhbCA9IHtuYW1lOiB0cnV0aFtuYW1lXSAqIDEuMjUgZm9yIG5hbWUgaW4gRlJFRV9QQVJBTUVURVJfTkFNRVN9CiAgICAgICAgc2NhbGVzID0gcGFyYW1ldGVyX3NjYWxlcyhpbml0aWFsKQogICAgICAgIGZpdCA9IGZpdF9tb2RlbCgKICAgICAgICAgICAgaW50ZXJ2YWxzLAogICAgICAgICAgICBGUkVFX1BBUkFNRVRFUl9OQU1FUywKICAgICAgICAgICAgc2NhbGVzLAogICAgICAgICAgICByb2J1c3Rfc2NhbGVfZGVnPTAuMiwKICAgICAgICAgICAgaW5pdGlhbF9waHlzaWNhbD1pbml0aWFsLAogICAgICAgICAgICBtYXhfaXRlcmF0aW9ucz02MCwKICAgICAgICApCiAgICAgICAgc2VsZi5hc3NlcnRUcnVlKGZpdFsic3VjY2VzcyJdKQogICAgICAgIGZvciBuYW1lIGluIEZSRUVfUEFSQU1FVEVSX05BTUVTOgogICAgICAgICAgICBzZWxmLmFzc2VydEFsbW9zdEVxdWFsKGZpdFsicGFyYW1ldGVycyJdW25hbWVdIC8gdHJ1dGhbbmFtZV0sIDEuMCwgZGVsdGE9MC4wMikKICAgICAgICBnYXVzc19uZXd0b24gPSBmaXRfbW9kZWxfZ2F1c3NfbmV3dG9uKAogICAgICAgICAgICBpbnRlcnZhbHMsCiAgICAgICAgICAgIEZSRUVfUEFSQU1FVEVSX05BTUVTLAogICAgICAgICAgICBzY2FsZXMsCiAgICAgICAgICAgIHJvYnVzdF9zY2FsZV9kZWc9MC4yLAogICAgICAgICAgICBpbml0aWFsX3BoeXNpY2FsPWluaXRpYWwsCiAgICAgICAgICAgIG1heF9pdGVyYXRpb25zPTgsCiAgICAgICAgKQogICAgICAgIHNlbGYuYXNzZXJ0VHJ1ZShnYXVzc19uZXd0b25bInN1Y2Nlc3MiXSkKICAgICAgICBmb3IgbmFtZSBpbiBGUkVFX1BBUkFNRVRFUl9OQU1FUzoKICAgICAgICAgICAgc2VsZi5hc3NlcnRBbG1vc3RFcXVhbCgKICAgICAgICAgICAgICAgIGdhdXNzX25ld3RvblsicGFyYW1ldGVycyJdW25hbWVdIC8gdHJ1dGhbbmFtZV0sIDEuMCwgZGVsdGE9MC4wMgogICAgICAgICAgICApCgogICAgZGVmIHRlc3RfZml4ZWRfY19lbmVyZ3lfZml0X3JlY292ZXJzX2NvbnN0cnVjdGVkX2NvZWZmaWNpZW50cyhzZWxmKToKICAgICAgICB0cnV0aCA9IHsiYl9JTiI6IDIuMGUtNSwgImNfcm9kIjogMy4wZS02LCAidGF1X0lOIjogNy4wZS01fQogICAgICAgIGludGVydmFscyA9IFtdCiAgICAgICAgZm9yIGFuZ2xlX2RlZyBpbiBbMTIuMCwgMjAuMCwgMzAuMCwgNDUuMCwgNjAuMF06CiAgICAgICAgICAgIGludGVydmFsID0gc2VsZi5tYWtlX2ludGVydmFsKCJJTiIsIGFuZ2xlX2RlZykKICAgICAgICAgICAgYmFzaXMgPSBleHBsaWNpdF9lbmVyZ3lfYmFzaXMoCiAgICAgICAgICAgICAgICBpbnRlcnZhbFsic3RhcnRfYW5nbGVfcmFkIl0sCiAgICAgICAgICAgICAgICBpbnRlcnZhbFsiaW5lcnRpYV9rZ19tMiJdLAogICAgICAgICAgICAgICAgaW50ZXJ2YWxbInJlc3RvcmluZ19uX21fcGVyX3JhZCJdLAogICAgICAgICAgICApCiAgICAgICAgICAgIGluaXRpYWxfZW5lcmd5ID0gaW50ZXJ2YWxbInJlc3RvcmluZ19uX21fcGVyX3JhZCJdICogKAogICAgICAgICAgICAgICAgMS4wIC0gbnAuY29zKGludGVydmFsWyJzdGFydF9hbmdsZV9yYWQiXSkKICAgICAgICAgICAgKQogICAgICAgICAgICBsb3NzID0gKAogICAgICAgICAgICAgICAgdHJ1dGhbImJfSU4iXSAqIGJhc2lzWzBdCiAgICAgICAgICAgICAgICArIHRydXRoWyJjX3JvZCJdICogYmFzaXNbMV0KICAgICAgICAgICAgICAgICsgdHJ1dGhbInRhdV9JTiJdICogYmFzaXNbMl0KICAgICAgICAgICAgKQogICAgICAgICAgICBmaW5hbF9lbmVyZ3kgPSBpbml0aWFsX2VuZXJneSAtIGxvc3MKICAgICAgICAgICAgbmV4dF9hbXBsaXR1ZGUgPSBucC5hcmNjb3MoCiAgICAgICAgICAgICAgICAxLjAgLSBmaW5hbF9lbmVyZ3kgLyBpbnRlcnZhbFsicmVzdG9yaW5nX25fbV9wZXJfcmFkIl0KICAgICAgICAgICAgKQogICAgICAgICAgICBpbnRlcnZhbFsibWVhc3VyZWRfbmV4dF9hbmdsZV9yYWQiXSA9IC1uZXh0X2FtcGxpdHVkZQogICAgICAgICAgICBpbnRlcnZhbFsid2F2ZWZvcm1faW50ZXJ2YWxfY291bnQiXSA9IDUKICAgICAgICAgICAgaW50ZXJ2YWxzLmFwcGVuZChpbnRlcnZhbCkKICAgICAgICBmaXR0ZWQgPSBlbmVyZ3lfZml0X3dpdGhfZml4ZWRfYygKICAgICAgICAgICAgaW50ZXJ2YWxzLCBbImJfSU4iLCAidGF1X0lOIl0sIHRydXRoWyJjX3JvZCJdCiAgICAgICAgKQogICAgICAgIHNlbGYuYXNzZXJ0QWxtb3N0RXF1YWwoZml0dGVkWyJiX0lOIl0gLyB0cnV0aFsiYl9JTiJdLCAxLjAsIGRlbHRhPTEuMGUtOCkKICAgICAgICBzZWxmLmFzc2VydEFsbW9zdEVxdWFsKAogICAgICAgICAgICBmaXR0ZWRbInRhdV9JTiJdIC8gdHJ1dGhbInRhdV9JTiJdLCAxLjAsIGRlbHRhPTEuMGUtOAogICAgICAgICkKCiAgICBkZWYgdGVzdF90aGVvcmV0aWNhbF9yb2RfY191c2VzX2NvbmZpcm1lZF9kaW1lbnNpb25zKHNlbGYpOgogICAgICAgIGV4cGVjdGVkID0gMS4yMjUgKiAxLjIgKiAwLjAwNSAvIDguMCAqICgwLjIyOSoqNCArIDAuMDcwKio0KQogICAgICAgIHNlbGYuYXNzZXJ0QWxtb3N0RXF1YWwoVEhFT1JFVElDQUxfUk9EX0MsIGV4cGVjdGVkLCBkZWx0YT0xLjBlLTE4KQoKICAgIGRlZiB0ZXN0X3RhdV9vbmx5X2ZpdF9hbmRfcmV5bm9sZHNfYXNzZXNzbWVudChzZWxmKToKICAgICAgICB0cnV0aF90YXUgPSA4LjBlLTUKICAgICAgICBpbnRlcnZhbHMgPSBbXQogICAgICAgIGZvciBudW1iZXIsIGFuZ2xlX2RlZyBpbiBlbnVtZXJhdGUoWzE1LjAsIDI1LjAsIDQwLjAsIDU1LjBdKToKICAgICAgICAgICAgaW50ZXJ2YWwgPSBzZWxmLm1ha2VfaW50ZXJ2YWwoIklOIiwgYW5nbGVfZGVnKQogICAgICAgICAgICBpbnRlcnZhbFsiaW50ZXJ2YWxfaWQiXSA9ICJJTl9TWU5fSCIgKyBzdHIobnVtYmVyKQogICAgICAgICAgICBpbnRlcnZhbFsic2VnbWVudF9pZCJdID0gIklOX1NZTiIKICAgICAgICAgICAgaW50ZXJ2YWxbIndhdmVmb3JtX2ludGVydmFsX2NvdW50Il0gPSA0CiAgICAgICAgICAgIHBoeXNpY2FsID0gewogICAgICAgICAgICAgICAgImJfSU4iOiAwLjAsCiAgICAgICAgICAgICAgICAiYl9PVVQiOiAwLjAsCiAgICAgICAgICAgICAgICAiY19yb2QiOiBUSEVPUkVUSUNBTF9ST0RfQywKICAgICAgICAgICAgICAgICJ0YXVfSU4iOiB0cnV0aF90YXUsCiAgICAgICAgICAgICAgICAidGF1X09VVCI6IDAuMCwKICAgICAgICAgICAgfQogICAgICAgICAgICBwcmVkaWN0aW9uID0gc29sdmVfaW50ZXJ2YWxfd2l0aF9zZW5zaXRpdml0aWVzKGludGVydmFsLCBwaHlzaWNhbCkKICAgICAgICAgICAgaW50ZXJ2YWxbIm1lYXN1cmVkX25leHRfYW5nbGVfcmFkIl0gPSBwcmVkaWN0aW9uWwogICAgICAgICAgICAgICAgInByZWRpY3RlZF9uZXh0X2FuZ2xlX3JhZCIKICAgICAgICAgICAgXQogICAgICAgICAgICBpbnRlcnZhbHMuYXBwZW5kKGludGVydmFsKQogICAgICAgIHJlc3VsdCA9IGZpdF90YXVfb25seV90aGVuX2FnZ3JlZ2F0ZShpbnRlcnZhbHMsIFRIRU9SRVRJQ0FMX1JPRF9DKQogICAgICAgIHNlbGYuYXNzZXJ0QWxtb3N0RXF1YWwoCiAgICAgICAgICAgIHJlc3VsdFsiZml0Il1bInBhcmFtZXRlcnMiXVsidGF1X0lOIl0gLyB0cnV0aF90YXUsCiAgICAgICAgICAgIDEuMCwKICAgICAgICAgICAgIyDkv53lrZjns7vou4zpgZPjgpLkvb/jgYbjgqjjg43jg6vjgq7jg7zov5HkvLzjgYvjgol0YXXjgpLliJ3mnJ/lkIzlrprjgZnjgovjgZ/jgoHjgIEKICAgICAgICAgICAgIyDmuJvoobBPREXjgafkvZzjgaPjgZ/lkIjmiJDms6LlvaLjgavlr77jgZfjgabmlbAl44Gu5beu44KS6Kix5a6544GZ44KL44CCCiAgICAgICAgICAgIGRlbHRhPTAuMDUsCiAgICAgICAgKQogICAgICAgIHJleW5vbGRzID0gY2FsY3VsYXRlX3JleW5vbGRzX2Fzc2Vzc21lbnQoaW50ZXJ2YWxzKQogICAgICAgIHNlbGYuYXNzZXJ0RXF1YWwobGVuKHJleW5vbGRzKSwgNCkKICAgICAgICBzZWxmLmFzc2VydEdyZWF0ZXIoCiAgICAgICAgICAgIHJleW5vbGRzWy0xXVsidXBwZXJfdGlwX3JleW5vbGRzIl0sCiAgICAgICAgICAgIHJleW5vbGRzWzBdWyJ1cHBlcl90aXBfcmV5bm9sZHMiXSwKICAgICAgICApCiAgICAgICAgc2VsZi5hc3NlcnRMZXNzKAogICAgICAgICAgICByZXlub2xkc1stMV1bImRyYWdfd2VpZ2h0ZWRfcmV5bm9sZHMiXSwKICAgICAgICAgICAgcmV5bm9sZHNbLTFdWyJ1cHBlcl90aXBfcmV5bm9sZHMiXSwKICAgICAgICApCgoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIHVuaXR0ZXN0Lm1haW4oKQo=
+"""Stage 4の共有ロッド減衰同定を合成条件で検証する。"""
+
+import sys
+import unittest
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+
+MODULE_DIRECTORY = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(MODULE_DIRECTORY))
+
+from peak_to_peak_solver import solve_next_turning_point
+from run_hybrid_rod_damping_identification import FREE_PARAMETER_NAMES
+from run_hybrid_rod_damping_identification import THEORETICAL_ROD_C
+from run_hybrid_rod_damping_identification import build_intervals
+from run_hybrid_rod_damping_identification import calculate_reynolds_assessment
+from run_hybrid_rod_damping_identification import energy_fit_with_fixed_c
+from run_hybrid_rod_damping_identification import explicit_energy_basis
+from run_hybrid_rod_damping_identification import fit_model
+from run_hybrid_rod_damping_identification import fit_model_gauss_newton
+from run_hybrid_rod_damping_identification import fit_tau_only_then_aggregate
+from run_hybrid_rod_damping_identification import parameter_scales
+from run_hybrid_rod_damping_identification import solve_interval_trajectory
+from run_hybrid_rod_damping_identification import solve_interval_with_sensitivities
+
+
+class HybridRodDampingTest(unittest.TestCase):
+    def make_interval(self, axis="IN", angle_deg=40.0):
+        return {
+            "interval_id": axis + "_TEST",
+            "segment_id": axis + "_TEST",
+            "axis": axis,
+            "configuration": "SP00",
+            "direction": "P",
+            "start_angle_rad": np.deg2rad(angle_deg),
+            "measured_next_angle_rad": np.deg2rad(-30.0),
+            "start_angle_deg": angle_deg,
+            "measured_next_angle_deg": -30.0,
+            "start_amplitude_deg": abs(angle_deg),
+            "end_amplitude_deg": 30.0,
+            "inertia_kg_m2": 3.0e-4,
+            "restoring_n_m_per_rad": 1.8e-2,
+            "waveform_interval_count": 1,
+        }
+
+    def test_augmented_solver_matches_stage3_solver(self):
+        interval = self.make_interval()
+        physical = {
+            "b_IN": 3.0e-5,
+            "b_OUT": 4.0e-5,
+            "c_rod": 2.0e-6,
+            "tau_IN": 7.0e-5,
+            "tau_OUT": 8.0e-5,
+        }
+        augmented = solve_interval_with_sensitivities(interval, physical)
+        direct = solve_next_turning_point(
+            interval["start_angle_rad"],
+            interval["inertia_kg_m2"],
+            interval["restoring_n_m_per_rad"],
+            physical["b_IN"],
+            physical["c_rod"],
+            physical["tau_IN"],
+            np.deg2rad(0.5),
+        )
+        self.assertAlmostEqual(
+            augmented["predicted_next_angle_rad"],
+            direct["next_angle_rad"],
+            delta=np.deg2rad(1.0e-2),
+        )
+
+    def test_sensitivities_match_central_difference(self):
+        interval = self.make_interval()
+        physical = {
+            "b_IN": 3.0e-5,
+            "b_OUT": 4.0e-5,
+            "c_rod": 2.0e-6,
+            "tau_IN": 7.0e-5,
+            "tau_OUT": 8.0e-5,
+        }
+        result = solve_interval_with_sensitivities(interval, physical)
+        for name, sensitivity_name, step in [
+            ("b_IN", "sensitivity_b", 1.0e-8),
+            ("c_rod", "sensitivity_c", 1.0e-9),
+            ("tau_IN", "sensitivity_tau", 1.0e-8),
+        ]:
+            plus = dict(physical)
+            minus = dict(physical)
+            plus[name] += step
+            minus[name] -= step
+            plus_angle = solve_interval_with_sensitivities(interval, plus)[
+                "predicted_next_angle_rad"
+            ]
+            minus_angle = solve_interval_with_sensitivities(interval, minus)[
+                "predicted_next_angle_rad"
+            ]
+            finite_difference = (plus_angle - minus_angle) / (2.0 * step)
+            self.assertAlmostEqual(
+                result[sensitivity_name] / finite_difference, 1.0, delta=2.0e-4
+            )
+
+    def test_plot_trajectory_ends_at_same_turning_point(self):
+        interval = self.make_interval()
+        physical = {
+            "b_IN": 3.0e-5,
+            "b_OUT": 4.0e-5,
+            "c_rod": 2.0e-6,
+            "tau_IN": 7.0e-5,
+            "tau_OUT": 8.0e-5,
+        }
+        trajectory_time, trajectory_angle = solve_interval_trajectory(
+            interval, physical
+        )
+        augmented = solve_interval_with_sensitivities(interval, physical)
+        self.assertEqual(len(trajectory_time), 61)
+        self.assertAlmostEqual(
+            trajectory_time[-1],
+            augmented["predicted_half_period_s"],
+            delta=1.0e-4,
+        )
+        self.assertAlmostEqual(
+            trajectory_angle[-1],
+            augmented["predicted_next_angle_rad"],
+            delta=np.deg2rad(1.0e-2),
+        )
+
+    def test_interval_selection_excludes_ball_and_below_four_degrees(self):
+        turning = pd.DataFrame(
+            [
+                ["IN_SP00_P_R01", "IN", "SP00", "P", 0, 0.0, 10.0, 10.0, 1, 1],
+                ["IN_SP00_P_R01", "IN", "SP00", "P", 1, 0.5, -8.0, 8.0, 0, 1],
+                ["IN_SP00_P_R01", "IN", "SP00", "P", 2, 1.0, -3.5, 3.5, 0, 0],
+                ["IN_SP00_P_R01", "IN", "SP00", "P", 3, 1.5, 5.0, 5.0, 0, 1],
+                ["IN_BALL_P_R01", "IN", "BALL", "P", 0, 0.0, 10.0, 10.0, 1, 1],
+                ["IN_BALL_P_R01", "IN", "BALL", "P", 1, 0.5, -8.0, 8.0, 0, 1],
+            ],
+            columns=[
+                "segment_id",
+                "axis",
+                "configuration",
+                "direction",
+                "peak_number",
+                "peak_time_s",
+                "centered_peak_angle_deg",
+                "amplitude_deg",
+                "is_initial_peak",
+                "eligible_for_later_stages",
+            ],
+        )
+        parameters = pd.DataFrame(
+            [
+                ["IN", "SP00", 3.0e-4, 1.8e-2],
+                ["IN", "BALL", 4.0e-4, 1.5e-2],
+            ],
+            columns=[
+                "axis",
+                "configuration",
+                "inertia_kg_m2",
+                "restoring_n_m_per_rad",
+            ],
+        )
+        intervals = build_intervals(turning, parameters)
+        self.assertEqual(len(intervals), 1)
+        self.assertEqual(intervals[0]["configuration"], "SP00")
+
+    def test_shared_fit_recovers_synthetic_coefficients(self):
+        truth = {
+            "b_IN": 3.0e-5,
+            "b_OUT": 4.0e-5,
+            "c_rod": 2.0e-6,
+            "tau_IN": 7.0e-5,
+            "tau_OUT": 8.0e-5,
+        }
+        intervals = []
+        for axis in ["IN", "OUT"]:
+            for waveform in range(2):
+                segment_id = axis + "_SYN_" + str(waveform)
+                for angle_deg in [15.0, 25.0, 40.0, 55.0]:
+                    interval = self.make_interval(axis, angle_deg)
+                    interval["interval_id"] = segment_id + "_" + str(angle_deg)
+                    interval["segment_id"] = segment_id
+                    interval["waveform_interval_count"] = 4
+                    prediction = solve_interval_with_sensitivities(interval, truth)
+                    interval["measured_next_angle_rad"] = prediction[
+                        "predicted_next_angle_rad"
+                    ]
+                    intervals.append(interval)
+        initial = {name: truth[name] * 1.25 for name in FREE_PARAMETER_NAMES}
+        scales = parameter_scales(initial)
+        fit = fit_model(
+            intervals,
+            FREE_PARAMETER_NAMES,
+            scales,
+            robust_scale_deg=0.2,
+            initial_physical=initial,
+            max_iterations=60,
+        )
+        self.assertTrue(fit["success"])
+        for name in FREE_PARAMETER_NAMES:
+            self.assertAlmostEqual(fit["parameters"][name] / truth[name], 1.0, delta=0.02)
+        gauss_newton = fit_model_gauss_newton(
+            intervals,
+            FREE_PARAMETER_NAMES,
+            scales,
+            robust_scale_deg=0.2,
+            initial_physical=initial,
+            max_iterations=8,
+        )
+        self.assertTrue(gauss_newton["success"])
+        for name in FREE_PARAMETER_NAMES:
+            self.assertAlmostEqual(
+                gauss_newton["parameters"][name] / truth[name], 1.0, delta=0.02
+            )
+
+    def test_fixed_c_energy_fit_recovers_constructed_coefficients(self):
+        truth = {"b_IN": 2.0e-5, "c_rod": 3.0e-6, "tau_IN": 7.0e-5}
+        intervals = []
+        for angle_deg in [12.0, 20.0, 30.0, 45.0, 60.0]:
+            interval = self.make_interval("IN", angle_deg)
+            basis = explicit_energy_basis(
+                interval["start_angle_rad"],
+                interval["inertia_kg_m2"],
+                interval["restoring_n_m_per_rad"],
+            )
+            initial_energy = interval["restoring_n_m_per_rad"] * (
+                1.0 - np.cos(interval["start_angle_rad"])
+            )
+            loss = (
+                truth["b_IN"] * basis[0]
+                + truth["c_rod"] * basis[1]
+                + truth["tau_IN"] * basis[2]
+            )
+            final_energy = initial_energy - loss
+            next_amplitude = np.arccos(
+                1.0 - final_energy / interval["restoring_n_m_per_rad"]
+            )
+            interval["measured_next_angle_rad"] = -next_amplitude
+            interval["waveform_interval_count"] = 5
+            intervals.append(interval)
+        fitted = energy_fit_with_fixed_c(
+            intervals, ["b_IN", "tau_IN"], truth["c_rod"]
+        )
+        self.assertAlmostEqual(fitted["b_IN"] / truth["b_IN"], 1.0, delta=1.0e-8)
+        self.assertAlmostEqual(
+            fitted["tau_IN"] / truth["tau_IN"], 1.0, delta=1.0e-8
+        )
+
+    def test_theoretical_rod_c_uses_confirmed_dimensions(self):
+        expected = 1.225 * 1.2 * 0.005 / 8.0 * (0.229**4 + 0.070**4)
+        self.assertAlmostEqual(THEORETICAL_ROD_C, expected, delta=1.0e-18)
+
+    def test_tau_only_fit_and_reynolds_assessment(self):
+        truth_tau = 8.0e-5
+        intervals = []
+        for number, angle_deg in enumerate([15.0, 25.0, 40.0, 55.0]):
+            interval = self.make_interval("IN", angle_deg)
+            interval["interval_id"] = "IN_SYN_H" + str(number)
+            interval["segment_id"] = "IN_SYN"
+            interval["waveform_interval_count"] = 4
+            physical = {
+                "b_IN": 0.0,
+                "b_OUT": 0.0,
+                "c_rod": THEORETICAL_ROD_C,
+                "tau_IN": truth_tau,
+                "tau_OUT": 0.0,
+            }
+            prediction = solve_interval_with_sensitivities(interval, physical)
+            interval["measured_next_angle_rad"] = prediction[
+                "predicted_next_angle_rad"
+            ]
+            intervals.append(interval)
+        result = fit_tau_only_then_aggregate(intervals, THEORETICAL_ROD_C)
+        self.assertAlmostEqual(
+            result["fit"]["parameters"]["tau_IN"] / truth_tau,
+            1.0,
+            # 保存系軌道を使うエネルギー近似からtauを初期同定するため、
+            # 減衰ODEで作った合成波形に対して数%の差を許容する。
+            delta=0.05,
+        )
+        reynolds = calculate_reynolds_assessment(intervals)
+        self.assertEqual(len(reynolds), 4)
+        self.assertGreater(
+            reynolds[-1]["upper_tip_reynolds"],
+            reynolds[0]["upper_tip_reynolds"],
+        )
+        self.assertLess(
+            reynolds[-1]["drag_weighted_reynolds"],
+            reynolds[-1]["upper_tip_reynolds"],
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
