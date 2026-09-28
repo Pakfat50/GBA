@@ -1,0 +1,20 @@
+{
+  "stage": 7,
+  "diagnostic_only": true,
+  "coefficients_changed": false,
+  "waveform_count": 46,
+  "phase_error_definition": "e = t_model - t_measured; y=e-e_first; x=t_measured-t_measured_first; fit y=k*x through origin",
+  "measured_crossing_method": "linear interpolation between adjacent logger samples",
+  "model_crossing_method": "root solve on continuous ODE dense output",
+  "coefficient_source": "Stage 6 axis and configuration assignments, unchanged",
+  "input_paths": {
+    "turning": "/workspace/scratch/7b69cb0df41c/gba-stage3/06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/turning_points.csv",
+    "waveforms": "/workspace/scratch/7b69cb0df41c/gba-stage3/06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/waveform_preprocessing.csv",
+    "parameters": "/workspace/scratch/7b69cb0df41c/gba-stage3/06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/02_frequency_identification/identified_inertia_restoring.csv",
+    "selection": "/workspace/scratch/7b69cb0df41c/gba-stage3/06_Analysis/fitting_pipeline/results/20260921/waveform_review/waveform_selection.csv",
+    "stage4": "/workspace/scratch/7b69cb0df41c/gba-stage3/06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/04_rod_damping_identification/stage4_settings.json",
+    "stage5": "/workspace/scratch/7b69cb0df41c/gba-stage3/06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/05_sphere_drag_identification/stage5_settings.json",
+    "stage5_report": "/workspace/scratch/7b69cb0df41c/gba-stage3/06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/05_sphere_drag_identification/interval_predictions.csv",
+    "data_root": "/workspace/scratch/7b69cb0df41c/gba-stage3/04_Data/05_Fitting/20260921"
+  }
+}
