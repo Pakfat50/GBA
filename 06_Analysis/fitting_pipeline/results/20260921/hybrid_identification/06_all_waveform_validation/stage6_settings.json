@@ -1,0 +1,130 @@
+{
+  "stage": 6,
+  "date": "20260921",
+  "waveform_count": 46,
+  "waveform_interval_count": 2173,
+  "matched_half_cycle_count": 2163,
+  "predicted_half_cycle_count": 2185,
+  "fit_parameters_changed": false,
+  "waveform_plots": "one all-waveform summary figure; no individual figure files",
+  "configuration_coefficients": {
+    "IN_SP00": {
+      "inertia_kg_m2": 0.0002446541342093,
+      "restoring_n_m_per_rad": 0.0223584766966256,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 8.659189535494277e-05
+    },
+    "IN_SP01": {
+      "inertia_kg_m2": 0.0003025568391801,
+      "restoring_n_m_per_rad": 0.0197944369966256,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 8.659189535494277e-05
+    },
+    "IN_SP02": {
+      "inertia_kg_m2": 0.000357875344151,
+      "restoring_n_m_per_rad": 0.0172882762966256,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 8.659189535494277e-05
+    },
+    "IN_SP03": {
+      "inertia_kg_m2": 0.0004106686491218,
+      "restoring_n_m_per_rad": 0.0148399945966256,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 8.659189535494277e-05
+    },
+    "IN_SP04": {
+      "inertia_kg_m2": 0.0004609957540926,
+      "restoring_n_m_per_rad": 0.0124495918966256,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 8.659189535494277e-05
+    },
+    "IN_BALL": {
+      "inertia_kg_m2": 0.0003666305342093,
+      "restoring_n_m_per_rad": 0.0157014106966256,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 1.4877575467818355e-05,
+      "c_basis": "c_sphere + c_rod_ball",
+      "tau_n_m": 8.659189535494277e-05
+    },
+    "OUT_SP00": {
+      "inertia_kg_m2": 0.0002481915850729,
+      "restoring_n_m_per_rad": 0.0216368305793738,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 0.0001715241008975902
+    },
+    "OUT_SP01": {
+      "inertia_kg_m2": 0.0003060942900437,
+      "restoring_n_m_per_rad": 0.0190727908793738,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 0.0001715241008975902
+    },
+    "OUT_SP02": {
+      "inertia_kg_m2": 0.0003614127950146,
+      "restoring_n_m_per_rad": 0.0165666301793738,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 0.0001715241008975902
+    },
+    "OUT_SP03": {
+      "inertia_kg_m2": 0.0004142060999854,
+      "restoring_n_m_per_rad": 0.0141183484793738,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 0.0001715241008975902
+    },
+    "OUT_SP04": {
+      "inertia_kg_m2": 0.0004645332049562,
+      "restoring_n_m_per_rad": 0.0117279457793738,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "c_basis": "c_rod",
+      "tau_n_m": 0.0001715241008975902
+    },
+    "OUT_BALL": {
+      "inertia_kg_m2": 0.0003701679850729,
+      "restoring_n_m_per_rad": 0.0149797645793738,
+      "b_n_m_s_per_rad": 0.0,
+      "c_n_m_s2_per_rad2": 1.4877575467818355e-05,
+      "c_basis": "c_sphere + c_rod_ball",
+      "tau_n_m": 0.0001715241008975902
+    }
+  },
+  "fixed_model": "I*theta_ddot + K*sin(theta) + b*theta_dot + c*abs(theta_dot)*theta_dot + tau*tanh(theta_dot/epsilon) = 0",
+  "initial_conditions": "first eligible peak angle relative to stage1 envelope center, zero angular velocity; no resets at later measured peaks",
+  "minimum_peak_amplitude_deg": 4.0,
+  "friction_epsilon_deg_s": 0.5,
+  "ode_rtol": 0.0001,
+  "angle_speed_atol": 1e-07,
+  "max_step_period_fraction": 0.2,
+  "input_sha256": {
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/turning_points.csv": "7f046f7dd6a62e3f255427b63d2750720db3f8679875763c973ee0e23ac2d758",
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/waveform_preprocessing.csv": "7276d4c4e5062b3cf34a411c4e81aab005577eb85aeb41ad4f655039ee61bdbc",
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/02_frequency_identification/identified_inertia_restoring.csv": "fffb3a412f4160b40f41c0db415cbddad001155104073ad60c30498bff1932f1",
+    "06_Analysis/fitting_pipeline/results/20260921/waveform_review/waveform_selection.csv": "f6f673ec7a54f82df23c0696432cc0d71260e72795847b228887a0ba358d0f1e",
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/04_rod_damping_identification/stage4_settings.json": "e9cb888de250e12863aae446a9154156cd9ae96ccc14d7b146466a24269f16b4",
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/05_sphere_drag_identification/stage5_settings.json": "c092a0afe7b99628cda07cc367240d58e7a4301bd319801b847ec62ad790c320",
+    "06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/05_sphere_drag_identification/interval_predictions.csv": "b217c51907c7ee033be9b270aead81e2ad77cf1484467431673a3da28a5b055f",
+    "04_Data/05_Fitting/20260921/Raw/4/LOG00017_ANGLE.csv": "a2abe8b4049065c67a4cf66a3b736a8c63329dc7ac2a51fea78c717c66a24fae",
+    "04_Data/05_Fitting/20260921/Raw/2/LOG00015_ANGLE.csv": "fbca1b4d0a5e290658c6455ccfa1d53cb2878c654e6ef8a62d1e7a340563042d",
+    "04_Data/05_Fitting/20260921/Raw/1/LOG00014_ANGLE.csv": "5fe004852f2ed08a6c770d09b597b5ea1e1f2b850efeff7c3f1a715c40edc2a8",
+    "04_Data/05_Fitting/20260921/Raw/3/LOG00016_ANGLE.csv": "742103863dcb64555a5e9b7cd9b2031f3fa3216f7d7be459ea8c83f55d1e1a9d",
+    "04_Data/05_Fitting/20260921/Raw/球なし/LOG00013_ANGLE.csv": "f88a505225b32fb34c069fd5886d610aabe4bfe7ae28ed80dbe0c0dd275ae72a",
+    "04_Data/05_Fitting/20260921/Raw/球/LOG00012_ANGLE.csv": "b7c96384ad995ae49de8700935fd21a891204c38ee2d39f18890595de6dbbaa5"
+  }
+}
