@@ -108,7 +108,7 @@ I_q^{(r-1)}=I_0^{(r-1)}+\Delta I_q
 
 IHB-01の計算を再実行する標準ライブラリのみのスクリプトを追加した。
 
-- [ihb01_period_ratio.py](../../iterative_hybrid/ihb01_period_ratio.py)
+- [ihb01_period_ratio.py](../../../iterative_hybrid/ihb01_period_ratio.py)
 - [条件別 (K/I)](ihb01_condition_ratios.csv)
 - [波形別 (K/I)](ihb01_waveform_ratios.csv)
 - [周期別診断値](ihb01_cycle_ratios.csv)
