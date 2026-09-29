@@ -104,6 +104,26 @@ I_q^{(r-1)}=I_0^{(r-1)}+\Delta I_q
 | OUT | SP03 | 4 | 69 | 34.029234 |
 | OUT | SP04 | 2 | 27 | 25.491741 |
 
+### 再現用ツールと出力
+
+IHB-01の計算を再実行する標準ライブラリのみのスクリプトを追加した。
+
+- [ihb01_period_ratio.py](../../iterative_hybrid/ihb01_period_ratio.py)
+- [条件別 (K/I)](ihb01_condition_ratios.csv)
+- [波形別 (K/I)](ihb01_waveform_ratios.csv)
+- [周期別診断値](ihb01_cycle_ratios.csv)
+
+実行例:
+
+```bash
+python 06_Analysis/fitting_pipeline/iterative_hybrid/ihb01_period_ratio.py \\
+  --selection-csv <approved-selection.csv> \\
+  --turning-points-csv <turning-points.csv> \\
+  --output-dir <output-directory>
+```
+
+スクリプトは承認済み選択表と頂点表から波形別・周期別・条件別CSVを生成する。合成振動データで、選択フィルタ、周期比計算、出力生成までの動作確認を行った。今回の34波形の新規計算結果は、同じ式・フィルタを適用した計算結果を上記CSVに保存した。
+
 ### IHB-01の評価
 
 周期比は全条件で得られ、IHB-02へ進めるデータはある。ただしSP02〜SP04の一部は条件あたり波形が2本で、周期数が多くても独立した波形再現性の情報は限られる。IHB-02では波形数の偏りを重みに反映し、5条件で分離した \(I_0,K_0\) が安定かを確認する。
