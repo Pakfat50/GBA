@@ -26,12 +26,18 @@ RMSE_MAX_DEG=0.5
 
 
 def pearson(x,y):
+    """Return the Pearson correlation, or NaN when it is undefined."""
     x=np.asarray(x,float); y=np.asarray(y,float)
     return float(np.corrcoef(x,y)[0,1]) if len(x)>1 and np.std(x)>0 and np.std(y)>0 else float('nan')
 
 
 def fit_monotone_log_envelope(t, signed_angle_rad, segment_id):
-    """Fit A_end+B*log((1+C)/(u+C)); positive and monotonically decreasing."""
+    """Fit a positive, decreasing amplitude curve to one peak sequence.
+
+    ``t`` is the measured peak-time array; ``signed_angle_rad`` contains
+    centered extrema in radians. The returned angles keep each measured peak
+    sign while the fitted amplitudes decrease monotonically between endpoints.
+    """
     t=np.asarray(t,float); signed_angle_rad=np.asarray(signed_angle_rad,float)
     amp=np.abs(signed_angle_rad)
     if len(t)<5: raise ValueError(f'{segment_id}: fewer than 5 consecutive peaks')
@@ -39,6 +45,8 @@ def fit_monotone_log_envelope(t, signed_angle_rad, segment_id):
         raise ValueError(f'{segment_id}: non-finite time or angle')
     if np.any(np.diff(t)<=0): raise ValueError(f'{segment_id}: times are not strictly increasing')
     if np.any(amp<=0): raise ValueError(f'{segment_id}: zero peak amplitude')
+    # Normalize time to [0, 1], which makes the envelope parameters independent
+    # of whether the original timestamps are seconds, milliseconds, or offsets.
     u=(t-t[0])/(t[-1]-t[0])
     def model(p,x):
         a_end,b,c=p
@@ -56,6 +64,7 @@ def fit_monotone_log_envelope(t, signed_angle_rad, segment_id):
 
 
 def envelope_at(t, params):
+    """Evaluate a previously fitted envelope at arbitrary times in its span."""
     t=np.asarray(t,float); t0,t1,p=params
     u=(t-t0)/(t1-t0)
     a_end,b,c=p
@@ -63,6 +72,7 @@ def envelope_at(t, params):
 
 
 def energy_metrics_for_condition(waves,axis,conf,tau):
+    """Score the fixed axis-wide tau on one configuration without refitting."""
     selected=[w for w in waves if w['axis']==axis and w['configuration']==conf and w['intervals']]
     obs=[];pred=[]
     for w in selected:
@@ -77,6 +87,7 @@ def energy_metrics_for_condition(waves,axis,conf,tau):
 
 
 def read_wave_segment(path,start,end,column):
+    """Read the selected raw-angle samples used only in the overlay plot."""
     with path.open(encoding='utf-8-sig',newline='') as f: rows=list(csv.DictReader(f))
     rows=rows[int(start):int(end)+1]
     return (np.asarray([float(r['systime[ms]'])*1e-3 for r in rows]),
@@ -84,6 +95,7 @@ def read_wave_segment(path,start,end,column):
 
 
 def write_waveform_overlay(path,peak_rows,selection,points,repository_root):
+    """Plot raw free-decay traces with the fitted positive/negative envelopes."""
     pby={}
     for r in points:pby.setdefault(r['segment_id'],[]).append(r)
     fits={}
@@ -127,6 +139,7 @@ def write_waveform_overlay(path,peak_rows,selection,points,repository_root):
 
 
 def write_ode_check(path,fits):
+    """Plot half-cycle angle and period residuals using fixed fitted tau."""
     fig,axs=plt.subplots(2,2,figsize=(11,7),sharex='col',constrained_layout=True)
     for row,axis in enumerate(('IN','OUT')):
         for col,(key,ylab,ylim) in enumerate((('angle_residual_deg','Next-peak angle residual [deg]',(-1.5,1.5)),
@@ -145,6 +158,7 @@ def write_ode_check(path,fits):
 
 
 def write_overview(path,waves,ode_fits):
+    """Compare observed energy loss to one-pass model loss and ODE residuals."""
     fig,axs=plt.subplots(2,2,figsize=(13,9),constrained_layout=True)
     for row,axis in enumerate(('IN','OUT')):
         tau=ode_fits[axis]['tau']
@@ -302,6 +316,8 @@ def main():
         new=dict(wave);new_intervals=[]
         for r in wave['intervals']:
             a0=smooth_angles[r['start_peak_number']];a1=smooth_angles[r['end_peak_number']]
+            # Recompute observed energy and the fixed c/tau bases from the
+            # smoothed adjacent peak angles. Angles are radians here.
             de,cb,tb=base.energy_bases(a0,wave['inertia_kg_m2'],wave['restoring_n_m'],a1)
             new_intervals.append(dict(r,start_angle_rad=a0,observed_next_angle_rad=a1,
                 start_amplitude_deg=abs(a0)*180/math.pi,next_amplitude_deg=abs(a1)*180/math.pi,
@@ -355,6 +371,8 @@ def main():
                 tau_raw_sp_fit_n_m=raw_sp['tau'],tau_monotone_sp_fit_n_m=smooth_sp['tau'],
                 tau_change_percent=100*(smooth_sp['tau']/raw_sp['tau']-1),
                 energy_rmse_raw_sp_fit_mj=1000*raw_sp['energy_rmse_j'],energy_rmse_monotone_sp_fit_mj=1000*smooth_sp['energy_rmse_j']))
+    # Validate the already identified tau by restarting the ODE from each
+    # measured/smoothed turning point. This stage never adjusts tau.
     ode_fits={}
     for axis in ('IN','OUT'):
         tau=smooth_fits[axis]['tau'];rows=[];bywave={}
