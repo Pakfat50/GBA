@@ -93,10 +93,15 @@ I_q^{(r-1)}=I_0^{(r-1)}+\Delta I_q
 として、正規化運動方程式
 
 ```math
-\ddot{\theta}_{\mathrm{model}}+
-\widehat{\kappa}_{q,\mathrm{obs}}^{(r)}\sin\left(\theta_{\mathrm{model}}\right)+
-\frac{c_{\mathrm{rod,model}}}{I_q^{(r-1)}}|\dot{\theta}_{\mathrm{model}}|\dot{\theta}_{\mathrm{model}}+
-\frac{\tau_0^{(r-1)}}{I_q^{(r-1)}}\mathrm{sgn}(\dot{\theta}_{\mathrm{model}})=0
+\begin{aligned}
+\ddot{\theta}_{\mathrm{model}}
+&+\widehat{\kappa}_{q,\mathrm{obs}}^{(r)}
+\sin\left(\theta_{\mathrm{model}}\right)\\
+&+\frac{c_{\mathrm{rod,model}}}{I_q^{(r-1)}}
+|\dot{\theta}_{\mathrm{model}}|\dot{\theta}_{\mathrm{model}}\\
+&+\frac{\tau_0^{(r-1)}}{I_q^{(r-1)}}
+\mathrm{sgn}(\dot{\theta}_{\mathrm{model}})=0
+\end{aligned}
 ```
 
 を使う。未知量は観測波形から同定する比 $`\widehat{\kappa}_{q,\mathrm{obs}}^{(r)}=K_q/I_q`$ とし、他項は前回値で固定する。ここで $`c_{\mathrm{rod,model}}/I_q^{(r-1)}`$ と $`\tau_0^{(r-1)}/I_q^{(r-1)}`$ は既知である。
