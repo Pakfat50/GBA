@@ -194,12 +194,12 @@ IHB-03はレビュー待ちで止める。IHB-04の反復更新にはまだ進�
 ご指摘を受け、係数同定自体も半周期ごとのODE積分で行う解析を追加した。以前のエネルギー基底法では半周期の散逸基底を一度計算し、その近似式から τ₀ を閉形式で求めていた。今回の直接法では、各区間の開始角度を実測頂点に戻し、固定した I,K,b,c と候補 τ₀ で次の折返し点まで数値積分する。予測した次頂点角と実測値の差を目的関数とし、同じ軸の全波形をまとめて τ₀ を1つ求めた。区間間で状態・位相誤差は引き継がない。
 
 ~~~math
-\\widehat{\\tau}_{0}
-=\\arg\\min_{\\tau_0\\ge 0}
-\\sum_w\\frac{1}{W N_w}
-\\sum_{n=1}^{N_w}
-\\left[\\theta_{n+1}^{\\mathrm{ODE}}(\\tau_0;\\theta_n^{\\mathrm{meas}})
--\\theta_{n+1}^{\\mathrm{meas}}\\right]^2
+\widehat{\tau}_{0}
+=\arg\min_{\tau_0\ge 0}
+\sum_w\frac{1}{W N_w}
+\sum_{n=1}^{N_w}
+\left[\theta_{n+1}^{\mathrm{ODE}}(\tau_0;\theta_n^{\mathrm{meas}})
+-\theta_{n+1}^{\mathrm{meas}}\right]^2
 ~~~
 
 ODEは各区間で実測始点角・角速度ゼロから解き直す。重みは一波形あたりの総和が等しくなるようにした。最小化する量は次頂点角であり、半周期時間は独立の診断値である。IHB-02の I,K、理論ロッド抗力係数、b=0、4 deg採用閾値、対象波形は一回積分法と同一である。
@@ -231,10 +231,10 @@ ODE直接法についても、角度予測から各半周期のエネルギー�
 再現には [半周期ODE直接フィットスクリプト](../../../iterative_hybrid/ihb03_half_cycle_ode_fit.py) を使う。直接ODE係数と波形別指標は、それぞれ [係数・集約適合度](ihb03_half_cycle_ode_parameters.csv)、[波形別適合度](ihb03_half_cycle_ode_waveform_metrics.csv) に保存した。
 
 ~~~bash
-python 06_Analysis/fitting_pipeline/iterative_hybrid/ihb03_half_cycle_ode_fit.py \\
-  --turning-points-csv 06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/turning_points.csv \\
-  --selection-csv 06_Analysis/fitting_pipeline/results/20260921/waveform_review/waveform_selection.csv \\
-  --condition-physics-csv 06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb02_condition_predictions.csv \\
+python 06_Analysis/fitting_pipeline/iterative_hybrid/ihb03_half_cycle_ode_fit.py \
+  --turning-points-csv 06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/turning_points.csv \
+  --selection-csv 06_Analysis/fitting_pipeline/results/20260921/waveform_review/waveform_selection.csv \
+  --condition-physics-csv 06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb02_condition_predictions.csv \
   --output-dir 06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid
 ~~~
 
@@ -303,7 +303,7 @@ c_{\mathrm{rod}}|\dot\theta|^3
 \right]dt
 ~~~
 
-各実測半周期の ΔE_obs とこの積算損失の差を、波形ごとの総重みが等しくなるように最小化した。従来の一回積分法の τ は探索の初期値に使ったが、最終値に固定していない。推定値はINで \(8.5218\times10^{-5}\) N m、OUTで \(1.7891\times10^{-4}\) N mとなった。
+各実測半周期の ΔE_obs とこの積算損失の差を、波形ごとの総重みが等しくなるように最小化した。従来の一回積分法の τ は探索の初期値に使ったが、最終値に固定していない。推定値はINで $8.5218\times10^{-5}$ N m、OUTで $1.7891\times10^{-4}$ N mとなった。
 
 | 軸 | τ同定の方法 | τ [N m] | エネルギーRMSE [mJ] | エネルギーPearson R | エネルギーR² | 角度RMSE [deg] |
 |---|---|---:|---:|---:|---:|---:|
@@ -346,7 +346,7 @@ D_{w,\mathrm{model}}
 +\tau\sum_{n=0}^{M_w-1}R_{w,n}
 ~~~
 
-となる。\(X_w=\sum_n R_{w,n}\)、\(Y_w=D_{w,\mathrm{obs}}-c_{\mathrm{rod}}\sum_n C_{w,n}\) と置くと、波形ごとに同じ重みを与えたτの解は
+となる。$X_w=\sum_n R_{w,n}$、$Y_w=D_{w,\mathrm{obs}}-c_{\mathrm{rod}}\sum_n C_{w,n}$ と置くと、波形ごとに同じ重みを与えたτの解は
 
 ~~~math
 \widehat\tau_{\mathrm{total}}
@@ -383,7 +383,7 @@ D_{w,\mathrm{model}}
 
 ## 追加試行：滑らかな頂点振幅列を仮定した感度確認
 
-観測頂点角の局所的なばらつきがエネルギー損失指標にどれだけ現れるかを見るため、各波形の頂点時刻 \(t_n\) における振幅 \(|A_n|\) を滑らかな関数で近似した。具体的には \(\log |A_n|\) 対 \(t_n\) に波形ごとの三次平滑化スプラインを当て、平滑化の強さは一般化交差検証（GCV）で選んだ。関数を同じ頂点時刻 \(t_n\) で評価し、符号は観測頂点の交互符号を保持した。この平滑角列から \(\Delta E\)、Cₙ、Rₙをすべて再計算し、c_rod固定の一回積分法でτをフィットした。
+観測頂点角の局所的なばらつきがエネルギー損失指標にどれだけ現れるかを見るため、各波形の頂点時刻 $t_n$ における振幅 $|A_n|$ を滑らかな関数で近似した。具体的には $\log |A_n|$ 対 $t_n$ に波形ごとの三次平滑化スプラインを当て、平滑化の強さは一般化交差検証（GCV）で選んだ。関数を同じ頂点時刻 $t_n$ で評価し、符号は観測頂点の交互符号を保持した。この平滑角列から $\Delta E$、Cₙ、Rₙをすべて再計算し、c_rod固定の一回積分法でτをフィットした。
 
 | 軸 | 指標 | 生の頂点角 | 平滑後の頂点角 |
 |---|---|---:|---:|
