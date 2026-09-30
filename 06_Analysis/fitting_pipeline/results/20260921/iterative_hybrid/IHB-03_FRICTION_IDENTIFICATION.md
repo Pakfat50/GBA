@@ -245,9 +245,9 @@ python 06_Analysis/fitting_pipeline/iterative_hybrid/ihb03_half_cycle_ode_fit.py
 c_rod を固定せず、各半周期のエネルギー損失を二つの基底の和として表し、c_rod と τ を同時に最小二乗で求めた。どちらも負にならない制約を置き、切片はゼロとした。係数は軸ごとに推定するため、同じ軸の全波形・全採用半周期に対して c_rod を一つ、τを一つだけ使う。振幅ごと、波形ごとに係数を変える自由度は加えていない。
 
 ~~~math
-\\Delta E_{\\mathrm{obs},n}
-\\approx c_{\\mathrm{rod}} C_n+\\tau R_n,
-\\qquad c_{\\mathrm{rod}}\\ge0,\\quad \\tau\\ge0
+\Delta E_{\mathrm{obs},n}
+\approx c_{\mathrm{rod}} C_n+\tau R_n,
+\qquad c_{\mathrm{rod}}\ge0,\quad \tau\ge0
 ~~~
 
 I、K、対象波形、4 degの採用条件、保存軌道から作る Cₙ と実測角度から作る Rₙ は従来の一回積分法と同じである。重みも各波形の総重みが等しくなるようにした。以下の固定係数法は従来レポートの基準値、同時フィット法は今回の追加試行を示す。
