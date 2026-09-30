@@ -96,17 +96,39 @@ def main():
         })
 
     condition_rows = []
+    wave_by_id = {r["segment_id"]: r for r in wave_rows}
     for axis in ("IN", "OUT"):
         for config in (f"SP{i:02d}" for i in range(5)):
             ws = [r for r in wave_rows if r["axis"] == axis and r["configuration"] == config]
+            accepted = [
+                r for r in cycle_rows
+                if r["axis"] == axis and r["configuration"] == config and r["accepted"] == 1
+            ]
+            observed = [float(r["period_s"]) for r in accepted]
+            predicted = [
+                4.0 * elliptic_k(math.sin(math.radians(float(r["representative_amplitude_deg"])) / 2.0) ** 2)
+                / math.sqrt(float(wave_by_id[r["segment_id"]]["waveform_median_k_over_i_s2"]))
+                for r in accepted
+            ]
+            if observed:
+                residuals = [y - yhat for y, yhat in zip(observed, predicted)]
+                mean_observed = sum(observed) / len(observed)
+                sse = sum(e * e for e in residuals)
+                sst = sum((y - mean_observed) ** 2 for y in observed)
+                period_rmse_ms = math.sqrt(sse / len(observed)) * 1000.0
+                period_r2 = 1.0 - sse / sst if sst > 0 else ""
+            else:
+                period_rmse_ms, period_r2 = "", ""
             condition_rows.append({
                 "axis": axis,
                 "configuration": config,
                 "waveforms": len(ws),
-                "accepted_periods": sum(int(r["accepted_periods"]) for r in ws),
+                "accepted_periods": len(accepted),
                 "mean_waveform_median_k_over_i_s2": (
                     sum(float(r["waveform_median_k_over_i_s2"]) for r in ws) / len(ws) if ws else ""
                 ),
+                "period_rmse_ms": period_rmse_ms,
+                "period_r2": period_r2,
             })
 
     out = Path(args.output_dir)
@@ -124,7 +146,7 @@ def main():
             writer.writerows(rows)
     print(f"selected_waveforms={len(selected)} processed_waveforms={len(wave_rows)} cycles={len(cycle_rows)}")
     for r in condition_rows:
-        print(f'{r["axis"]},{r["configuration"]},{r["waveforms"]},{r["accepted_periods"]},{r["mean_waveform_median_k_over_i_s2"]}')
+        print(f'{r["axis"]},{r["configuration"]},{r["waveforms"]},{r["accepted_periods"]},{r["mean_waveform_median_k_over_i_s2"]},{r["period_rmse_ms"]},{r["period_r2"]}')
 
 if __name__ == "__main__":
     main()
