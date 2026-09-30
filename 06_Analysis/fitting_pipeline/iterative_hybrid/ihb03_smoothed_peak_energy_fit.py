@@ -210,7 +210,7 @@ def main():
                 sp=make_smoothing_spline(t,np.log(np.abs(signed)),lam=None)
                 a=np.exp(sp(t))
                 if not np.all(np.isfinite(a)) or np.any(a <= 0):
-                    raise ValueError(f'{wave[\'segment_id\']}: spline produced invalid amplitudes')
+                    raise ValueError(f"{wave['segment_id']}: spline produced invalid amplitudes")
                 run_functions[(wave['segment_id'],int(run[0][0]))]=(float(t[0]),float(t[-1]),sp)
             else: raise AssertionError('minimum smoothing-run length gate was bypassed')
             for (peak_no,tm,raw),amp in zip(run,a):
