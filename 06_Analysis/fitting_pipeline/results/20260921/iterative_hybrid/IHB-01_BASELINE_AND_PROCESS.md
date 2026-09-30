@@ -146,7 +146,7 @@ I_q^{(r-1)}=I_0^{(r-1)}+\Delta I_q
 
 縦軸は周期 $`T`$ [s]、横軸は観測代表振幅 $`A_{\mathrm{obs}}`$ [deg] である。点は $`T_{\mathrm{obs}}`$、線は $`T_{\mathrm{model}}`$ を表し、両者の比ではない。図中の数式はLaTeX形式のmathtextで描画し、SVGのパスとして保存している。
 
-![IHB-01の条件別周期フィッティング結果](ihb01_fit_overview.svg?version=16bf027d4050b9924545a044b13d78b8884e966c)
+![IHB-01の条件別周期フィッティング結果](https://raw.githubusercontent.com/Pakfat50/GBA/1567b64ad58a63525e84e6ffc394895992a1cd3d/06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb01_fit_overview.svg)
 
 ### 条件内の全波形をまとめる線形フィット（実施済み）
 
