@@ -112,6 +112,8 @@ def write_waveform_overlay(path,peak_rows,selection,points,repository_root):
                     ax.plot(trace_t[valid]-t0,-env*180/math.pi,color=color,lw=1.05,ls='--',alpha=.95,label='_nolegend_')
             ax.axhline(0,color='#555',lw=.55);ax.set_title(f'{axis} / {conf} (n={len(waves)})')
             ax.set_xlabel('Time from first fitted peak [s]');ax.set_ylabel('Centered angle [deg]');ax.grid(alpha=.2)
+            # Match the corresponding GCV-spline panel's vertical scale.
+            ax.set_ylim(-65,65)
             if waves:ax.legend(loc='upper right',fontsize=6,ncol=2,framealpha=.8)
     fig.suptitle('Free-decay waveforms with monotone logarithmic amplitude envelopes')
     fig.savefig(path,bbox_inches='tight',dpi=45);fig.savefig(path.with_suffix('.png'),bbox_inches='tight',dpi=90);plt.close(fig)
@@ -128,7 +130,7 @@ def write_ode_check(path,fits):
                 rr=rr[::12] if len(rr)>12 else rr
                 ax.scatter([float(r['start_amplitude_deg']) for r in rr],[float(r[key]) for r in rr],
                            s=14,color=SP_COLORS[si],alpha=.72,label=conf)
-            ax.axhline(0,color='#222',lw=1);ax.set_ylim(*ylim);ax.set_xlim(4,54);ax.grid(alpha=.22)
+            ax.axhline(0,color='#222',lw=1);ax.set_ylim(*ylim);ax.set_xlim(4,64);ax.grid(alpha=.22)
             ax.set_title(f'{axis}: {ylab}');ax.set_ylabel(ylab);ax.set_xlabel('Fitted start amplitude [deg]')
             if row==0 and col==0:ax.legend(fontsize=8,ncol=2)
     fig.suptitle('Half-cycle ODE validation using monotone-smoothed peak amplitudes')
@@ -148,6 +150,11 @@ def write_overview(path,waves,ode_fits):
                     x=np.asarray([1000*float(r['delta_energy_j']) for r in rr])
                     y=np.asarray([1000*(base.C_ROD*float(r['c_basis'])+tau*float(r['tau_basis'])) for r in rr])
                     ax.set_xlabel('Observed ΔE [mJ]');ax.set_ylabel('Model cC + τR [mJ]')
+                    # Match the spline report's condition-wise energy scales.
+                    if axis=='IN':
+                        ax.set_xlim(-300,1100);ax.set_ylim(-300,1100)
+                    else:
+                        ax.set_xlim(0,1500);ax.set_ylim(0,1500)
                     if len(x):
                         lo=min(0,float(x.min()),float(y.min()));hi=max(float(x.max()),float(y.max()));ax.plot([lo,hi],[lo,hi],'k--',lw=1)
                     title=f'{axis}: one-pass energy fit'
@@ -155,6 +162,7 @@ def write_overview(path,waves,ode_fits):
                     rr=[r for r in ode_fits[axis]['rows'] if r['configuration']==conf]
                     x=np.asarray([float(r['start_amplitude_deg']) for r in rr]);y=np.asarray([float(r['angle_residual_deg']) for r in rr])
                     ax.set_xlabel('Measured start amplitude [deg]');ax.set_ylabel('ODE next-peak residual [deg]');ax.axhline(0,color='#222',lw=1)
+                    ax.set_xlim(4,64);ax.set_ylim(-1.5,1.5)
                     title=f'{axis}: fixed-τ ODE validation'
                 ax.scatter(x,y,s=7,color=SP_COLORS[si],alpha=.55,label=conf,rasterized=True)
                 ax.set_title(title);ax.grid(alpha=.22)
@@ -284,6 +292,8 @@ def main():
     for axis,ax in zip(('IN','OUT'),axs):
         rr=[r for r in peak_rows if r['axis']==axis];xx=[float(r['raw_amplitude_deg']) for r in rr];yy=[float(r['smoothed_amplitude_deg']) for r in rr]
         ax.scatter(xx,yy,s=9,alpha=.35,rasterized=True);lo=min(xx+yy);hi=max(xx+yy);ax.plot([lo,hi],[lo,hi],'k--',lw=1)
+        # Match the GCV-spline peak-amplitude comparison panels.
+        ax.set_xlim(5,65);ax.set_ylim(5,65)
         ax.set_title(axis);ax.set_xlabel('Observed peak amplitude |A| [deg]');ax.grid(alpha=.2)
     axs[0].set_ylabel('Monotone-fitted amplitude [deg]');fig.suptitle('Observed vs monotone log-endpoint peak amplitudes')
     fig.savefig(args.output_dir/'ihb03_monotone_peak_angles.svg',bbox_inches='tight');fig.savefig(args.output_dir/'ihb03_monotone_peak_angles.png',bbox_inches='tight',dpi=160);plt.close(fig)
