@@ -1,0 +1,3 @@
+axis,tau_direct_ode_n_m,waveforms,half_cycles,angle_rmse_deg,half_period_rmse_ms,optimizer_success,function_evaluations
+IN,8.823799804319556e-05,15,1025,0.5493346820290033,10.901467820173936,True,18
+OUT,0.00015632639438215316,19,769,0.47674372962442463,7.369454522505548,True,22
