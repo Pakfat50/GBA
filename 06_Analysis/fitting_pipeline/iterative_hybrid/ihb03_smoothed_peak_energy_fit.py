@@ -128,6 +128,38 @@ def write_smoothed_ode_check(path, fits):
     fig.savefig(path,bbox_inches='tight');plt.close(fig)
 
 
+
+def write_smoothed_fit_overview(path, waves, ode_fits):
+    """Plot smoothed one-pass energy predictions and fixed-tau ODE angle residuals."""
+    fig, axs = plt.subplots(2, 2, figsize=(13, 9), constrained_layout=True)
+    for row, axis in enumerate(('IN', 'OUT')):
+        tau = ode_fits[axis]['tau']
+        selected = [w for w in waves if w['axis'] == axis]
+        for col, kind in enumerate(('energy', 'ode')):
+            ax = axs[row, col]
+            for si, conf in enumerate([f'SP{i:02d}' for i in range(5)]):
+                if kind == 'energy':
+                    rr = [r for w in selected if w['configuration'] == conf for r in w['intervals']]
+                    x = np.asarray([1000*float(r['delta_energy_j']) for r in rr])
+                    y = np.asarray([1000*(base.C_ROD*float(r['c_basis']) + tau*float(r['tau_basis'])) for r in rr])
+                    title = f'{axis}: one-pass energy fit'
+                    ax.set_xlabel('Observed ΔE [mJ]'); ax.set_ylabel('Model cC + τR [mJ]')
+                    if len(x):
+                        lo=min(0,float(x.min()),float(y.min())); hi=max(float(x.max()),float(y.max()))
+                        ax.plot([lo,hi],[lo,hi],'k--',lw=1)
+                else:
+                    rr = [r for r in ode_fits[axis]['rows'] if r['configuration'] == conf]
+                    x = np.asarray([float(r['start_amplitude_deg']) for r in rr])
+                    y = np.asarray([float(r['angle_residual_deg']) for r in rr])
+                    title = f'{axis}: fixed-τ ODE validation'
+                    ax.set_xlabel('Measured start amplitude [deg]'); ax.set_ylabel('ODE next-peak residual [deg]')
+                    ax.axhline(0,color='#222',lw=1)
+                ax.scatter(x,y,s=7,color=SP_COLORS[si],alpha=.55,label=conf,rasterized=True)
+                ax.set_title(title); ax.grid(alpha=.22)
+                if row == 0 and col == 0: ax.legend(fontsize=8,ncol=3)
+    fig.suptitle('Smoothed peak amplitudes: one-pass energy fit and fixed-τ ODE check')
+    fig.savefig(path,bbox_inches='tight'); plt.close(fig)
+
 def main():
     p=argparse.ArgumentParser()
     p.add_argument('--turning-points-csv',type=Path,required=True)
@@ -288,6 +320,7 @@ def main():
     write_condition_waveforms(args.output_dir/'ihb03_smoothed_peak_waveforms.svg',peak_rows,
         base.read_csv(args.selection_csv),base.read_csv(args.turning_points_csv),args.repository_root)
     write_smoothed_ode_check(args.output_dir/'ihb03_smoothed_peak_ode_fit.svg',ode_fits)
+    write_smoothed_fit_overview(args.output_dir/'ihb03_smoothed_peak_fit_overview.svg',smoothed_waves,ode_fits)
     print(summary)
 
 if __name__=='__main__':main()
