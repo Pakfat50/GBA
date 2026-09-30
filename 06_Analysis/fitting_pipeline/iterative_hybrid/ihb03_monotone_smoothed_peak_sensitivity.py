@@ -185,6 +185,9 @@ def write_automatic_report(report_path, summary, condition_rows, per_wave, peak_
     The report deliberately keeps amplitude-fit quality separate from the
     energy-loss fit metrics. Pearson R measures correlation; RMSE measures the
     typical residual size; R2 compares residual error with the observed spread.
+    Equations are standalone display-math blocks so they render in GitHub's
+    Markdown preview. Inline math markup is avoided because GitHub displays it
+    as source text in this report view.
     """
     by_key={(row['axis'],row['method']):row for row in summary}
     raw_name='raw_observed_peaks'
@@ -192,20 +195,30 @@ def write_automatic_report(report_path, summary, condition_rows, per_wave, peak_
     report=[]
     report += ['# 単調振幅平滑化による一回積分τ同定レポート','',
         '## 解析の流れ','',
-        r'このレポートは解析スクリプトが実行ごとに自動生成します。入力の計測頂点列から、波形ごとに振幅の単調関数フィットを行い、フィット後の頂点角で半周期エネルギー収支を作り、一回の重み付き最小二乗で軸別の $\tau$ を同定します。最後にエネルギー損失のPearson $R$、RMSE、$R^2$ を評価し、図表を出力します。', '',
+        'このレポートは解析スクリプトが実行ごとに自動生成します。入力の計測頂点列から、波形ごとに振幅の単調関数フィットを行い、フィット後の頂点角で半周期エネルギー収支を作り、一回の重み付き最小二乗で軸別のτを同定します。最後にエネルギー損失のPearson R、RMSE、R²を評価し、図表を出力します。', '',
         '処理順は次の通りです。', '',
         '1. 計測頂点列を波形・軸・形態ごとに読み込み、連続した頂点列に分割する。',
         '2. 各列に正値かつ単調減少を保証する対数関数をフィットする。',
         '3. 各波形の振幅フィット品質ゲートを確認する。失敗時は理由を表示して停止し、τを計算しない。',
         '4. フィット振幅から隣接頂点対ごとのエネルギー損失と散逸基底を計算する。',
-        r'5. 全採用波形を軸ごとにまとめて $\tau$ を一度だけ最小二乗同定する。',
-        r'6. エネルギー損失の $R$、RMSE、$R^2$ を計算し、同定した $\tau$ を変更せずODEで補助確認する。',
+        '5. 全採用波形を軸ごとにまとめてτを一度だけ最小二乗同定する。',
+        '6. エネルギー損失のPearson R、RMSE、R²を計算し、同定したτを変更せずODEで補助確認する。',
         '7. CSV、図、実行条件入りの本レポートを出力する。', '',
         '## 方法','',
-        r'振幅包絡線には $A(u)=A_{\rm end}+B\ln\{(1+C)/(u+C)\}$ を使います。フィット区間ごとに $A_{\rm end}>0$、$B>0$、$C>0$ とするため、包絡線は正値で厳密に単調減少します。頂点の正負符号は計測値から引き継ぎます。', '',
-        r'隣接する頂点 $A_n,A_{n+1}$ から、観測エネルギー損失は $\Delta E_n=K_j[\cos(|A_{n+1}|)-\cos(|A_n|)]$ とします。固定した $I,K,c_{\rm rod}$ と $b=0$ のもとで、ロッド抗力基底を $C_n$、クーロン摩擦基底を $R_n=|A_n|+|A_{n+1}|$ とします。各波形の総重みを等しくし、$\Delta E_n-c_{\rm rod}C_n\approx\tau R_n$ を切片なし、$\tau\ge0$ で一回の重み付き線形最小二乗により解きます。', '',
+        '振幅包絡線は、正値かつ単調減少を保証する対数関数で表します。各フィット区間の終端振幅を A_end、形状係数を B、C、正規化時間を u とします。',
+        '$$',
+        r'A(u)=A_{\mathrm{end}}+B\ln\left(\frac{1+C}{u+C}\right),\qquad A_{\mathrm{end}}>0,\quad B>0,\quad C>0.',
+        '$$',
+        '隣接する頂点 A_n、A_(n+1) から観測エネルギー損失とクーロン摩擦の角度移動量を計算します。I、K、c_rod は固定し、b=0 とします。',
+        '$$',
+        r'\Delta E_n=K_j\left[\cos(|A_{n+1}|)-\cos(|A_n|)\right],\qquad R_n=|A_n|+|A_{n+1}|.',
+        '$$',
+        '各波形の総重みを等しくし、切片なし、τ ≥ 0 の条件で一回の重み付き線形最小二乗を解きます。',
+        '$$',
+        r'\Delta E_n-c_{\mathrm{rod}}C_n\approx\tau R_n,\qquad \widehat{\tau}\ge0.',
+        '$$', '',
         '## 振幅フィット品質','',
-        rf'対象波形数: {len(per_wave)}。対象頂点数: {len(peak_rows)}。全波形が $R\ge{R_MIN}$ かつ振幅RMSE $\le{RMSE_MAX_DEG}^\circ$ のゲートを通過した場合だけ、τ同定へ進みます。', '',
+        f'対象波形数: {len(per_wave)}。対象頂点数: {len(peak_rows)}。全波形が R ≥ {R_MIN} かつ振幅RMSE ≤ {RMSE_MAX_DEG} deg のゲートを通過した場合だけ、τ同定へ進みます。', '',
         '| 軸 | 形態 | 波形数 | 頂点数 | 振幅Pearson R平均 | 振幅RMSE平均 [deg] |','|---|---|---:|---:|---:|---:|']
     for row in condition_rows:
         report.append(f"| {row['axis']} | {row['configuration']} | {row['waveforms']} | {row['peaks']} | {row['amplitude_R_mean_waveform']:.6f} | {row['amplitude_RMSE_mean_waveform_deg']:.4f} |")
@@ -236,7 +249,6 @@ def write_automatic_report(report_path, summary, condition_rows, per_wave, peak_
         '- `ihb03_monotone_peak_ode_metrics.csv`、`ihb03_monotone_peak_ode_predictions.csv`: τ固定ODE確認',
         '- SVGおよびPNG形式の図: 振幅フィット、自由振動への包絡線重ね描き、エネルギー適合、ODE残差', '']
     report_path.write_text('\n'.join(report), encoding='utf-8')
-
 
 def main():
     """Read user-supplied data files and create a complete analysis bundle."""
