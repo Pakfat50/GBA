@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Repeat IHB-03 smoothed-peak sensitivity analysis with a monotone log envelope."""
+"""Run the complete monotone-amplitude tau-identification workflow.
+
+This command reads measured turning-point amplitudes, fits one positive and
+monotonically decreasing envelope to each continuous peak sequence, computes
+one-pass energy-basis tau estimates, evaluates energy-loss Pearson R/RMSE/R2,
+and writes CSV tables, plots, and a Markdown report. It is intended to be run
+from the repository root; see the generated report for the exact inputs.
+"""
 import argparse
 import csv
 import math
@@ -172,20 +179,92 @@ def write_overview(path,waves,ode_fits):
     fig.savefig(path,bbox_inches='tight');fig.savefig(path.with_suffix('.png'),bbox_inches='tight',dpi=140);plt.close(fig)
 
 
+def write_automatic_report(report_path, summary, condition_rows, per_wave, peak_rows, ode_metrics, input_paths):
+    """Write a human-readable report from the exact outputs made in this run.
+
+    The report deliberately keeps amplitude-fit quality separate from the
+    energy-loss fit metrics. Pearson R measures correlation; RMSE measures the
+    typical residual size; R2 compares residual error with the observed spread.
+    """
+    by_key={(row['axis'],row['method']):row for row in summary}
+    raw_name='raw_observed_peaks'
+    smooth_name='monotone_log_endpoint'
+    report=[]
+    report += ['# 単調振幅平滑化による一回積分τ同定レポート','',
+        '## 解析の流れ','',
+        r'このレポートは解析スクリプトが実行ごとに自動生成します。入力の計測頂点列から、波形ごとに振幅の単調関数フィットを行い、フィット後の頂点角で半周期エネルギー収支を作り、一回の重み付き最小二乗で軸別の $\tau$ を同定します。最後にエネルギー損失のPearson $R$、RMSE、$R^2$ を評価し、図表を出力します。', '',
+        '処理順は次の通りです。', '',
+        '1. 計測頂点列を波形・軸・形態ごとに読み込み、連続した頂点列に分割する。',
+        '2. 各列に正値かつ単調減少を保証する対数関数をフィットする。',
+        '3. 各波形の振幅フィット品質ゲートを確認する。失敗時は理由を表示して停止し、τを計算しない。',
+        '4. フィット振幅から隣接頂点対ごとのエネルギー損失と散逸基底を計算する。',
+        r'5. 全採用波形を軸ごとにまとめて $\tau$ を一度だけ最小二乗同定する。',
+        r'6. エネルギー損失の $R$、RMSE、$R^2$ を計算し、同定した $\tau$ を変更せずODEで補助確認する。',
+        '7. CSV、図、実行条件入りの本レポートを出力する。', '',
+        '## 方法','',
+        r'振幅包絡線には $A(u)=A_{\rm end}+B\ln\{(1+C)/(u+C)\}$ を使います。フィット区間ごとに $A_{\rm end}>0$、$B>0$、$C>0$ とするため、包絡線は正値で厳密に単調減少します。頂点の正負符号は計測値から引き継ぎます。', '',
+        r'隣接する頂点 $A_n,A_{n+1}$ から、観測エネルギー損失は $\Delta E_n=K_j[\cos(|A_{n+1}|)-\cos(|A_n|)]$ とします。固定した $I,K,c_{\rm rod}$ と $b=0$ のもとで、ロッド抗力基底を $C_n$、クーロン摩擦基底を $R_n=|A_n|+|A_{n+1}|$ とします。各波形の総重みを等しくし、$\Delta E_n-c_{\rm rod}C_n\approx\tau R_n$ を切片なし、$\tau\ge0$ で一回の重み付き線形最小二乗により解きます。', '',
+        '## 振幅フィット品質','',
+        rf'対象波形数: {len(per_wave)}。対象頂点数: {len(peak_rows)}。全波形が $R\ge{R_MIN}$ かつ振幅RMSE $\le{RMSE_MAX_DEG}^\circ$ のゲートを通過した場合だけ、τ同定へ進みます。', '',
+        '| 軸 | 形態 | 波形数 | 頂点数 | 振幅Pearson R平均 | 振幅RMSE平均 [deg] |','|---|---|---:|---:|---:|---:|']
+    for row in condition_rows:
+        report.append(f"| {row['axis']} | {row['configuration']} | {row['waveforms']} | {row['peaks']} | {row['amplitude_R_mean_waveform']:.6f} | {row['amplitude_RMSE_mean_waveform_deg']:.4f} |")
+    report += ['', '### 振幅フィット図','', '![計測振幅と単調関数フィット](ihb03_monotone_peak_angles.svg)', '',
+        '![自由振動波形上に重ねた単調包絡線](ihb03_monotone_peak_waveforms.svg)', '',
+        '## τ同定とエネルギー損失評価','',
+        '| 軸 | 振幅列 | 波形数 | 半周期数 | τ [N m] | Pearson R | RMSE [mJ] | R² |','|---|---|---:|---:|---:|---:|---:|---:|']
+    for axis in ('IN','OUT'):
+        for method,label in ((raw_name,'計測頂点'),(smooth_name,'単調関数フィット')):
+            row=by_key[(axis,method)]
+            report.append(f"| {axis} | {label} | {row['waveforms']} | {row['half_cycles']} | {row['tau_n_m']:.7g} | {row['energy_pearson_r']:.6f} | {row['energy_rmse_mj']:.5f} | {row['energy_r2']:.6f} |")
+    report += ['', 'Pearson Rは観測損失とモデル損失の相関、RMSEは損失残差の大きさ、R²は観測損失のばらつきに対する残差の比を表します。平滑後の指標はフィットに使った同一データ上の評価で、独立データでの予測精度を意味しません。計測頂点列との比較は平滑化による感度を確認するために併記しています。', '',
+        '### エネルギー損失図','',
+        '![単調関数振幅によるエネルギーフィットと固定τ ODE確認](ihb03_monotone_peak_fit_overview.svg)', '',
+        '## 固定τによるODE確認','',
+        '| 軸 | 半周期数 | 頂点角RMSE [deg] | 頂点角R² | 半周期時間RMSE [ms] |','|---|---:|---:|---:|---:|']
+    for row in ode_metrics:
+        report.append(f"| {row['axis']} | {row['half_cycles']} | {row['angle_rmse_deg']:.5f} | {row['angle_r2']:.6f} | {row['half_period_rmse_ms']:.3f} |")
+    report += ['', '![固定τで行った半周期ODE残差](ihb03_monotone_peak_ode_fit.svg)', '',
+        'この確認ではτを再フィットしません。エネルギー基底法のτを固定したODE積分による補助評価です。', '',
+        '## 入力ファイル','']
+    for input_path in input_paths:
+        report.append(f'- `{input_path}`')
+    report += ['', '## 生成ファイル','',
+        '- `ihb03_monotone_peak_summary.csv`: 計測頂点と単調フィットの軸別τ・エネルギー指標',
+        '- `ihb03_monotone_peak_angles.csv`: 頂点ごとの生角度・フィット角度・包絡線係数',
+        '- `ihb03_monotone_peak_waveform_metrics.csv`、`ihb03_monotone_peak_condition_metrics.csv`: 振幅品質と条件別指標',
+        '- `ihb03_monotone_peak_ode_metrics.csv`、`ihb03_monotone_peak_ode_predictions.csv`: τ固定ODE確認',
+        '- SVGおよびPNG形式の図: 振幅フィット、自由振動への包絡線重ね描き、エネルギー適合、ODE残差', '']
+    report_path.write_text('\n'.join(report), encoding='utf-8')
+
+
 def main():
-    p=argparse.ArgumentParser()
-    p.add_argument('--turning-points-csv',type=Path,required=True)
-    p.add_argument('--selection-csv',type=Path,required=True)
-    p.add_argument('--condition-physics-csv',type=Path,required=True)
-    p.add_argument('--output-dir',type=Path,required=True)
-    p.add_argument('--repository-root',type=Path,default=Path.cwd())
-    args=p.parse_args();args.output_dir.mkdir(parents=True,exist_ok=True)
+    """Read user-supplied data files and create a complete analysis bundle."""
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--turning-points-csv',type=Path,required=True,
+                   help='Measured peak-angle point sequence (turning_points.csv).')
+    p.add_argument('--selection-csv',type=Path,required=True,
+                   help='Waveform review table defining approved segments and raw-log locations.')
+    p.add_argument('--condition-physics-csv',type=Path,required=True,
+                   help='Fixed I and K values for each axis/configuration.')
+    p.add_argument('--output-dir',type=Path,required=True,
+                   help='Directory for CSV results, graphs, and the generated Markdown report.')
+    p.add_argument('--repository-root',type=Path,default=Path.cwd(),
+                   help='Repository root used to locate the measured angle logs for overlay plots.')
+    p.add_argument('--report-name',default='IHB03_MONOTONE_TAU_REPORT.md',
+                   help='Markdown report filename written inside output-dir.')
+    args=p.parse_args()
+    args.output_dir.mkdir(parents=True,exist_ok=True)
+    # Build the accepted half-cycle list once. Both raw and smoothed results
+    # reuse these same waveform/interval identities for a fair comparison.
     waves=base.assemble_intervals(base.read_csv(args.turning_points_csv),base.read_csv(args.selection_csv),
                                   base.read_csv(args.condition_physics_csv),3.0)
     # assemble_intervals has already chosen the common raw-data intervals.
     # A zero extra cutoff keeps those exact interval identities after replacing A.
     raw_fits={axis:base.fit_tau_energy(waves,axis,minimum_amplitude_deg=0.0) for axis in ('IN','OUT')}
     smoothed_waves=[];peak_rows=[];per_wave=[]
+    # Fit A(t) independently on each contiguous run of measured extrema.
+    # A missing peak breaks the run so the fit never bridges a data gap.
     for wave in waves:
         peaks={}
         for r in wave['intervals']:
@@ -217,6 +296,8 @@ def main():
                 delta_energy_j=de,c_basis=cb,tau_basis=tb,rod_drag_loss_j=base.C_ROD*cb,
                 tau_adjusted_energy_j=de-base.C_ROD*cb))
         new['intervals']=new_intervals;smoothed_waves.append(new)
+    # Quality gates run before tau estimation. A failed amplitude fit stops
+    # the pipeline; bad waves are never silently omitted from the result.
     # Amplitude gates are checked before any smoothed tau fit.
     failures=[]
     for wave in waves:
@@ -228,6 +309,8 @@ def main():
         if not np.isfinite(R) or R<R_MIN or rmse>RMSE_MAX_DEG:
             failures.append(f"{wave['segment_id']}: R={R:.6f}, amplitude RMSE={rmse:.6f} deg")
     if failures: raise RuntimeError('Monotone A-fit gate failed; tau not fitted:\n'+'\n'.join(failures))
+    # This is the requested one-pass energy-basis tau fit, using the fitted
+    # monotone A values and the fixed physical coefficients.
     smooth_fits={axis:base.fit_tau_energy(smoothed_waves,axis,minimum_amplitude_deg=0.0) for axis in ('IN','OUT')}
     summary=[]
     for axis in ('IN','OUT'):
@@ -302,6 +385,12 @@ def main():
                            base.read_csv(args.turning_points_csv),args.repository_root)
     write_ode_check(args.output_dir/'ihb03_monotone_peak_ode_fit.svg',ode_fits)
     write_overview(args.output_dir/'ihb03_monotone_peak_fit_overview.svg',smoothed_waves,ode_fits)
+    # Write the report last, after all data tables and figures exist. Relative
+    # image links therefore render when the output directory is viewed on GitHub.
+    report_path=args.output_dir/args.report_name
+    write_automatic_report(report_path,summary,condition_rows,per_wave,peak_rows,ode_metrics,
+                           [args.turning_points_csv,args.selection_csv,args.condition_physics_csv])
+    print('report:',report_path)
     print('tau raw:',{a:raw_fits[a]['tau'] for a in raw_fits})
     print('tau monotone:',{a:smooth_fits[a]['tau'] for a in smooth_fits})
     print('ODE metrics:',ode_metrics)
@@ -309,3 +398,4 @@ def main():
 
 
 if __name__=='__main__':main()
+
