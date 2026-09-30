@@ -6,7 +6,7 @@
 |---|---|---|
 | IHB-01 | $c=0,\tau=0$ とし、各球なし条件の非線形周期から $K_j/I_j$ を新規算出する | 完了 |
 | IHB-02 | $K_j/I_j$ と既知の $\Delta I_j,\Delta K_j$ から $I_0,K_0$ を同定する | 次 |
-| IHB-03 | $I_0,K_0,c_\mathrm{rod}$ を使い、半周期の振幅減衰から $\tau_0$ を同定する | 未着手 |
+| IHB-03 | $I_0,K_0,c_{\mathrm{rod,model}}$ を使い、半周期の振幅減衰から $\tau_0$ を同定する | 未着手 |
 | IHB-04 | 前回値で減衰項を固定して $K_j/I_j$ を再同定し、IHB-02/03を反復する | 未着手 |
 | IHB-05 | IHB-01〜04で得た値を球あり形態へ展開し、球の $c$ を同定する | 未着手 |
 
@@ -24,7 +24,7 @@ $$
 とする。IN/OUTは独立に解析する。球なし全条件で $b=0$、理論値
 
 $$
-c=c_\mathrm{rod}=2.5486754169\times10^{-6}\;\mathrm{N\,m\,s^2/rad^2}
+c=c_{\mathrm{rod,model}}=2.5486754169\times10^{-6}\;\mathrm{N\,m\,s^2/rad^2}
 $$
 
 を用いる。過去のハイブリッド同定の係数結果は新しい係数の初期値・出力に流用せず、手順と比較基準の参照に限る。IHB-04の初期値は今回のIHB-01〜03で新しく算出する。
@@ -78,9 +78,9 @@ $$
 
 を全SP条件で解く。制約・重み・残差診断を記録し、IN/OUT別に新しい $I_0,K_0$ を得る。
 
-### IHB-03: 固定 $I_0,K_0,c_\mathrm{rod}$ から $\tau_0$ を求める
+### IHB-03: 固定 $I_0,K_0,c_{\mathrm{rod,model}}$ から $\tau_0$ を求める
 
-IHB-02の $I_0,K_0$、既知の形態増分、理論 $c_\mathrm{rod}$、$b=0$ を固定し、既存ハイブリッド同定の半周期振幅減衰法で $\tau_0$ を推定する。使用半周期、波形別残差、軸別の統合方法を保存する。この推定値も今回の実行で新しく得る。
+IHB-02の $I_0,K_0$、既知の形態増分、理論 $c_{\mathrm{rod,model}}$、$b=0$ を固定し、既存ハイブリッド同定の半周期振幅減衰法で $\tau_0$ を推定する。使用半周期、波形別残差、軸別の統合方法を保存する。この推定値も今回の実行で新しく得る。
 
 ### IHB-04: 前回の減衰項で周期比を更新して反復する
 
@@ -93,15 +93,15 @@ $$
 として、正規化運動方程式
 
 $$
-\ddot\theta+
-\kappa_q^{(r)}\sin\theta+
-\frac{c_\mathrm{rod}}{I_q^{(r-1)}}|\dot\theta|\dot\theta+
-\frac{\tau_0^{(r-1)}}{I_q^{(r-1)}}\mathrm{sgn}(\dot\theta)=0
+\ddot{\theta}_{\mathrm{model}}+
+\widehat{\kappa}_{q,\mathrm{obs}}^{(r)}\sin\left(\theta_{\mathrm{model}}\right)+
+\frac{c_{\mathrm{rod,model}}}{I_q^{(r-1)}}|\dot{\theta}_{\mathrm{model}}|\dot{\theta}_{\mathrm{model}}+
+\frac{\tau_0^{(r-1)}}{I_q^{(r-1)}}\mathrm{sgn}(\dot{\theta}_{\mathrm{model}})=0
 $$
 
-を使う。未知量は観測波形から同定する比 $\widehat{\kappa}_{q,\mathrm{obs}}^{(r)}=K_q/I_q$ とし、他項は前回値で固定する。ここで $c_\mathrm{rod}/I_q^{(r-1)}$ と $\tau_0^{(r-1)}/I_q^{(r-1)}$ は既知である。
+を使う。未知量は観測波形から同定する比 $\widehat{\kappa}_{q,\mathrm{obs}}^{(r)}=K_q/I_q$ とし、他項は前回値で固定する。ここで $c_{\mathrm{rod,model}}/I_q^{(r-1)}$ と $\tau_0^{(r-1)}/I_q^{(r-1)}$ は既知である。
 
-更新した全条件の $\widehat{\kappa}_{q,\mathrm{obs}}^{(r)}$ をIHB-02へ戻して $I_0^{(r)},K_0^{(r)}$ を求め、その値と $c_\mathrm{rod}$ を固定してIHB-03を再実行し、$\tau_0^{(r)}$ を求める。これを停止条件まで繰り返す。反復ごとに各係数、フィット残差、波形へ戻した予測結果を保存する。
+更新した全条件の $\widehat{\kappa}_{q,\mathrm{obs}}^{(r)}$ をIHB-02へ戻して $I_0^{(r)},K_0^{(r)}$ を求め、その値と $c_{\mathrm{rod,model}}$ を固定してIHB-03を再実行し、$\tau_0^{(r)}$ を求める。これを停止条件まで繰り返す。反復ごとに各係数、フィット残差、波形へ戻した予測結果を保存する。
 
 ### IHB-05: 球あり形態で球の $c$ を同定する
 
