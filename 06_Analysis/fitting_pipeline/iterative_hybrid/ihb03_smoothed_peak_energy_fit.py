@@ -14,6 +14,9 @@ from scipy.interpolate import make_smoothing_spline
 import ihb03_friction_identification as base
 
 SP_COLORS=['#1f77b4','#ff7f0e','#2ca02c','#d62728','#9467bd']
+MIN_PEAKS_PER_SMOOTHING_RUN = 5
+MIN_AMPLITUDE_PEARSON_R = 0.99
+MAX_AMPLITUDE_RMSE_DEG = 0.5
 
 
 def summarize(fit):
@@ -25,6 +28,20 @@ def summarize(fit):
 def pearson(x,y):
     x=np.asarray(x,float);y=np.asarray(y,float)
     return float(np.corrcoef(x,y)[0,1]) if len(x)>1 and np.std(x)>0 and np.std(y)>0 else float('nan')
+
+
+def validate_smoothing_input(segment_id, peak_numbers, t, signed_angles):
+    """Fail early on invalid or insufficient peak sequences for the spline."""
+    if len(t) < MIN_PEAKS_PER_SMOOTHING_RUN:
+        raise ValueError(f'{segment_id}: only {len(t)} consecutive peaks; need at least {MIN_PEAKS_PER_SMOOTHING_RUN}')
+    if not np.all(np.isfinite(t)) or not np.all(np.isfinite(signed_angles)):
+        raise ValueError(f'{segment_id}: non-finite peak time or angle')
+    if np.any(np.diff(t) <= 0):
+        raise ValueError(f'{segment_id}: peak times must be strictly increasing')
+    if np.any(np.abs(signed_angles) <= 0):
+        raise ValueError(f'{segment_id}: zero-amplitude peak cannot be log-smoothed')
+    if np.any(np.diff(peak_numbers) != 1):
+        raise ValueError(f'{segment_id}: smoothing run contains non-consecutive peaks')
 
 
 def energy_metrics_for_condition(waves, axis, conf, tau):
@@ -186,13 +203,16 @@ def main():
         smooth_angles={}
         for run in runs:
             t=np.asarray([x[1] for x in run]); signed=np.asarray([x[2] for x in run])
-            if len(run)>=5:
+            validate_smoothing_input(wave['segment_id'],np.asarray([x[0] for x in run]),t,signed)
+            if len(run)>=MIN_PEAKS_PER_SMOOTHING_RUN:
                 # Smooth log-amplitude with the cubic smoothing-spline lambda
                 # selected by generalized cross-validation; retain measured signs.
                 sp=make_smoothing_spline(t,np.log(np.abs(signed)),lam=None)
                 a=np.exp(sp(t))
+                if not np.all(np.isfinite(a)) or np.any(a <= 0):
+                    raise ValueError(f'{wave[\'segment_id\']}: spline produced invalid amplitudes')
                 run_functions[(wave['segment_id'],int(run[0][0]))]=(float(t[0]),float(t[-1]),sp)
-            else:a=np.abs(signed)
+            else: raise AssertionError('minimum smoothing-run length gate was bypassed')
             for (peak_no,tm,raw),amp in zip(run,a):
                 smooth_angles[peak_no]=math.copysign(float(amp),raw)
                 peak_rows.append(dict(segment_id=wave['segment_id'],axis=wave['axis'],
@@ -211,6 +231,23 @@ def main():
                 delta_energy_j=delta,c_basis=c_basis,tau_basis=tau_basis,
                 rod_drag_loss_j=base.C_ROD*c_basis,tau_adjusted_energy_j=delta-base.C_ROD*c_basis))
         new['intervals']=new_intervals;smoothed_waves.append(new)
+    # Gate every waveform before any smoothed-amplitude tau fit is attempted.
+    per_wave=[];gate_failures=[]
+    for wave in waves:
+        rr=[r for r in peak_rows if r['segment_id']==wave['segment_id']]
+        obs=np.asarray([float(r['raw_amplitude_deg']) for r in rr]);fit=np.asarray([float(r['smoothed_amplitude_deg']) for r in rr])
+        e=fit-obs;fit_r=pearson(obs,fit);fit_rmse=float(np.sqrt(np.mean(e*e))) if len(e) else float('nan')
+        per_wave.append(dict(segment_id=wave['segment_id'],axis=wave['axis'],configuration=wave['configuration'],
+            direction=wave['direction'],peaks=len(rr),pearson_r=fit_r,
+            amplitude_rmse_deg=fit_rmse,amplitude_bias_deg=float(np.mean(e)) if len(e) else float('nan')))
+        reasons=[]
+        if len(rr)<MIN_PEAKS_PER_SMOOTHING_RUN: reasons.append(f'peaks={len(rr)} < {MIN_PEAKS_PER_SMOOTHING_RUN}')
+        if not np.isfinite(fit_r) or fit_r<MIN_AMPLITUDE_PEARSON_R: reasons.append(f'R={fit_r:.6g} < {MIN_AMPLITUDE_PEARSON_R}')
+        if not np.isfinite(fit_rmse) or fit_rmse>MAX_AMPLITUDE_RMSE_DEG: reasons.append(f'RMSE={fit_rmse:.6g} deg > {MAX_AMPLITUDE_RMSE_DEG} deg')
+        if reasons: gate_failures.append(f"{wave['segment_id']}: " + '; '.join(reasons))
+    if gate_failures:
+        raise RuntimeError('Amplitude-fit quality gate failed; tau was not fitted:\\n'+'\\n'.join(gate_failures))
+
     smooth_fits={axis:base.fit_tau_energy(smoothed_waves,axis) for axis in ('IN','OUT')}
     summary=[]
     for axis in ('IN','OUT'):
@@ -228,14 +265,6 @@ def main():
 
     # Per-waveform fit quality, then condition summaries that give each waveform
     # one vote so longer records cannot dominate the reported R values.
-    per_wave=[]
-    for wave in waves:
-        rr=[r for r in peak_rows if r['segment_id']==wave['segment_id']]
-        obs=np.asarray([float(r['raw_amplitude_deg']) for r in rr]);fit=np.asarray([float(r['smoothed_amplitude_deg']) for r in rr])
-        e=fit-obs
-        per_wave.append(dict(segment_id=wave['segment_id'],axis=wave['axis'],configuration=wave['configuration'],
-            direction=wave['direction'],peaks=len(rr),pearson_r=pearson(obs,fit),
-            amplitude_rmse_deg=float(np.sqrt(np.mean(e*e))),amplitude_bias_deg=float(np.mean(e))))
     condition_rows=[]
     for axis in ('IN','OUT'):
         for conf in [f'SP{i:02d}' for i in range(5)]:
