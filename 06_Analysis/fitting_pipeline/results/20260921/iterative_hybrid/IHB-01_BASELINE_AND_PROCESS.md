@@ -134,12 +134,54 @@ I_q^{(r-1)}=I_0^{(r-1)}+\Delta I_q
 
 以下にIN/OUT × SP00〜SP04の10条件を1枚にまとめる。点は採用周期の実測値、色ごとの曲線は各波形で得た中央値 $`\widehat{\kappa}_{w,\mathrm{obs}}`$ を係数にした周期モデル $`T_{\mathrm{model}}`$である。各パネルに周期RMSEと $`R^2`$ を示す。
 
+縦軸は周期 $`T`$ [s]、横軸は観測代表振幅 $`A_{\mathrm{obs}}`$ [deg] である。点は $`T_{\mathrm{obs}}`$、線は $`T_{\mathrm{model}}`$ を表し、両者の比ではない。図中の数式はLaTeX形式のmathtextで描画し、SVGのパスとして保存している。
+
 ![IHB-01の条件別周期フィッティング結果](ihb01_fit_overview.svg)
+
+### 条件内の全波形をまとめるフィット案（未実施）
+
+同じ軸・同じSP条件では物理係数が共通という前提から、最終的な条件別周期比は、その条件の全採用波形を同時に使って1回だけ求める方法が適している。波形別の推定値は再現性・外れ波形の診断に残す。SP00〜SP04では既知の付加質量により係数が異なるので、全SP条件に同じ周期比を当てはめない。全条件を一括して扱う場合は、IHB-02で既知増分を含むモデルを使って基準係数を求める。
+
+条件内の採用波形数を $`W_q`$、波形 $`w`$ の採用周期数を $`N_w`$ とする。観測振幅から求める理論周期係数と、同定する周期スケールを次のように定義する。振幅はラジアンで代入する。
+
+
+```math
+H_{w,i,\mathrm{model}}=4K_{\mathrm{ell}}\left(\sin^2(A_{w,i,\mathrm{obs}}/2)\right),
+\qquad \alpha_q=\frac{1}{\sqrt{\kappa_q}},
+\qquad T_{w,i,\mathrm{model}}=\alpha_q H_{w,i,\mathrm{model}}
+```
+
+
+長い波形が過大な重みを持たないよう、波形ごとの総重みをそろえた周期残差を最小化する。
+
+
+```math
+J_q(\alpha_q)=\frac{1}{W_q}\sum_{w=1}^{W_q}\frac{1}{N_w}
+\sum_{i\in S_w}
+\left(T_{w,i,\mathrm{obs}}-\alpha_q H_{w,i,\mathrm{model}}\right)^2
+```
+
+
+この問題は周期スケールに対して線形であり、反復最適化を使わず、次式で解ける。正の周期・周期係数を使えば、周期スケールも正になる。
+
+
+```math
+\widehat{\alpha}_q=
+\frac{\sum_w N_w^{-1}\sum_{i\in S_w}H_{w,i,\mathrm{model}}T_{w,i,\mathrm{obs}}}
+{\sum_w N_w^{-1}\sum_{i\in S_w}H_{w,i,\mathrm{model}}^2},
+\qquad \widehat{\kappa}_{q,\mathrm{obs}}=\widehat{\alpha}_q^{-2}
+```
+
+
+これは高速性に適したIHB-01の更新案であり、減衰を含むIHB-04にも同じ閉形式が使えるという意味ではない。採用周期の抽出規則はまず固定し、現行法と共通係数法を同じ入力で比較する。共通係数でのRMSE・R²と波形別の残差・推定比のばらつきを再計算し、系統的な波形差がないか確認する。
+
+今回の図は表示のみ修正した。既存の波形別係数・CSV・RMSE・R²は変更しておらず、図の曲線も現行の波形別係数による。共通係数法への切り替えと再同定は、この案のレビュー後に実施する。
 
 ### 再現用ツールと出力
 
 IHB-01の計算を再実行する標準ライブラリのみのスクリプトを追加した。
 
+- [図の再生成スクリプト ihb01_plot.py](../../../iterative_hybrid/ihb01_plot.py)
 - [ihb01_period_ratio.py](../../../iterative_hybrid/ihb01_period_ratio.py)
 - [条件別 (K/I)](ihb01_condition_ratios.csv)
 - [波形別 (K/I)](ihb01_waveform_ratios.csv)
