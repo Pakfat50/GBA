@@ -3,6 +3,7 @@
 import argparse
 import csv
 import math
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -25,12 +26,105 @@ def elliptic_k(m):
         a, b = an, bn
     return math.pi / (2.0 * ((a + b) / 2.0))
 
+def fit_conditions(cycle_rows, wave_rows):
+    """One zero-intercept linear fit per axis/configuration, equal waveform weight.
+
+    T_model = alpha * H(A_obs); alpha = 1/sqrt(K/I).
+    Cached features contain only observations/selection flags. Old coefficients
+    are retained for diagnostics and never used as inputs to this fit.
+    """
+    started = time.perf_counter()
+    condition_rows = []
+    for axis in ("IN", "OUT"):
+        for config in (f"SP{i:02d}" for i in range(5)):
+            points = [p for p in cycle_rows if p["axis"] == axis
+                      and p["configuration"] == config and str(p["accepted"]) == "1"]
+            if not points:
+                raise ValueError(f"No accepted periods for {axis} {config}")
+            counts = defaultdict(int)
+            for p in points:
+                counts[p["segment_id"]] += 1
+            ws = [w for w in wave_rows if w["axis"] == axis and w["configuration"] == config]
+            if {w["segment_id"] for w in ws} != set(counts):
+                raise ValueError(f"Waveform metadata mismatch for {axis} {config}")
+            observed = [float(p["period_s"]) for p in points]
+            h = [4 * elliptic_k(math.sin(math.radians(float(p["representative_amplitude_deg"])) / 2) ** 2)
+                 for p in points]
+            if not all(y > 0 and math.isfinite(y) for y in observed + h):
+                raise ValueError("Periods and theoretical period factors must be finite and positive")
+            weights = [1 / (len(counts) * counts[p["segment_id"]]) for p in points]
+            alpha = math.fsum(a * x * y for a, x, y in zip(weights, h, observed)) / math.fsum(
+                a * x * x for a, x in zip(weights, h))
+            ratio = alpha ** -2
+            predicted = [alpha * x for x in h]
+            residuals = [y - z for y, z in zip(observed, predicted)]
+            mean_y = math.fsum(a * y for a, y in zip(weights, observed)) / math.fsum(weights)
+            sse = math.fsum(a * e * e for a, e in zip(weights, residuals))
+            sst = math.fsum(a * (y - mean_y) ** 2 for a, y in zip(weights, observed))
+            unweighted_mean = math.fsum(observed) / len(observed)
+            unweighted_sse = math.fsum(e * e for e in residuals)
+            unweighted_sst = math.fsum((y - unweighted_mean) ** 2 for y in observed)
+            for p, factor, prediction, residual, weight in zip(points, h, predicted, residuals, weights):
+                p.update(period_factor_model=factor, condition_alpha_s=alpha,
+                         condition_k_over_i_s2=ratio, period_model_s=prediction,
+                         period_residual_s=residual, fit_weight=weight)
+            # Predictions for rejected periods are diagnostic only, with zero fit weight.
+            for p in cycle_rows:
+                if p["axis"] == axis and p["configuration"] == config and str(p["accepted"]) != "1":
+                    factor = 4 * elliptic_k(math.sin(math.radians(float(p["representative_amplitude_deg"])) / 2) ** 2)
+                    p.update(period_factor_model=factor, condition_alpha_s=alpha,
+                             condition_k_over_i_s2=ratio, period_model_s=alpha * factor,
+                             period_residual_s=float(p["period_s"]) - alpha * factor, fit_weight=0.0)
+            for w in ws:
+                errors = [e for p, e in zip(points, residuals) if p["segment_id"] == w["segment_id"]]
+                w.update(condition_k_over_i_s2=ratio,
+                         common_fit_period_rmse_ms=1000 * math.sqrt(math.fsum(e * e for e in errors) / len(errors)),
+                         common_fit_period_bias_ms=1000 * math.fsum(errors) / len(errors))
+            condition_rows.append(dict(
+                axis=axis, configuration=config, waveforms=len(counts), accepted_periods=len(points),
+                fitted_alpha_s=alpha, fitted_k_over_i_s2=ratio,
+                mean_waveform_median_k_over_i_s2=math.fsum(float(w["waveform_median_k_over_i_s2"]) for w in ws) / len(ws),
+                period_rmse_ms=1000 * math.sqrt(sse / math.fsum(weights)),
+                period_r2=1 - sse / sst if sst > 0 else "",
+                unweighted_period_rmse_ms=1000 * math.sqrt(unweighted_sse / len(points)),
+                unweighted_period_r2=1 - unweighted_sse / unweighted_sst if unweighted_sst > 0 else "",
+            ))
+    print(f"condition_fit_seconds={time.perf_counter() - started:.6f}")
+    return condition_rows
+
+def write_outputs(output_dir, cycle_rows, wave_rows, condition_rows):
+    out = Path(output_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    for filename, rows in (("ihb01_cycle_ratios.csv", cycle_rows),
+                           ("ihb01_waveform_ratios.csv", wave_rows),
+                           ("ihb01_condition_ratios.csv", condition_rows)):
+        if not rows:
+            raise ValueError(f"No output rows for {filename}")
+        with open(out / filename, "w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+            writer.writeheader()
+            writer.writerows(rows)
+    for r in condition_rows:
+        print(f'{r["axis"]},{r["configuration"]},{r["waveforms"]},{r["accepted_periods"]},{r["fitted_k_over_i_s2"]},{r["period_rmse_ms"]},{r["period_r2"]}')
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--selection-csv", required=True)
-    ap.add_argument("--turning-points-csv", required=True)
+    ap.add_argument("--selection-csv")
+    ap.add_argument("--turning-points-csv")
+    ap.add_argument("--cycle-csv", help="Reuse observed period/amplitude features and accepted flags")
+    ap.add_argument("--waveform-csv", help="Metadata/diagnostics accompanying --cycle-csv")
     ap.add_argument("--output-dir", required=True)
     args = ap.parse_args()
+
+    if args.cycle_csv or args.waveform_csv:
+        if not (args.cycle_csv and args.waveform_csv) or args.selection_csv or args.turning_points_csv:
+            ap.error("Use both cached CSV inputs, or both selection/turning-point inputs")
+        cycles, waves = read_csv(args.cycle_csv), read_csv(args.waveform_csv)
+        conditions = fit_conditions(cycles, waves)
+        write_outputs(args.output_dir, cycles, waves, conditions)
+        return
+    if not (args.selection_csv and args.turning_points_csv):
+        ap.error("Both --selection-csv and --turning-points-csv are required for feature extraction")
 
     selected = {
         r["segment_id"]: r for r in read_csv(args.selection_csv)
@@ -95,58 +189,9 @@ def main():
             "waveform_median_k_over_i_s2": wave_ratio,
         })
 
-    condition_rows = []
-    wave_by_id = {r["segment_id"]: r for r in wave_rows}
-    for axis in ("IN", "OUT"):
-        for config in (f"SP{i:02d}" for i in range(5)):
-            ws = [r for r in wave_rows if r["axis"] == axis and r["configuration"] == config]
-            accepted = [
-                r for r in cycle_rows
-                if r["axis"] == axis and r["configuration"] == config and r["accepted"] == 1
-            ]
-            observed = [float(r["period_s"]) for r in accepted]
-            predicted = [
-                4.0 * elliptic_k(math.sin(math.radians(float(r["representative_amplitude_deg"])) / 2.0) ** 2)
-                / math.sqrt(float(wave_by_id[r["segment_id"]]["waveform_median_k_over_i_s2"]))
-                for r in accepted
-            ]
-            if observed:
-                residuals = [y - yhat for y, yhat in zip(observed, predicted)]
-                mean_observed = sum(observed) / len(observed)
-                sse = sum(e * e for e in residuals)
-                sst = sum((y - mean_observed) ** 2 for y in observed)
-                period_rmse_ms = math.sqrt(sse / len(observed)) * 1000.0
-                period_r2 = 1.0 - sse / sst if sst > 0 else ""
-            else:
-                period_rmse_ms, period_r2 = "", ""
-            condition_rows.append({
-                "axis": axis,
-                "configuration": config,
-                "waveforms": len(ws),
-                "accepted_periods": len(accepted),
-                "mean_waveform_median_k_over_i_s2": (
-                    sum(float(r["waveform_median_k_over_i_s2"]) for r in ws) / len(ws) if ws else ""
-                ),
-                "period_rmse_ms": period_rmse_ms,
-                "period_r2": period_r2,
-            })
-
-    out = Path(args.output_dir)
-    out.mkdir(parents=True, exist_ok=True)
-    for filename, rows in (
-        ("ihb01_cycle_ratios.csv", cycle_rows),
-        ("ihb01_waveform_ratios.csv", wave_rows),
-        ("ihb01_condition_ratios.csv", condition_rows),
-    ):
-        if not rows:
-            raise SystemExit(f"No output rows for {filename}; check selections and peak input.")
-        with open(out / filename, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=list(rows[0]))
-            writer.writeheader()
-            writer.writerows(rows)
+    condition_rows = fit_conditions(cycle_rows, wave_rows)
+    write_outputs(args.output_dir, cycle_rows, wave_rows, condition_rows)
     print(f"selected_waveforms={len(selected)} processed_waveforms={len(wave_rows)} cycles={len(cycle_rows)}")
-    for r in condition_rows:
-        print(f'{r["axis"]},{r["configuration"]},{r["waveforms"]},{r["accepted_periods"]},{r["mean_waveform_median_k_over_i_s2"]},{r["period_rmse_ms"]},{r["period_r2"]}')
 
 if __name__ == "__main__":
     main()
