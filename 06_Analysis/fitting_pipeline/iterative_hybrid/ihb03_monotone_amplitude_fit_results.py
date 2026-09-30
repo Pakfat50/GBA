@@ -127,6 +127,8 @@ def main():
                 ax.plot(t[use]-t0,-envelope,color=color,lw=1.05,ls='--',alpha=.95,label='_nolegend_')
             ax.axhline(0,color='#555',lw=.55);ax.set_title(f'{axis} / {conf} (n={len(waves)})')
             ax.set_xlabel('Time from first fitted peak [s]');ax.set_ylabel('Centered angle [deg]');ax.grid(alpha=.2)
+            # Keep the displayed angle range identical to the GCV-spline panels.
+            ax.set_ylim(-65,65)
             if waves:ax.legend(loc='upper right',fontsize=6,ncol=2,framealpha=.8)
     fig.suptitle('Free-decay waveforms with monotone logarithmic amplitude envelopes')
     fig.savefig(args.output_dir/'ihb03_monotone_amplitude_waveforms.svg',bbox_inches='tight',dpi=45)
