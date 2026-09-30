@@ -185,6 +185,22 @@ J_q(\alpha_q)=\frac{1}{W_q}\sum_{w=1}^{W_q}\frac{1}{N_w}
 
 この線形性は未知係数 $`\alpha_q`$ に対するものである。$`H_{\mathrm{model}}`$ を横軸、$`T_{\mathrm{obs}}`$ を縦軸に置けば切片ゼロ・傾き $`\widehat{\alpha}_q`$ の直線になる。掲載図は元の振幅 $`A_{\mathrm{obs}}`$ を横軸にしているため曲線になる。減衰を含むIHB-04にも同じ閉形式が使えることを示したものではない。
 
+#### 線形化した条件別フィッティング図
+
+10条件を1枚にまとめた。横軸は観測振幅から計算した無次元の理論周期係数 $`H_{\mathrm{model}}`$、縦軸は周期 $`T`$ [s] である。色付きの点は $`T_{\mathrm{obs}}`$、黒い直線は条件内の共通係数を使った $`T_{\mathrm{model}}=\widehat{\alpha}_q H_{\mathrm{model}}`$ を示す。各パネルには傾き $`\widehat{\alpha}_q`$ [s]、切片ゼロ、波形等重みRMSE・R²を記載する。
+
+この図は同定済みの係数・採用周期を座標変換して表示したもので、再フィットはしていない。予測値と残差は振幅対周期図と同一なので、RMSE・R²も同じになる。観測されたHの範囲を拡大表示しており、原点は表示範囲外だが、モデルの切片はゼロに固定している。
+
+![IHB-01の線形化した条件別フィッティング結果](https://raw.githubusercontent.com/Pakfat50/GBA/903223ab986462a8ef3b9275a496bc4feb879a0f/06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb01_linear_fit_overview.svg)
+
+再生成コマンド：
+
+```bash
+python 06_Analysis/fitting_pipeline/iterative_hybrid/ihb01_plot.py \
+  --results-dir <output-directory> \
+  --linear
+```
+
 #### 再同定の結果と確認
 
 34波形・採用854周期を用い、10条件すべてで正の周期スケール・周期比を得た。旧条件値（波形別中央値の平均）からの変化は最大約0.098%で、今回の共通係数化による大きな係数変動はなかった。共通曲線の波形等重みRMSEは0.593〜2.474 ms、R²は0.984237〜0.997042となった。
