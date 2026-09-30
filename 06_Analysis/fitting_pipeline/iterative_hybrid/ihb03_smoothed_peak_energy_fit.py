@@ -188,7 +188,6 @@ def main():
     args=p.parse_args();args.output_dir.mkdir(parents=True,exist_ok=True)
     waves=base.assemble_intervals(base.read_csv(args.turning_points_csv),
         base.read_csv(args.selection_csv),base.read_csv(args.condition_physics_csv),3.0)
-    raw_fits={axis:base.fit_tau_energy(waves,axis) for axis in ('IN','OUT')}
     smoothed_waves=[];peak_rows=[];run_functions={}
     for wave in waves:
         peaks={}
@@ -248,6 +247,8 @@ def main():
     if gate_failures:
         raise RuntimeError('Amplitude-fit quality gate failed; tau was not fitted:\\n'+'\\n'.join(gate_failures))
 
+    # No tau fit is attempted until every waveform passes the amplitude gates.
+    raw_fits={axis:base.fit_tau_energy(waves,axis) for axis in ('IN','OUT')}
     smooth_fits={axis:base.fit_tau_energy(smoothed_waves,axis) for axis in ('IN','OUT')}
     summary=[]
     for axis in ('IN','OUT'):
