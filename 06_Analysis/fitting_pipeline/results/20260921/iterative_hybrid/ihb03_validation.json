@@ -1,0 +1,18 @@
+[
+  {
+    "axis": "IN",
+    "synthetic_tau_n_m": 4.2e-05,
+    "recovered_tau_n_m": 4.2e-05,
+    "synthetic_relative_tolerance": 1e-13,
+    "linear_solution_independent_check": "passed",
+    "adjacent_peak_pairing_and_alternating_signs": "passed"
+  },
+  {
+    "axis": "OUT",
+    "synthetic_tau_n_m": 4.2e-05,
+    "recovered_tau_n_m": 4.2e-05,
+    "synthetic_relative_tolerance": 1e-13,
+    "linear_solution_independent_check": "passed",
+    "adjacent_peak_pairing_and_alternating_signs": "passed"
+  }
+]

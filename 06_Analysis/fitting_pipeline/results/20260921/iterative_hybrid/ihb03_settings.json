@@ -1,0 +1,27 @@
+{
+  "stage": "IHB-03",
+  "method": "single-pass energy-basis weighted linear least squares, followed by one ODE validation",
+  "inputs": {
+    "ihb03/input/turning_points.csv": "ee9eb9efdbcaf1cfdea10e4e6744cc5ce6337d692521bc44568280240adc1289",
+    "ihb03/input/waveform_selection.csv": "f6f673ec7a54f82df23c0696432cc0d71260e72795847b228887a0ba358d0f1e",
+    "ihb03/input/ihb02_condition_predictions.csv": "634a57adb399c5f34d169b9360ad0ac634cc131c88ca8075004bc1b31fb605e7",
+    "ihb03/input/ihb02_base_parameters.csv": "39bbcc5acc9e0467232004532e6296adae3bc0cc15a87a10430f20ce4086e12e"
+  },
+  "scope": "approved ball-free SP00-SP04; IN and OUT fit separately",
+  "fixed_coefficients": "I,K from IHB-02 per axis/configuration; b=0; theoretical c_rod fixed",
+  "c_rod_n_m_s2_per_rad2": 2.5486754169187504e-06,
+  "gravity_m_s2": 9.81,
+  "epsilon_deg_s": 0.5,
+  "minimum_start_amplitude_deg": 4.0,
+  "waveform_weighting": "equal total weight per waveform; each half-cycle within waveform has equal share",
+  "tau_basis": "ideal Coulomb work equals absolute angular travel |A_n|+|A_n+1|; c basis assumes conservative finite-amplitude orbit",
+  "initial_half_cycle": "release-to-first-peak excluded; starts from first detected measured peak",
+  "rejected_waveforms_not_reinstated": true,
+  "robust_loss": "ordinary weighted least squares; approved waveforms only",
+  "no_historical_fitted_tau_used": true,
+  "ode_validation": "tested DOP853 peak-to-peak solver with tanh friction regularization; no tau refit",
+  "ode_rtol": 0.0001,
+  "ode_angle_speed_atol": 1e-07,
+  "ode_energy_atol": 1e-11,
+  "runtime_s": 4.313753101998373
+}
