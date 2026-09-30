@@ -11,9 +11,9 @@
 角度の大きさを |Aₙ|、|Aₙ₊₁| とすると、頂点でのエネルギーは Eₙ = Kⱼ(1 − cos|Aₙ|) です。Kⱼ はIHB-02で条件ごとに決めた復元係数です。始点から次の頂点までに観測された損失は、始点のエネルギーから終点のエネルギーを引いた量です。
 
 ~~~math
-\\Delta E_{\\mathrm{obs},n}
-= E_{n,\\mathrm{obs}}-E_{n+1,\\mathrm{obs}}
-=K_j\\left[\\cos(|A_{n+1}|)-\\cos(|A_n|)\\right]
+\Delta E_{\mathrm{obs},n}
+= E_{n,\mathrm{obs}}-E_{n+1,\mathrm{obs}}
+=K_j\left[\cos(|A_{n+1}|)-\cos(|A_n|)\right]
 ~~~
 
 したがって ΔE_obs は「頂点角の差」そのものではありません。角度をエネルギーに変換してから、その二つのエネルギーを引いた値です。
@@ -23,27 +23,27 @@
 摩擦によるモデル損失を二つに分けます。ロッドの二乗抗力による損失は c_rod Cₙ、クーロン摩擦による損失は τ Rₙ です。ここで c_rod = 2.5486754169 × 10⁻⁶ N m s²/rad²、b = 0 に固定しています。Cₙ は保存振り子の半周期軌道上で一度計算した基底、Rₙ = |Aₙ| + |Aₙ₊₁| は半周期中に角度が動いた合計です。動きが大きい半周期ほど、クーロン摩擦の仕事 τRₙ も大きくなります。
 
 ~~~math
-C_n=4\\frac{K_j}{I_j}
-\\left[\\sin(|A_n|)-|A_n|\\cos(|A_n|)\\right],
-\\qquad
+C_n=4\frac{K_j}{I_j}
+\left[\sin(|A_n|)-|A_n|\cos(|A_n|)\right],
+\qquad
 R_n=|A_n|+|A_{n+1}|
 ~~~
 
 この τ の計算では、半周期ごとにODEを数値積分していません。保存軌道から Cₙ を一度計算し、測定された損失からロッド損失を引き、残りを τRₙ で説明します。
 
 ~~~math
-y_n=\\Delta E_{\\mathrm{obs},n}-c_{\\mathrm{rod}}C_n
-\\approx \\tau R_n
+y_n=\Delta E_{\mathrm{obs},n}-c_{\mathrm{rod}}C_n
+\approx \tau R_n
 ~~~
 
 「一致させる」といっても、全区間の値を完全に一致させられるわけではありません。τ は軸ごとに一つだけなので、全波形の残差の二乗和が最小になる値を選びます。波形数や長さの違いで一つの波形が支配しないよう、各波形の総重みを等しくしています。切片は設けず、負の τ も許しません。
 
 ~~~math
-\\widehat\\tau
-=\\max\\left(0,
-\\frac{\\sum_{w,n}a_{w,n}R_{w,n}y_{w,n}}
-{\\sum_{w,n}a_{w,n}R_{w,n}^2}\\right),
-\\qquad a_{w,n}=\\frac{1}{W N_w}
+\widehat\tau
+=\max\left(0,
+\frac{\sum_{w,n}a_{w,n}R_{w,n}y_{w,n}}
+{\sum_{w,n}a_{w,n}R_{w,n}^2}\right),
+\qquad a_{w,n}=\frac{1}{W N_w}
 ~~~
 
 | 軸 | 重み付き分子 ΣaRy | 重み付き分母 ΣaR² | 求まった τ [N m] |
@@ -59,8 +59,8 @@ y_n=\\Delta E_{\\mathrm{obs},n}-c_{\\mathrm{rod}}C_n
 
 ~~~math
 R^2
-=1-\\frac{\\sum a_{w,n}(\\Delta E_{\\mathrm{obs},w,n}-\\Delta E_{\\mathrm{model},w,n})^2}
-{\\sum a_{w,n}(\\Delta E_{\\mathrm{obs},w,n}-\\overline{\\Delta E}_{\\mathrm{obs}})^2}
+=1-\frac{\sum a_{w,n}(\Delta E_{\mathrm{obs},w,n}-\Delta E_{\mathrm{model},w,n})^2}
+{\sum a_{w,n}(\Delta E_{\mathrm{obs},w,n}-\overline{\Delta E}_{\mathrm{obs}})^2}
 ~~~
 
 IN のエネルギー R² は0.4673、OUTは0.7549です。これは「損失をどれだけ説明できたか」の指標で、1なら誤差ゼロ、0なら観測損失の平均値だけを予測する場合と同程度、負ならその平均値予測より悪いことを表します。τの最小二乗フィット自体が完全だったという意味ではありません。なお、出力CSVの energy_weighted_r 欄は名前に weighted とありますが、実際には観測損失とモデル損失の通常のPearson相関係数です（IN 0.6831、OUT 0.8727）。相関 R と上記の R² は別の指標です。
