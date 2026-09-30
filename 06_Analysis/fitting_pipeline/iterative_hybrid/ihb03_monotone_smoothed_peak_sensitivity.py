@@ -152,9 +152,10 @@ def write_overview(path,waves,ode_fits):
                     ax.set_xlabel('Observed ΔE [mJ]');ax.set_ylabel('Model cC + τR [mJ]')
                     # Match the spline report's condition-wise energy scales.
                     if axis=='IN':
-                        ax.set_xlim(-300,1100);ax.set_ylim(-300,1100)
+                        # The spline figure uses microjoules; this panel uses mJ.
+                        ax.set_xlim(-0.25,1.05);ax.set_ylim(-0.25,1.05)
                     else:
-                        ax.set_xlim(0,1500);ax.set_ylim(0,1500)
+                        ax.set_xlim(0,1.5);ax.set_ylim(0,1.5)
                     if len(x):
                         lo=min(0,float(x.min()),float(y.min()));hi=max(float(x.max()),float(y.max()));ax.plot([lo,hi],[lo,hi],'k--',lw=1)
                     title=f'{axis}: one-pass energy fit'
