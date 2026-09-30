@@ -1,0 +1,18 @@
+[
+  {
+    "axis": "IN",
+    "independent_profile_agreement_rtol": 2e-07,
+    "synthetic_recovery_rtol": 1e-10,
+    "order_invariance_rtol": 1e-08,
+    "positive_physical_coefficients": true,
+    "status": "passed"
+  },
+  {
+    "axis": "OUT",
+    "independent_profile_agreement_rtol": 2e-07,
+    "synthetic_recovery_rtol": 1e-10,
+    "order_invariance_rtol": 1e-08,
+    "positive_physical_coefficients": true,
+    "status": "passed"
+  }
+]

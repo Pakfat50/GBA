@@ -1,0 +1,23 @@
+{
+  "stage": "IHB-02",
+  "gravity_m_s2": 9.81,
+  "method": "bounded weighted ratio least squares",
+  "initialization": "weighted linear equations using current observations and increments only",
+  "weighting": "waveform counts per condition, normalized per axis",
+  "constraints": "I0>0, K0>0 and all condition inertia/restoring coefficients positive",
+  "historical_fitted_coefficients_used": false,
+  "uncertainty_note": "Sensitivity checks are not confidence intervals; geometry and mass treated as fixed",
+  "input_sha256": {
+    "06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb01_condition_ratios.csv": "bb3b68688213b740626fe6e779cd562bdca8775dd897ed51a3dade180077f5bb",
+    "06_Analysis/fitting_pipeline/results/20260921/resolved_manifest.csv": "34496920606fdcf0e7e79066c78f2acac7f3d575d330177c325309a9f5da0946"
+  },
+  "input_blob_sha": {
+    "condition_csv": "5a9ae9b31ed65902cf9ab16f74500113308a0fd4",
+    "manifest_csv": "a3c2535bd634bc5055bb751650ec9de43427b5c3"
+  },
+  "dependency_versions": {
+    "numpy": "2.3.5",
+    "scipy": "1.17.0",
+    "matplotlib": "3.10.8"
+  }
+}
