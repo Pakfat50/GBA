@@ -132,3 +132,11 @@ ODEは各区間で実測始点角・角速度ゼロから解き直す。重み�
 この結果は連続波形を初期条件から最後まで積分した誤差を評価するものではない。位相ずれを積算させない以前のハイブリッド同定と同じ評価設計であり、連続波形の誤差指標とは直接比較しない。IHB-04の減衰補正付き周期確認も未実施なので、I,Kの最終同定値とは扱わない。
 
 再現には [半周期ODE直接フィットスクリプト](../../../iterative_hybrid/ihb03_half_cycle_ode_fit.py) を使う。直接ODE係数と波形別指標は、それぞれ [係数・集約適合度](ihb03_half_cycle_ode_parameters.csv)、[波形別適合度](ihb03_half_cycle_ode_waveform_metrics.csv) に保存した。
+
+~~~bash
+python 06_Analysis/fitting_pipeline/iterative_hybrid/ihb03_half_cycle_ode_fit.py \\
+  --turning-points-csv 06_Analysis/fitting_pipeline/results/20260921/hybrid_identification/01_preprocessing/turning_points.csv \\
+  --selection-csv 06_Analysis/fitting_pipeline/results/20260921/waveform_review/waveform_selection.csv \\
+  --condition-physics-csv 06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb02_condition_predictions.csv \\
+  --output-dir 06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid
+~~~
