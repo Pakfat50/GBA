@@ -22,7 +22,7 @@
 <!-- y mapping 11.2 at 95, 10.0 at 390 -->
 <line x1="625" y1="151.3" x2="625" y2="390" class="start"/><circle cx="625" cy="151.3" r="6" fill="#333"/>
 <line x1="750" y1="346.6" x2="750" y2="390" class="obs"/><circle cx="750" cy="346.6" r="6" fill="#1769aa"/>
-<line x1="845" y1="326.1" x2="845" y2="390" class="mod"/><circle cx="845" cy="270.4" r="6" fill="#e87500"/>
+<line x1="845" y1="270.4" x2="845" y2="390" class="mod"/><circle cx="845" cy="270.4" r="6" fill="#e87500"/>
 <!-- labels in zoom -->
 <text x="625" y="138" text-anchor="middle" class="small">10.971</text><text x="750" y="367" text-anchor="middle" class="small">10.177</text><text x="845" y="258" text-anchor="middle" class="small">10.487</text>
 <line x1="648" y1="152" x2="648" y2="346" class="arrow"/><text x="658" y="242" class="small">ΔEobs = 0.794 mJ</text>
