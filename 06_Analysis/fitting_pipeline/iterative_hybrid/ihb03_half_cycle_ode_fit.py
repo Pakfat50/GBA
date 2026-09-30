@@ -28,12 +28,18 @@ def write_residual_svg(path, fits):
     plotw,ploth=420,220
     for x,y,axis,key,ymin,ymax,ylabel in panels:
         parts.append(f'<text x="{x+plotw/2}" y="{y-12}" text-anchor="middle" font-size="14">{axis} — {ylabel}</text>')
-        for j in range(5):
-            gx=x+j*plotw/4; gy=y+j*ploth/4
+        for j in range(6):
+            gx=x+j*plotw/5
             parts.append(f'<line class="grid" x1="{gx:.1f}" y1="{y}" x2="{gx:.1f}" y2="{y+ploth}"/>')
+        for j in range(5):
+            gy=y+j*ploth/4
             parts.append(f'<line class="grid" x1="{x}" y1="{gy:.1f}" x2="{x+plotw}" y2="{gy:.1f}"/>')
+        for j in range(6):
+            gx=x+j*plotw/5
             tick=4+j*10
             parts.append(f'<text x="{gx:.1f}" y="{y+ploth+17}" text-anchor="middle" font-size="10">{tick}</text>')
+        for j in range(5):
+            gy=y+j*ploth/4
             val=ymax-j*(ymax-ymin)/4
             parts.append(f'<text x="{x-8}" y="{gy+3:.1f}" text-anchor="end" font-size="10">{val:.1f}</text>')
         zero=y+(ymax/(ymax-ymin))*ploth
