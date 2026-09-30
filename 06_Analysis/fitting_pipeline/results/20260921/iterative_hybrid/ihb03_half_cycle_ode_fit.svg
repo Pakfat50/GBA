@@ -4,24 +4,26 @@
 <text x="540" y="28" text-anchor="middle" font-size="18">IHB-03 direct ODE fit: state reset at each measured peak</text>
 <text x="280.0" y="63" text-anchor="middle" font-size="14">IN — Next-peak angle residual [deg]</text>
 <line class="grid" x1="70.0" y1="75" x2="70.0" y2="295"/>
-<line class="grid" x1="70" y1="75.0" x2="490" y2="75.0"/>
-<text x="70.0" y="312" text-anchor="middle" font-size="10">4</text>
-<text x="62" y="78.0" text-anchor="end" font-size="10">1.5</text>
-<line class="grid" x1="175.0" y1="75" x2="175.0" y2="295"/>
-<line class="grid" x1="70" y1="130.0" x2="490" y2="130.0"/>
-<text x="175.0" y="312" text-anchor="middle" font-size="10">14</text>
-<text x="62" y="133.0" text-anchor="end" font-size="10">0.8</text>
-<line class="grid" x1="280.0" y1="75" x2="280.0" y2="295"/>
-<line class="grid" x1="70" y1="185.0" x2="490" y2="185.0"/>
-<text x="280.0" y="312" text-anchor="middle" font-size="10">24</text>
-<text x="62" y="188.0" text-anchor="end" font-size="10">0.0</text>
-<line class="grid" x1="385.0" y1="75" x2="385.0" y2="295"/>
-<line class="grid" x1="70" y1="240.0" x2="490" y2="240.0"/>
-<text x="385.0" y="312" text-anchor="middle" font-size="10">34</text>
-<text x="62" y="243.0" text-anchor="end" font-size="10">-0.8</text>
+<line class="grid" x1="154.0" y1="75" x2="154.0" y2="295"/>
+<line class="grid" x1="238.0" y1="75" x2="238.0" y2="295"/>
+<line class="grid" x1="322.0" y1="75" x2="322.0" y2="295"/>
+<line class="grid" x1="406.0" y1="75" x2="406.0" y2="295"/>
 <line class="grid" x1="490.0" y1="75" x2="490.0" y2="295"/>
+<line class="grid" x1="70" y1="75.0" x2="490" y2="75.0"/>
+<line class="grid" x1="70" y1="130.0" x2="490" y2="130.0"/>
+<line class="grid" x1="70" y1="185.0" x2="490" y2="185.0"/>
+<line class="grid" x1="70" y1="240.0" x2="490" y2="240.0"/>
 <line class="grid" x1="70" y1="295.0" x2="490" y2="295.0"/>
-<text x="490.0" y="312" text-anchor="middle" font-size="10">44</text>
+<text x="70.0" y="312" text-anchor="middle" font-size="10">4</text>
+<text x="154.0" y="312" text-anchor="middle" font-size="10">14</text>
+<text x="238.0" y="312" text-anchor="middle" font-size="10">24</text>
+<text x="322.0" y="312" text-anchor="middle" font-size="10">34</text>
+<text x="406.0" y="312" text-anchor="middle" font-size="10">44</text>
+<text x="490.0" y="312" text-anchor="middle" font-size="10">54</text>
+<text x="62" y="78.0" text-anchor="end" font-size="10">1.5</text>
+<text x="62" y="133.0" text-anchor="end" font-size="10">0.8</text>
+<text x="62" y="188.0" text-anchor="end" font-size="10">0.0</text>
+<text x="62" y="243.0" text-anchor="end" font-size="10">-0.8</text>
 <text x="62" y="298.0" text-anchor="end" font-size="10">-1.5</text>
 <line x1="70" y1="185.0" x2="490" y2="185.0" stroke="#222" stroke-width="1.3"/>
 <line class="axis" x1="70" y1="75" x2="70" y2="295"/><line class="axis" x1="70" y1="295" x2="490" y2="295"/>
@@ -114,24 +116,26 @@
 <circle cx="112.9" cy="222.0" r="2.6" fill="#9467bd" fill-opacity=".68"/>
 <text x="785.0" y="63" text-anchor="middle" font-size="14">IN — Half-period residual [ms]</text>
 <line class="grid" x1="575.0" y1="75" x2="575.0" y2="295"/>
-<line class="grid" x1="575" y1="75.0" x2="995" y2="75.0"/>
-<text x="575.0" y="312" text-anchor="middle" font-size="10">4</text>
-<text x="567" y="78.0" text-anchor="end" font-size="10">30.0</text>
-<line class="grid" x1="680.0" y1="75" x2="680.0" y2="295"/>
-<line class="grid" x1="575" y1="130.0" x2="995" y2="130.0"/>
-<text x="680.0" y="312" text-anchor="middle" font-size="10">14</text>
-<text x="567" y="133.0" text-anchor="end" font-size="10">15.0</text>
-<line class="grid" x1="785.0" y1="75" x2="785.0" y2="295"/>
-<line class="grid" x1="575" y1="185.0" x2="995" y2="185.0"/>
-<text x="785.0" y="312" text-anchor="middle" font-size="10">24</text>
-<text x="567" y="188.0" text-anchor="end" font-size="10">0.0</text>
-<line class="grid" x1="890.0" y1="75" x2="890.0" y2="295"/>
-<line class="grid" x1="575" y1="240.0" x2="995" y2="240.0"/>
-<text x="890.0" y="312" text-anchor="middle" font-size="10">34</text>
-<text x="567" y="243.0" text-anchor="end" font-size="10">-15.0</text>
+<line class="grid" x1="659.0" y1="75" x2="659.0" y2="295"/>
+<line class="grid" x1="743.0" y1="75" x2="743.0" y2="295"/>
+<line class="grid" x1="827.0" y1="75" x2="827.0" y2="295"/>
+<line class="grid" x1="911.0" y1="75" x2="911.0" y2="295"/>
 <line class="grid" x1="995.0" y1="75" x2="995.0" y2="295"/>
+<line class="grid" x1="575" y1="75.0" x2="995" y2="75.0"/>
+<line class="grid" x1="575" y1="130.0" x2="995" y2="130.0"/>
+<line class="grid" x1="575" y1="185.0" x2="995" y2="185.0"/>
+<line class="grid" x1="575" y1="240.0" x2="995" y2="240.0"/>
 <line class="grid" x1="575" y1="295.0" x2="995" y2="295.0"/>
-<text x="995.0" y="312" text-anchor="middle" font-size="10">44</text>
+<text x="575.0" y="312" text-anchor="middle" font-size="10">4</text>
+<text x="659.0" y="312" text-anchor="middle" font-size="10">14</text>
+<text x="743.0" y="312" text-anchor="middle" font-size="10">24</text>
+<text x="827.0" y="312" text-anchor="middle" font-size="10">34</text>
+<text x="911.0" y="312" text-anchor="middle" font-size="10">44</text>
+<text x="995.0" y="312" text-anchor="middle" font-size="10">54</text>
+<text x="567" y="78.0" text-anchor="end" font-size="10">30.0</text>
+<text x="567" y="133.0" text-anchor="end" font-size="10">15.0</text>
+<text x="567" y="188.0" text-anchor="end" font-size="10">0.0</text>
+<text x="567" y="243.0" text-anchor="end" font-size="10">-15.0</text>
 <text x="567" y="298.0" text-anchor="end" font-size="10">-30.0</text>
 <line x1="575" y1="185.0" x2="995" y2="185.0" stroke="#222" stroke-width="1.3"/>
 <line class="axis" x1="575" y1="75" x2="575" y2="295"/><line class="axis" x1="575" y1="295" x2="995" y2="295"/>
@@ -224,24 +228,26 @@
 <circle cx="617.9" cy="124.3" r="2.6" fill="#9467bd" fill-opacity=".68"/>
 <text x="280.0" y="368" text-anchor="middle" font-size="14">OUT — Next-peak angle residual [deg]</text>
 <line class="grid" x1="70.0" y1="380" x2="70.0" y2="600"/>
-<line class="grid" x1="70" y1="380.0" x2="490" y2="380.0"/>
-<text x="70.0" y="617" text-anchor="middle" font-size="10">4</text>
-<text x="62" y="383.0" text-anchor="end" font-size="10">1.5</text>
-<line class="grid" x1="175.0" y1="380" x2="175.0" y2="600"/>
-<line class="grid" x1="70" y1="435.0" x2="490" y2="435.0"/>
-<text x="175.0" y="617" text-anchor="middle" font-size="10">14</text>
-<text x="62" y="438.0" text-anchor="end" font-size="10">0.8</text>
-<line class="grid" x1="280.0" y1="380" x2="280.0" y2="600"/>
-<line class="grid" x1="70" y1="490.0" x2="490" y2="490.0"/>
-<text x="280.0" y="617" text-anchor="middle" font-size="10">24</text>
-<text x="62" y="493.0" text-anchor="end" font-size="10">0.0</text>
-<line class="grid" x1="385.0" y1="380" x2="385.0" y2="600"/>
-<line class="grid" x1="70" y1="545.0" x2="490" y2="545.0"/>
-<text x="385.0" y="617" text-anchor="middle" font-size="10">34</text>
-<text x="62" y="548.0" text-anchor="end" font-size="10">-0.8</text>
+<line class="grid" x1="154.0" y1="380" x2="154.0" y2="600"/>
+<line class="grid" x1="238.0" y1="380" x2="238.0" y2="600"/>
+<line class="grid" x1="322.0" y1="380" x2="322.0" y2="600"/>
+<line class="grid" x1="406.0" y1="380" x2="406.0" y2="600"/>
 <line class="grid" x1="490.0" y1="380" x2="490.0" y2="600"/>
+<line class="grid" x1="70" y1="380.0" x2="490" y2="380.0"/>
+<line class="grid" x1="70" y1="435.0" x2="490" y2="435.0"/>
+<line class="grid" x1="70" y1="490.0" x2="490" y2="490.0"/>
+<line class="grid" x1="70" y1="545.0" x2="490" y2="545.0"/>
 <line class="grid" x1="70" y1="600.0" x2="490" y2="600.0"/>
-<text x="490.0" y="617" text-anchor="middle" font-size="10">44</text>
+<text x="70.0" y="617" text-anchor="middle" font-size="10">4</text>
+<text x="154.0" y="617" text-anchor="middle" font-size="10">14</text>
+<text x="238.0" y="617" text-anchor="middle" font-size="10">24</text>
+<text x="322.0" y="617" text-anchor="middle" font-size="10">34</text>
+<text x="406.0" y="617" text-anchor="middle" font-size="10">44</text>
+<text x="490.0" y="617" text-anchor="middle" font-size="10">54</text>
+<text x="62" y="383.0" text-anchor="end" font-size="10">1.5</text>
+<text x="62" y="438.0" text-anchor="end" font-size="10">0.8</text>
+<text x="62" y="493.0" text-anchor="end" font-size="10">0.0</text>
+<text x="62" y="548.0" text-anchor="end" font-size="10">-0.8</text>
 <text x="62" y="603.0" text-anchor="end" font-size="10">-1.5</text>
 <line x1="70" y1="490.0" x2="490" y2="490.0" stroke="#222" stroke-width="1.3"/>
 <line class="axis" x1="70" y1="380" x2="70" y2="600"/><line class="axis" x1="70" y1="600" x2="490" y2="600"/>
@@ -313,24 +319,26 @@
 <circle cx="79.7" cy="582.2" r="2.6" fill="#9467bd" fill-opacity=".68"/>
 <text x="785.0" y="368" text-anchor="middle" font-size="14">OUT — Half-period residual [ms]</text>
 <line class="grid" x1="575.0" y1="380" x2="575.0" y2="600"/>
-<line class="grid" x1="575" y1="380.0" x2="995" y2="380.0"/>
-<text x="575.0" y="617" text-anchor="middle" font-size="10">4</text>
-<text x="567" y="383.0" text-anchor="end" font-size="10">30.0</text>
-<line class="grid" x1="680.0" y1="380" x2="680.0" y2="600"/>
-<line class="grid" x1="575" y1="435.0" x2="995" y2="435.0"/>
-<text x="680.0" y="617" text-anchor="middle" font-size="10">14</text>
-<text x="567" y="438.0" text-anchor="end" font-size="10">15.0</text>
-<line class="grid" x1="785.0" y1="380" x2="785.0" y2="600"/>
-<line class="grid" x1="575" y1="490.0" x2="995" y2="490.0"/>
-<text x="785.0" y="617" text-anchor="middle" font-size="10">24</text>
-<text x="567" y="493.0" text-anchor="end" font-size="10">0.0</text>
-<line class="grid" x1="890.0" y1="380" x2="890.0" y2="600"/>
-<line class="grid" x1="575" y1="545.0" x2="995" y2="545.0"/>
-<text x="890.0" y="617" text-anchor="middle" font-size="10">34</text>
-<text x="567" y="548.0" text-anchor="end" font-size="10">-15.0</text>
+<line class="grid" x1="659.0" y1="380" x2="659.0" y2="600"/>
+<line class="grid" x1="743.0" y1="380" x2="743.0" y2="600"/>
+<line class="grid" x1="827.0" y1="380" x2="827.0" y2="600"/>
+<line class="grid" x1="911.0" y1="380" x2="911.0" y2="600"/>
 <line class="grid" x1="995.0" y1="380" x2="995.0" y2="600"/>
+<line class="grid" x1="575" y1="380.0" x2="995" y2="380.0"/>
+<line class="grid" x1="575" y1="435.0" x2="995" y2="435.0"/>
+<line class="grid" x1="575" y1="490.0" x2="995" y2="490.0"/>
+<line class="grid" x1="575" y1="545.0" x2="995" y2="545.0"/>
 <line class="grid" x1="575" y1="600.0" x2="995" y2="600.0"/>
-<text x="995.0" y="617" text-anchor="middle" font-size="10">44</text>
+<text x="575.0" y="617" text-anchor="middle" font-size="10">4</text>
+<text x="659.0" y="617" text-anchor="middle" font-size="10">14</text>
+<text x="743.0" y="617" text-anchor="middle" font-size="10">24</text>
+<text x="827.0" y="617" text-anchor="middle" font-size="10">34</text>
+<text x="911.0" y="617" text-anchor="middle" font-size="10">44</text>
+<text x="995.0" y="617" text-anchor="middle" font-size="10">54</text>
+<text x="567" y="383.0" text-anchor="end" font-size="10">30.0</text>
+<text x="567" y="438.0" text-anchor="end" font-size="10">15.0</text>
+<text x="567" y="493.0" text-anchor="end" font-size="10">0.0</text>
+<text x="567" y="548.0" text-anchor="end" font-size="10">-15.0</text>
 <text x="567" y="603.0" text-anchor="end" font-size="10">-30.0</text>
 <line x1="575" y1="490.0" x2="995" y2="490.0" stroke="#222" stroke-width="1.3"/>
 <line class="axis" x1="575" y1="380" x2="575" y2="600"/><line class="axis" x1="575" y1="600" x2="995" y2="600"/>
