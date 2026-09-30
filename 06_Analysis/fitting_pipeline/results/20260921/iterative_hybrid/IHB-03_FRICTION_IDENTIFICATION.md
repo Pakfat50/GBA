@@ -82,7 +82,7 @@ IN のエネルギー R² は0.4673、OUTは0.7549です。これは「損失を
 
 観測された損失は 10.9709 − 10.1766 = 0.7944 mJ です。ODE予測の損失は 10.9709 − 10.4872 = 0.4838 mJ です。したがって、この区間ではモデルが損失を0.3106 mJ少なく予測しました。角度のずれは約0.96°ですが、二つの損失そのものの差として見ると0.3106 mJが直接現れます。
 
-![実測とODE予測のエネルギーを同じ始点から比較した例](ihb03_energy_angle_relationship.svg)
+![実測とODE予測のエネルギーを同じ始点から比較した例](https://raw.githubusercontent.com/Pakfat50/GBA/fc469a0ba25c98666b74e1b5c017f2804098f5bc/06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb03_energy_angle_relationship.svg)
 
 図の左側は全エネルギー範囲、右側は終点付近を拡大しています。終点エネルギーの観測値と予測値の差は0.3106 mJです。同じ始点エネルギーから引き算しているので、この終点エネルギーの差は損失予測の差と同じ大きさになります。損失は約0.5〜0.8 mJと全エネルギー約11 mJより小さいため、終点の小さな差も損失に対しては目立ちます。これが、頂点角の全体的な一致が非常に良くても、半周期エネルギー損失の R² がそれほど高くならないことと両立する理由です。全波形で成り立つ関係の説明であり、この一例だけから全体の R² を計算しているわけではありません。
 
@@ -155,7 +155,7 @@ y_n=\Delta E_n-c_{\mathrm{rod}}C_n
 
 エネルギーRMSE・R²は観測された半周期損失と cC+τ̂₀R の差に対する指標である。ODE頂点RMSE・R²はモデル予測頂点と実測次頂点との比較で、対象量・残差定義が異なる。エネルギー R² が低く見える軸について、ODE頂点一致だけで I,K や c の妥当性を証明したとは扱わない。
 
-![IHB-03の積分基底フィットと固定係数ODE検証](ihb03_fit_overview.svg)
+![IHB-03の積分基底フィットと固定係数ODE検証](https://raw.githubusercontent.com/Pakfat50/GBA/fc469a0ba25c98666b74e1b5c017f2804098f5bc/06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb03_fit_overview.svg)
 
 左列は計測された半周期エネルギー損失と一回計算の基底予測、右列は固定した τ₀ によるODE頂点残差を示す。点の色はSP条件である。
 
@@ -222,7 +222,7 @@ ODE直接法についても、角度予測から各半周期のエネルギー�
 
 直接法の τ₀ はエネルギー基底法に対しINで+6.86%、OUTで−10.77%となった。一方、同じリセット半周期ODEで評価した頂点角RMSEの改善はINで0.2%、OUTで4.9%で、半周期時間RMSEはほぼ同じだった。直接ODEフィットへの変更で大きく改善したとは言えない。特にINではほぼ同じ適合度で τ₀ が異なり、減衰係数の識別には依然として不確かさがある。角度減衰を合わせる目的では、今回の直接法を次の比較基準とする。
 
-![半周期ごとに実測頂点へ戻した直接ODEフィットの残差](ihb03_half_cycle_ode_fit.svg)
+![半周期ごとに実測頂点へ戻した直接ODEフィットの残差](https://raw.githubusercontent.com/Pakfat50/GBA/fc469a0ba25c98666b74e1b5c017f2804098f5bc/06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb03_half_cycle_ode_fit.svg)
 
 図の点は半周期残差を振幅条件ごとに示す（表示点は視認性のため間引き、数値評価は全1,794区間）。各積分は実測開始頂点から独立に開始する。左列は予測次頂点の角度残差、右列は半周期時間残差。残る時間誤差や振幅依存の角度残差は、τだけでは説明できない周期係数 I,K の誤差やモデル近似も含みうるため、これだけで原因を特定しない。
 
@@ -365,7 +365,7 @@ D_{w,\mathrm{model}}
 
 最終総損失に対する波形単位の5分割評価では、累積フィットのRMSEがINで約8%、OUTで約7%小さくなった。一方、このτで半周期ごとの損失を評価すると、RMSEはINで0.10826から0.10827 mJ、OUTで0.08758から0.08787 mJとなり、ほぼ同じかごくわずかに悪化した。つまり、波形全体の総損失予測には少し利点が見えるが、個々の半周期の損失配分が改善したわけではない。
 
-![各波形の最終累積損失：予測値と観測値](https://raw.githubusercontent.com/Pakfat50/GBA/13235bfab6b86e7651f315b0250c67fb0a00aebb/06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb03_cumulative_endpoint_fit.svg)
+![各波形の最終累積損失：予測値と観測値](https://raw.githubusercontent.com/Pakfat50/GBA/fc469a0ba25c98666b74e1b5c017f2804098f5bc/06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb03_cumulative_endpoint_fit.svg)
 
 図では青丸が半周期フィットのτ、橙四角が累積総損失フィットのτによる予測で、破線は予測と観測が一致する線である。点はIN 15波形、OUT 19波形であり、同じ波形の二つの予測を並べている。
 
@@ -398,7 +398,7 @@ D_{w,\mathrm{model}}
 
 頂点振幅の平滑化による角度差は、RMSEでIN 0.288°、OUT 0.226°だった。95パーセンタイルの絶対差はそれぞれ0.505°、0.429°である。この角度差だけで計算した観測半周期損失の変化は、RMSEでIN 0.112 mJ、OUT 0.088 mJとなり、元のエネルギーRMSEと同程度だった。したがって、頂点角に1°未満の変化があっても、差分エネルギーの評価には無視できない変化が出ることを示す試行結果となった。
 
-![観測頂点振幅とGCV平滑化後の振幅](https://raw.githubusercontent.com/Pakfat50/GBA/13235bfab6b86e7651f315b0250c67fb0a00aebb/06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb03_smoothed_peak_angles.svg)
+![観測頂点振幅とGCV平滑化後の振幅](https://raw.githubusercontent.com/Pakfat50/GBA/fc469a0ba25c98666b74e1b5c017f2804098f5bc/06_Analysis/fitting_pipeline/results/20260921/iterative_hybrid/ihb03_smoothed_peak_angles.svg)
 
 ただし、平滑化後のエネルギーR²は、**滑らかにした同じ角度列から観測損失とモデル基底の両方を作り直し、その同じデータでτも適合させた値**である。測定誤差を独立に推定した結果でも、独立データに対する予測精度でもない。平滑化差には測定ノイズだけでなく、実際の振幅減衰の不規則さやスプラインの近似誤差も含まれる。GCV平滑化が物理的な真の角度列を表すとも限らない。したがって、R²の上昇は「角度列の滑らかさを仮定すると損失指標が大きく変わりうる」ことを示す感度確認として扱い、主解析の適合度や測定精度として解釈しない。
 
