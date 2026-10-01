@@ -1,0 +1,21 @@
+{
+  "method": "Continuous full-waveform ODE integration, no state reset after initial accepted peak",
+  "waveforms": 34,
+  "axes": {
+    "IN": 15,
+    "OUT": 19
+  },
+  "tau_method": "monotone_log_endpoint one-pass energy method",
+  "tau_n_m": {
+    "IN": 7.945731419193821e-05,
+    "OUT": 0.0001769496760658
+  },
+  "rod_drag_c_n_m_s2_per_rad2": 2.5486754169187504e-06,
+  "viscous_damping_b_n_m_s_per_rad": 0.0,
+  "friction_regularization_epsilon_deg_s": 0.5,
+  "rtol": 2e-09,
+  "atol": 2e-11,
+  "zero_crossing_definition": "linear interpolation between consecutive measured time samples",
+  "comparison": "no phase alignment; numerical integration starts at first accepted measured turning point with zero speed",
+  "excluded": "ball-installed waveforms, not-approved waveforms, and selection rows with use_for_fitting != 1"
+}
