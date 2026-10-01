@@ -1,0 +1,36 @@
+{
+  "method": "continuous full-waveform ODE integration, no state reset or phase alignment",
+  "coefficient_source": "IHB-05 method A c_ball; IHB-02 I/K plus measured ball increments; IHB-03 tau",
+  "waveforms": 12,
+  "c_ball_n_m_s2_per_rad2": 1.3550808367250009e-05,
+  "c_rod_ball_n_m_s2_per_rad2": 2.5664419286471763e-07,
+  "tau_by_axis_n_m": {
+    "IN": 7.945731419193821e-05,
+    "OUT": 0.0001769496760658
+  },
+  "I_K_by_axis": {
+    "IN": {
+      "inertia_kg_m2": 0.00035907044953219995,
+      "restoring_n_m": 0.0152161325942857,
+      "base_inertia_kg_m2": 0.0002370940495322,
+      "base_restoring_n_m": 0.0218731985942857,
+      "delta_inertia_kg_m2": 0.00012197639999999997,
+      "delta_restoring_n_m": -0.006657066
+    },
+    "OUT": {
+      "inertia_kg_m2": 0.0003617960859512,
+      "restoring_n_m": 0.0144739701179168,
+      "base_inertia_kg_m2": 0.0002398196859512,
+      "base_restoring_n_m": 0.0211310361179168,
+      "delta_inertia_kg_m2": 0.00012197639999999997,
+      "delta_restoring_n_m": -0.006657066
+    }
+  },
+  "friction_epsilon_deg_s": 0.5,
+  "rtol": 2e-09,
+  "atol": 2e-11,
+  "max_step_natural_period_fraction": 0.01,
+  "initial_state": "first accepted measured turning point; measured angle and zero angular speed",
+  "comparison_interval": "first through last eligible turning point with amplitude >= 4 deg",
+  "zero_crossing_method": "linear interpolation between adjacent sampled points"
+}

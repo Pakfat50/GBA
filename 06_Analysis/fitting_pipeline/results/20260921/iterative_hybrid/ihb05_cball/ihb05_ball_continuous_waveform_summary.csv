@@ -1,0 +1,3 @@
+﻿axis,waveforms,sample_rmse_mean_deg,sample_mae_mean_deg,zero_crossing_shift_rmse_mean_ms,zero_crossing_shift_bias_mean_ms,matched_zero_crossings
+IN,6,12.68656256,10.75905454,205.9006036,-176.869507,227
+OUT,6,7.899975616,6.599908488,130.7982806,-112.928325,150
