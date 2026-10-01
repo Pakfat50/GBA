@@ -1,0 +1,62 @@
+{
+  "stage": "IHB-05",
+  "date": "20260921",
+  "interpretation": "IHB-04 skipped: uses IHB-02 base I/K plus measured sphere increments and IHB-03 monotone one-pass tau",
+  "c_ball_n_m_s2_per_rad2": 1.4408564374153766e-05,
+  "c_ball_waveform_bootstrap_95pct": [
+    1.3597827693115097e-05,
+    1.5163524552764095e-05
+  ],
+  "equivalent_Cd": 0.5685609026570014,
+  "equivalent_Cd_95pct": [
+    0.5365692921662748,
+    0.5983515764170296
+  ],
+  "waveforms": 12,
+  "half_cycles": 379,
+  "half_cycle_ode_next_peak_angle_rmse_deg": 0.49471196800533657,
+  "tau_by_axis_n_m": {
+    "IN": 7.945731419193821e-05,
+    "OUT": 0.0001769496760658
+  },
+  "b_by_axis_n_m_s_per_rad": {
+    "IN": 0.0,
+    "OUT": 0.0
+  },
+  "c_rod_no_ball": 2.5486754169187504e-06,
+  "c_rod_ball_exposed_length_adjusted": 2.5664419286471763e-07,
+  "sphere_diameter_m": 0.1,
+  "sphere_center_arm_m": 0.174,
+  "bootstrap_method": "2000 waveform-cluster resamples; seed 20261002",
+  "energy_fit_metrics": [
+    {
+      "scope": "ALL",
+      "intervals": 379,
+      "waveforms": 12,
+      "pearson_r": 0.958753470874974,
+      "rmse_mj": 0.0733198814437949,
+      "r_squared": 0.9171554364587177
+    },
+    {
+      "scope": "IN",
+      "intervals": 227,
+      "waveforms": 6,
+      "pearson_r": 0.9468267933641696,
+      "rmse_mj": 0.07548818700409018,
+      "r_squared": 0.8954000227844867
+    },
+    {
+      "scope": "OUT",
+      "intervals": 152,
+      "waveforms": 6,
+      "pearson_r": 0.9684773050898535,
+      "rmse_mj": 0.07108546723979368,
+      "r_squared": 0.9315408398429742
+    }
+  ],
+  "endpoint_residual_vs_start_amplitude_pearson_r": {
+    "IN": 0.9511421134247797,
+    "OUT": 0.8063945925419764,
+    "ALL": 0.8876060812402783
+  }
+}
