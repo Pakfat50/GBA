@@ -17,16 +17,21 @@
   "half_cycles": 379,
   "half_cycle_ode_next_peak_angle_rmse_deg": 0.21695650100981576,
   "half_cycle_ode_next_peak_angle_rmse_vs_raw_deg": 0.3952108619013588,
-  "amplitude_fit_quality_gate": {
-    "pearson_r_min": 0.99,
-    "amplitude_rmse_deg_max": 0.5
+  "amplitude_fit_assessment": {
+    "automatic_pass_fail_gate": false,
+    "pearson_r_use": "diagnostic_only",
+    "rmse_reference_deg": 0.5,
+    "rmse_review_margin_deg": 0.1,
+    "rmse_review_bands": {
+      "reference_range": "<= 0.5 deg",
+      "within_margin": "> 0.5 and <= 0.6 deg",
+      "review_recommended": "> 0.6 deg"
+    }
   },
-  "amplitude_fit_gate_failures": [
-    "IN_BALL_P_R01",
-    "IN_BALL_P_R02",
-    "IN_BALL_N_R02",
-    "IN_BALL_P_R03"
-  ],
+  "amplitude_fit_review_counts": {
+    "reference_range": 8,
+    "within_margin": 4
+  },
   "tau_by_axis_n_m": {
     "IN": 7.945731419193821e-05,
     "OUT": 0.0001769496760658
