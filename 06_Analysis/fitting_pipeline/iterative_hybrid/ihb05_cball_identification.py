@@ -24,6 +24,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.optimize import least_squares
 
 # Make the shared pipeline modules importable when this script is launched by path.
 PIPELINE_DIRECTORY = Path(__file__).resolve().parents[1]
@@ -55,6 +56,83 @@ ROD_C_BALL = THEORETICAL_ROD_C * (EXPOSED_ROD_UPPER_M / FULL_ROD_UPPER_M) ** 4
 TAU_BY_AXIS_N_M = {"IN": 7.945731419193821e-5, "OUT": 1.769496760658e-4}
 BOOTSTRAP_REPLICATES = 2000
 BOOTSTRAP_SEED = 20261002
+AMPLITUDE_FIT_MIN_R = 0.99
+AMPLITUDE_FIT_MAX_RMSE_DEG = 0.5
+
+
+def fit_monotone_log_envelope(time_s: np.ndarray, signed_angle_rad: np.ndarray) -> np.ndarray:
+    """IHB-03と同じ正値・単調減少の対数包絡線を頂点列に当てる。
+
+    時刻を0〜1に正規化し、A(u) = A_end + B log((1+C)/(u+C))
+    を最小二乗フィットする。A_end、B、Cを正に制約するため、振幅は
+    常に正で、時間とともに単調減少する。戻り値は元の頂点符号を保つ。
+    """
+    time_s = np.asarray(time_s, dtype=float)
+    signed_angle_rad = np.asarray(signed_angle_rad, dtype=float)
+    amplitude = np.abs(signed_angle_rad)
+    if len(time_s) < 5 or np.any(np.diff(time_s) <= 0) or np.any(amplitude <= 0):
+        raise ValueError("単調振幅フィットには時刻順の正振幅頂点が5点以上必要です")
+    u = (time_s - time_s[0]) / (time_s[-1] - time_s[0])
+
+    def curve(parameters, x):
+        a_end, b, c = parameters
+        return a_end + b * np.log((1.0 + c) / (x + c))
+
+    initial = [max(1e-8, float(amplitude[-1])),
+               max(1e-8, float(amplitude[0] - amplitude[-1]) / 2), 0.8]
+    fit = least_squares(
+        lambda p: curve(p, u) - amplitude, initial,
+        bounds=([1e-10, 1e-10, 1e-5], [np.inf, np.inf, 100.0]),
+        x_scale="jac", max_nfev=50000,
+        ftol=1e-12, xtol=1e-12, gtol=1e-12,
+    )
+    if not fit.success or not np.all(np.isfinite(fit.x)):
+        raise RuntimeError(f"単調振幅フィットに失敗しました: {fit.message}")
+    return np.sign(signed_angle_rad) * curve(fit.x, u)
+
+
+def fit_ball_peak_amplitudes(turning: pd.DataFrame, selection: pd.DataFrame):
+    """承認済みBALL波形の頂点をフィットし、品質指標とフィット角を返す。
+
+    頂点番号が飛んだ場合は別々の列としてフィットし、欠測をまたいで
+    包絡線をつなぎません。品質ゲートの結果は記録し、未達をレポートで明示します。
+    """
+    approved = selection[
+        (pd.to_numeric(selection.use_for_fitting, errors="coerce") == 1)
+        & (selection.configuration.astype(str).str.upper() == "BALL")
+    ]
+    fitted_by_peak = {}
+    diagnostics = []
+    for segment_id in approved.segment_id.astype(str):
+        peaks = turning[turning.segment_id.astype(str) == segment_id].sort_values("peak_number")
+        starts = np.flatnonzero(pd.to_numeric(peaks.is_initial_peak, errors="coerce").to_numpy() == 1)
+        if len(starts) != 1:
+            raise ValueError(f"{segment_id}: 初期頂点が一つに定まりません")
+        peaks = peaks.iloc[int(starts[0]):].copy().reset_index(drop=True)
+        number = pd.to_numeric(peaks.peak_number).to_numpy(dtype=int)
+        runs = np.split(np.arange(len(peaks)), np.where(np.diff(number) != 1)[0] + 1)
+        raw_amplitudes, fitted_amplitudes = [], []
+        for run in runs:
+            if len(run) < 5:
+                raise ValueError(f"{segment_id}: 連続頂点列が5点未満のためフィットできません")
+            subset = peaks.iloc[run]
+            raw = np.deg2rad(pd.to_numeric(subset.centered_peak_angle_deg).to_numpy(float))
+            fitted = fit_monotone_log_envelope(pd.to_numeric(subset.peak_time_s).to_numpy(float), raw)
+            for peak_number, value in zip(number[run], fitted):
+                fitted_by_peak[(segment_id, int(peak_number))] = float(value)
+            raw_amplitudes.extend(np.abs(np.rad2deg(raw)))
+            fitted_amplitudes.extend(np.abs(np.rad2deg(fitted)))
+        raw_a = np.asarray(raw_amplitudes)
+        fit_a = np.asarray(fitted_amplitudes)
+        corr = float(np.corrcoef(raw_a, fit_a)[0, 1]) if np.std(raw_a) and np.std(fit_a) else float("nan")
+        rmse = float(np.sqrt(np.mean((fit_a - raw_a) ** 2)))
+        diagnostics.append({
+            "segment_id": segment_id, "peaks": len(raw_a), "amplitude_pearson_r": corr,
+            "amplitude_rmse_deg": rmse, "amplitude_bias_deg": float(np.mean(fit_a - raw_a)),
+            "quality_gate_pass": bool(np.isfinite(corr) and corr >= AMPLITUDE_FIT_MIN_R
+                                       and rmse <= AMPLITUDE_FIT_MAX_RMSE_DEG),
+        })
+    return fitted_by_peak, diagnostics
 
 
 def parse_args() -> argparse.Namespace:
@@ -105,7 +183,8 @@ def ball_physics(manifest: pd.DataFrame, base_parameters: pd.DataFrame) -> dict:
     return result
 
 
-def make_intervals(turning: pd.DataFrame, selection: pd.DataFrame, physics: dict) -> list[dict]:
+def make_intervals(turning: pd.DataFrame, selection: pd.DataFrame, physics: dict,
+                   fitted_by_peak: dict) -> list[dict]:
     """承認済みBALL波形の隣り合う適格頂点を半周期データにする。"""
     approved = selection[
         (pd.to_numeric(selection.use_for_fitting, errors="coerce") == 1)
@@ -130,8 +209,10 @@ def make_intervals(turning: pd.DataFrame, selection: pd.DataFrame, physics: dict
                 continue
             if min(float(first.amplitude_deg), float(last.amplitude_deg)) < MINIMUM_AMPLITUDE_DEG:
                 continue
-            a = float(first.centered_peak_angle_deg)
-            z = float(last.centered_peak_angle_deg)
+            raw_a = float(first.centered_peak_angle_deg)
+            raw_z = float(last.centered_peak_angle_deg)
+            a = float(np.rad2deg(fitted_by_peak[(str(segment_id), int(first.peak_number))]))
+            z = float(np.rad2deg(fitted_by_peak[(str(segment_id), int(last.peak_number))]))
             if a * z >= 0:
                 raise ValueError(f"{segment_id}: 頂点の正負が交互になっていません")
             kept += 1
@@ -146,6 +227,8 @@ def make_intervals(turning: pd.DataFrame, selection: pd.DataFrame, physics: dict
                 "start_angle_rad": float(np.deg2rad(a)),
                 "measured_next_angle_rad": float(np.deg2rad(z)),
                 "start_amplitude_deg": abs(a), "end_amplitude_deg": abs(z),
+                "raw_start_angle_deg": raw_a, "raw_next_angle_deg": raw_z,
+                "fitted_start_angle_deg": a, "fitted_next_angle_deg": z,
                 "inertia_kg_m2": info["inertia_kg_m2"],
                 "restoring_n_m": info["restoring_n_m"],
             })
@@ -242,7 +325,24 @@ def main() -> None:
 
     turning, selection, manifest, bases = load_inputs(root, args.date)
     physics = ball_physics(manifest, bases)
-    intervals = make_intervals(turning, selection, physics)
+    fitted_by_peak, amplitude_fit_metrics = fit_ball_peak_amplitudes(turning, selection)
+    intervals = make_intervals(turning, selection, physics, fitted_by_peak)
+    # 旧版（生の計測角）を感度比較用に再計算する。主結果は単調関数角による値。
+    raw_intervals = []
+    for row in intervals:
+        raw = dict(row)
+        raw_start = float(np.deg2rad(row["raw_start_angle_deg"]))
+        raw_next = float(np.deg2rad(row["raw_next_angle_deg"]))
+        raw.update(
+            start_angle_rad=raw_start, measured_next_angle_rad=raw_next,
+            start_amplitude_deg=abs(row["raw_start_angle_deg"]),
+            end_amplitude_deg=abs(row["raw_next_angle_deg"]),
+        )
+        raw_intervals.append(raw)
+    c_ball_raw, _ = fit_one_shared_c(raw_intervals)
+    for row in raw_intervals:
+        row["sphere_coulomb_loss_j"] = TAU_BY_AXIS_N_M[row["axis"]] * row["tau_basis"]
+    raw_energy_metrics = weighted_energy_metrics(raw_intervals, c_ball_raw)
     c_ball, wave_contributions = fit_one_shared_c(intervals)
 
     # 全半周期を一つずつ数値積分し、実測次頂点との角度誤差を調べる。
@@ -252,6 +352,7 @@ def main() -> None:
         row["predicted_next_angle_deg"] = float(np.rad2deg(row["predicted_next_angle_rad"]))
         row["measured_next_angle_deg"] = float(np.rad2deg(row["measured_next_angle_rad"]))
         row["angle_residual_deg"] = row["predicted_next_angle_deg"] - row["measured_next_angle_deg"]
+        row["raw_angle_residual_deg"] = row["predicted_next_angle_deg"] - row["raw_next_angle_deg"]
         row["predicted_loss_j"] = ROD_C_BALL * row["rod_basis"] + row["sphere_coulomb_loss_j"] + c_ball * row["quadratic_drag_basis"]
 
     # 波形ごとの寄与とRMSEを記録し、波形単位の再現性を確認する。
@@ -298,6 +399,8 @@ def main() -> None:
         prediction_table.start_amplitude_deg.corr(prediction_table.angle_residual_deg)
     )
     pd.DataFrame(energy_metrics).to_csv(output / "energy_fit_metrics.csv", index=False)
+    pd.DataFrame(raw_energy_metrics).to_csv(output / "raw_peak_sensitivity_energy_fit_metrics.csv", index=False)
+    pd.DataFrame(amplitude_fit_metrics).to_csv(output / "amplitude_fit_metrics.csv", index=False)
     waveform_table.to_csv(output / "waveform_estimates.csv", index=False, float_format="%.10g")
     prediction_table.to_csv(output / "interval_predictions.csv", index=False, float_format="%.10g")
     reynolds.to_csv(output / "reynolds_assessment.csv", index=False, float_format="%.10g")
@@ -306,18 +409,26 @@ def main() -> None:
     cd_ci = [2.0 * ci_low / (AIR_DENSITY_KG_M3 * SPHERE_AREA_M2 * SPHERE_CENTER_ARM_M**3),
              2.0 * ci_high / (AIR_DENSITY_KG_M3 * SPHERE_AREA_M2 * SPHERE_CENTER_ARM_M**3)]
     angle_rmse = float(np.sqrt(np.mean(prediction_table.angle_residual_deg**2)))
+    raw_angle_rmse = float(np.sqrt(np.mean(prediction_table.raw_angle_residual_deg**2)))
     settings = {
         "stage": "IHB-05", "date": args.date,
-        "interpretation": "IHB-04 skipped: uses IHB-02 base I/K plus measured sphere increments and IHB-03 monotone one-pass tau",
-        "c_ball_n_m_s2_per_rad2": c_ball, "c_ball_waveform_bootstrap_95pct": [float(ci_low), float(ci_high)],
+        "interpretation": "IHB-04 skipped: uses IHB-02 base I/K plus measured sphere increments, IHB-03 monotone fitted A peaks, and IHB-03 one-pass tau",
+        "c_ball_n_m_s2_per_rad2": c_ball, "c_ball_raw_peak_sensitivity_n_m_s2_per_rad2": c_ball_raw,
+        "c_ball_waveform_bootstrap_95pct": [float(ci_low), float(ci_high)],
         "equivalent_Cd": cd, "equivalent_Cd_95pct": cd_ci,
         "waveforms": len(ids), "half_cycles": len(intervals),
         "half_cycle_ode_next_peak_angle_rmse_deg": angle_rmse,
+        "half_cycle_ode_next_peak_angle_rmse_vs_raw_deg": raw_angle_rmse,
+        "amplitude_fit_quality_gate": {"pearson_r_min": AMPLITUDE_FIT_MIN_R,
+                                       "amplitude_rmse_deg_max": AMPLITUDE_FIT_MAX_RMSE_DEG},
+        "amplitude_fit_gate_failures": [r["segment_id"] for r in amplitude_fit_metrics
+                                        if not r["quality_gate_pass"]],
         "tau_by_axis_n_m": TAU_BY_AXIS_N_M, "b_by_axis_n_m_s_per_rad": {"IN": 0.0, "OUT": 0.0},
         "c_rod_no_ball": THEORETICAL_ROD_C, "c_rod_ball_exposed_length_adjusted": ROD_C_BALL,
         "sphere_diameter_m": SPHERE_DIAMETER_M, "sphere_center_arm_m": SPHERE_CENTER_ARM_M,
         "bootstrap_method": f"{BOOTSTRAP_REPLICATES} waveform-cluster resamples; seed {BOOTSTRAP_SEED}",
         "energy_fit_metrics": energy_metrics,
+        "raw_peak_sensitivity_energy_fit_metrics": raw_energy_metrics,
         "endpoint_residual_vs_start_amplitude_pearson_r": residual_amplitude_correlation,
     }
     (output / "ihb05_settings.json").write_text(json.dumps(settings, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -333,7 +444,7 @@ def main() -> None:
     low = float(min(prediction_table.measured_next_angle_deg.min(), prediction_table.predicted_next_angle_deg.min()))
     high = float(max(prediction_table.measured_next_angle_deg.max(), prediction_table.predicted_next_angle_deg.max()))
     axes[0].plot([low, high], [low, high], color="black", linewidth=1, linestyle="--")
-    axes[0].set(title="Measured vs ODE next peak", xlabel="Measured next angle [deg]", ylabel="ODE predicted next angle [deg]")
+    axes[0].set(title="Monotone-fit vs ODE next peak", xlabel="Monotone-fit next angle [deg]", ylabel="ODE predicted next angle [deg]")
     axes[1].axhline(0.0, color="black", linewidth=1, linestyle="--")
     axes[1].set(title="ODE endpoint residual", xlabel="Starting peak amplitude [deg]", ylabel="Predicted - measured [deg]")
     for ax in axes:
@@ -350,15 +461,26 @@ def main() -> None:
     r_all = next(m["pearson_r"] for m in energy_metrics if m["scope"] == "ALL")
     rmse_all = next(m["rmse_mj"] for m in energy_metrics if m["scope"] == "ALL")
     r2_all = next(m["r_squared"] for m in energy_metrics if m["scope"] == "ALL")
+    r_raw = next(m["pearson_r"] for m in raw_energy_metrics if m["scope"] == "ALL")
+    rmse_raw = next(m["rmse_mj"] for m in raw_energy_metrics if m["scope"] == "ALL")
+    r2_raw = next(m["r_squared"] for m in raw_energy_metrics if m["scope"] == "ALL")
+    failed_amplitude_fits = [r for r in amplitude_fit_metrics if not r["quality_gate_pass"]]
+    failed_fit_summary = (
+        "、".join(f"{r['segment_id']}（R={r['amplitude_pearson_r']:.5f}, RMSE={r['amplitude_rmse_deg']:.4f}°）"
+                  for r in failed_amplitude_fits)
+        if failed_amplitude_fits else "なし"
+    )
     # Keep LaTeX outside the f-string parser so the backslashes stay intact.
     equation_i_k = r"I_{\mathrm{BALL}}=I_0+J_{G,\mathrm{ball}}+m_{\mathrm{ball}}\ell_{\mathrm{ball}}^2,\quad K_{\mathrm{BALL}}=K_0+m_{\mathrm{ball}}g \ell_{\mathrm{signed}}."
     report = rf"""# IHB-05: 球抗力係数 c_ball の同定
 
 ## 結論
 
-IHB-04をスキップする指示に合わせ、IHB-02の球なし基準 I/K に実測球質量・形状から計算した増分を加え、IHB-03で採用した単調振幅一回積分法のτを固定して、承認済みの球あり自由振動データから共通の非負 c_ball を一回の重み付き最小二乗で推定した。
+IHB-04をスキップする指示に合わせ、IHB-02の球なし基準 I/K に実測球質量・形状から計算した増分を加え、IHB-03で採用した単調減少Aフィットと一回積分法の考え方をIHB-05の球あり頂点列にも適用した。単調フィット後の頂点角をエネルギー損失計算に用い、軸別τ等を固定して共通の非負 c_ball を一回の重み付き最小二乗で求めた。
 
-推定値は **c_ball = {c_ball:.8g} N·m·s²/rad²**。波形単位のクラスタ・ブートストラップ95%区間は **{ci_low:.8g}〜{ci_high:.8g} N·m·s²/rad²**、等価球抗力係数は **Cd = {cd:.4f}**（同95%区間 {cd_ci[0]:.4f}〜{cd_ci[1]:.4f}）だった。半周期ODEの次頂点角RMSEは **{angle_rmse:.4f}°**（{len(intervals)}区間）、エネルギー損失は波形等重みでPearson R **{r_all:.5f}**、RMSE **{rmse_all:.5f} mJ**、R² **{r2_all:.5f}** となった。
+単調関数Aを使った暫定推定値は **c_ball = {c_ball:.8g} N·m·s²/rad²**。生の計測Aを使った旧方式の感度比較値は **{c_ball_raw:.8g} N·m·s²/rad²** である。単調フィットを使った半周期ODEの次頂点角RMSEは、フィット頂点との比較で **{angle_rmse:.4f}°**、生の計測頂点との比較で **{raw_angle_rmse:.4f}°**（{len(intervals)}区間）だった。単調フィットAから作ったエネルギー損失はPearson R **{r_all:.5f}**、RMSE **{rmse_all:.5f} mJ**、R² **{r2_all:.5f}**（生A方式: R {r_raw:.5f}、RMSE {rmse_raw:.5f} mJ、R² {r2_raw:.5f}）となった。
+
+ただし、IHB-03と同じ品質基準（AフィットR ≥ 0.99、振幅RMSE ≤ 0.5°）を満たさない波形が **{len(failed_amplitude_fits)}/{len(amplitude_fit_metrics)}本**あった（{failed_fit_summary}）。従って上記は全波形でゲートを通過した確定値ではなく、A平滑化の影響を調べる暫定感度解析値として扱う。
 
 この値はIHB-04の更新結果を用いた値ではない。IHB-04をスキップしたため、IHB-02/03の係数に依存する暫定同定値として記録する。
 
@@ -379,7 +501,22 @@ $$
 
 ## 同定方法：実測エネルギー損失から球抗力を分ける
 
-ここでは、球抗力係数をいきなりODEの波形合わせで探すのではなく、まず頂点から頂点までに失われたエネルギーを使う。頂点では振り子が一瞬止まるため、角速度はほぼゼロである。その瞬間の力学的エネルギーは位置エネルギーだけになり、平衡点からの角度 A [rad] を使って E=K(1−cos|A|) と計算できる。隣り合う頂点のエネルギー差が、実測半周期損失になる。
+### なぜIHB-03と同じくAを単調関数で近似するか
+
+IHB-03では、生の頂点振幅の小さな局所変動でも、隣接頂点のエネルギーを引き算して作る半周期損失に無視できない変化が出ることを確認した。エネルギー損失は各頂点のエネルギーそのものより小さいため、頂点Aのわずかな揺れが差分の相対誤差を大きくする。IHB-05も同じ隣接頂点差から観測損失を作り、さらにその損失を c_ball 同定に使うので、同じ理由で単調減少包絡線に置き換えるのが妥当である。
+
+ここではIHB-03最終採用の関数をそのまま用いる。
+
+~~~math
+A(u)=A_{{\mathrm{{end}}}}+B\ln\!\left(\frac{{1+C}}{{u+C}}\right),
+\qquad A_{{\mathrm{{end}}}}>0,\quad B>0,\quad C>0.
+~~~
+
+各波形の連続した頂点列に対して当てはめ、符号は計測頂点の交互符号を保つ。フィット頂点と生の頂点の振幅R/RMSEを波形ごとに記録する。IHB-03と同じ判定基準を当てた結果、未達波形は {len(failed_amplitude_fits)}本で、該当は {failed_fit_summary}。未達を除外したり閾値を緩めたりせず、今回の c_ball は全波形での厳密な品質ゲート合格値とは区別する。
+
+IHB-03が示すように、平滑後の同じA列から観測損失とモデル基底の両方を作り直した適合指標は、平滑後の列への同一データ内適合である。測定誤差を独立に推定した結果や、別データへの予測精度ではない。そのため、ここでは c_ball の生A感度比較値と、ODE予測をフィット頂点・生頂点の双方に比較した角度RMSEも併記する。
+
+ここでは、球抗力係数をいきなりODEの波形合わせで探すのではなく、まず頂点から頂点までに失われたエネルギーを使う。頂点では振り子が一瞬止まるため、角速度はほぼゼロである。その瞬間の力学的エネルギーは位置エネルギーだけになり、平衡点からの角度 A [rad] を使って E=K(1−cos|A|) と計算できる。隣り合う頂点のエネルギー差が、実測半周期損失になる。以下の主計算の A_n は、生角ではなくIHB-03と同じ単調関数でフィットした頂点角である。
 
 ~~~math
 E_n=K_j\left(1-\cos|A_n|\right),\qquad
@@ -387,7 +524,7 @@ E_n=K_j\left(1-\cos|A_n|\right),\qquad
 =K_j\left[\cos|A_{{n+1}}|-\cos|A_n|\right].
 ~~~
 
-ここで j は IN または OUT の軸、A_n は半周期の始点角、A_{{n+1}} は次の頂点角である。角度はこの計算の前にラジアンへ変換する。頂点列は品質確認済みの前処理結果を使い、リリース直後の区間を除外する。さらに始点・終点の振幅が両方4°以上で、隣り合う頂点が連続している半周期だけを残した。
+ここで j は IN または OUT の軸、A_n は単調関数フィット後の半周期始点角、A_{{n+1}} は次のフィット頂点角である。角度はこの計算の前にラジアンへ変換する。頂点列は品質確認済みの前処理結果を使い、リリース直後の区間を除外する。さらにフィット後の始点・終点振幅が両方4°以上で、隣り合う頂点が連続している半周期だけを残した。
 
 ## 係数を固定する理由と、抗力仕事の式
 
@@ -509,12 +646,16 @@ I_j\ddot{{\theta}}+K_j\sin\theta
 | 評価 | 結果 |
 |---|---:|
 | c_ball | {c_ball:.8g} N·m·s²/rad² |
+| 生Aによる従来方式の感度比較値 | {c_ball_raw:.8g} N·m·s²/rad² |
 | 波形クラスタ・ブートストラップ95%区間 | {ci_low:.8g}〜{ci_high:.8g} N·m·s²/rad² |
 | 等価 Cd | {cd:.4f} |
 | エネルギー損失 Pearson R | {r_all:.5f} |
 | エネルギー損失 RMSE | {rmse_all:.5f} mJ |
 | エネルギー損失 R² | {r2_all:.5f} |
+| エネルギー損失 RMSE（生A方式） | {rmse_raw:.5f} mJ |
 | 半周期ODE次頂点角RMSE | {angle_rmse:.4f}° |
+| 半周期ODE次頂点角RMSE（生計測頂点との比較） | {raw_angle_rmse:.4f}° |
+| Aフィット品質ゲート未達波形 | {len(failed_amplitude_fits)}/{len(amplitude_fit_metrics)} |
 | 波形数・半周期数 | {len(ids)}・{len(intervals)} |
 
 ![実測次頂点と半周期ODE予測の比較、開始振幅に対する残差](ihb05_cball_validation.svg)
@@ -531,7 +672,7 @@ I_j\ddot{{\theta}}+K_j\sin\theta
 python 06_Analysis/fitting_pipeline/iterative_hybrid/ihb05_cball_identification.py
 ```
 
-出力: `ihb05_settings.json`、`energy_fit_metrics.csv`、`waveform_estimates.csv`、`interval_predictions.csv`、`reynolds_assessment.csv`、およびPNG/SVG比較図。
+出力: `ihb05_settings.json`、`amplitude_fit_metrics.csv`、`energy_fit_metrics.csv`、`raw_peak_sensitivity_energy_fit_metrics.csv`、`waveform_estimates.csv`、`interval_predictions.csv`、`reynolds_assessment.csv`、およびPNG/SVG比較図。
 """
     report = report.replace("CBALL_RESULT_TOKEN", f"{c_ball:.8g}")
     (output / "IHB-05_C_BALL_IDENTIFICATION.md").write_text(report, encoding="utf-8")

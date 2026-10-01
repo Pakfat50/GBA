@@ -1,20 +1,32 @@
 {
   "stage": "IHB-05",
   "date": "20260921",
-  "interpretation": "IHB-04 skipped: uses IHB-02 base I/K plus measured sphere increments and IHB-03 monotone one-pass tau",
-  "c_ball_n_m_s2_per_rad2": 1.4408564374153766e-05,
+  "interpretation": "IHB-04 skipped: uses IHB-02 base I/K plus measured sphere increments, IHB-03 monotone fitted A peaks, and IHB-03 one-pass tau",
+  "c_ball_n_m_s2_per_rad2": 1.3550808367250009e-05,
+  "c_ball_raw_peak_sensitivity_n_m_s2_per_rad2": 1.4408564374153766e-05,
   "c_ball_waveform_bootstrap_95pct": [
-    1.3597827693115097e-05,
-    1.5163524552764095e-05
+    1.3009057817289963e-05,
+    1.4157290926904151e-05
   ],
-  "equivalent_Cd": 0.5685609026570014,
+  "equivalent_Cd": 0.5347139129860885,
   "equivalent_Cd_95pct": [
-    0.5365692921662748,
-    0.5983515764170296
+    0.5133364756716023,
+    0.5586456706968869
   ],
   "waveforms": 12,
   "half_cycles": 379,
-  "half_cycle_ode_next_peak_angle_rmse_deg": 0.49471196800533657,
+  "half_cycle_ode_next_peak_angle_rmse_deg": 0.21695650100981576,
+  "half_cycle_ode_next_peak_angle_rmse_vs_raw_deg": 0.3952108619013588,
+  "amplitude_fit_quality_gate": {
+    "pearson_r_min": 0.99,
+    "amplitude_rmse_deg_max": 0.5
+  },
+  "amplitude_fit_gate_failures": [
+    "IN_BALL_P_R01",
+    "IN_BALL_P_R02",
+    "IN_BALL_N_R02",
+    "IN_BALL_P_R03"
+  ],
   "tau_by_axis_n_m": {
     "IN": 7.945731419193821e-05,
     "OUT": 0.0001769496760658
@@ -29,6 +41,32 @@
   "sphere_center_arm_m": 0.174,
   "bootstrap_method": "2000 waveform-cluster resamples; seed 20261002",
   "energy_fit_metrics": [
+    {
+      "scope": "ALL",
+      "intervals": 379,
+      "waveforms": 12,
+      "pearson_r": 0.9963832632347012,
+      "rmse_mj": 0.02114822694116637,
+      "r_squared": 0.9917851318436642
+    },
+    {
+      "scope": "IN",
+      "intervals": 227,
+      "waveforms": 6,
+      "pearson_r": 0.9996148898379029,
+      "rmse_mj": 0.014188679006777175,
+      "r_squared": 0.995017100959291
+    },
+    {
+      "scope": "OUT",
+      "intervals": 152,
+      "waveforms": 6,
+      "pearson_r": 0.9986775270340188,
+      "rmse_mj": 0.0263282432675025,
+      "r_squared": 0.9896159611116485
+    }
+  ],
+  "raw_peak_sensitivity_energy_fit_metrics": [
     {
       "scope": "ALL",
       "intervals": 379,
@@ -55,8 +93,8 @@
     }
   ],
   "endpoint_residual_vs_start_amplitude_pearson_r": {
-    "IN": 0.9511421134247797,
-    "OUT": 0.8063945925419764,
-    "ALL": 0.8876060812402783
+    "IN": 0.08104166198381708,
+    "OUT": 0.06779899370552502,
+    "ALL": 0.05816540942239916
   }
 }
