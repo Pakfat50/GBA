@@ -1,0 +1,3 @@
+﻿axis,baseline_I0_kg_m2,baseline_K0_n_m,I0_multiplier,K0_multiplier,adjusted_I0_kg_m2,adjusted_K0_n_m,I0_change_percent,K0_change_percent,train_waveforms,validation_waveforms,train_wave_equal_crossing_rmse_before_ms,train_wave_equal_crossing_rmse_after_ms,optimizer_success,optimizer_message,function_evaluations,bound_contact
+IN,0.0002370940495,0.02187319859,1.018448409,1.017429609,0.0002414680575,0.0222544399,1.844840901,1.742960923,10,5,154.89676,120.206286,True,`xtol` termination condition is satisfied.,4,False
+OUT,0.000239819686,0.02113103612,1.014965662,1.015210549,0.0002434087463,0.02145245077,1.496566185,1.52105488,14,5,85.65161991,68.7529323,True,Both `ftol` and `xtol` termination conditions are satisfied.,5,False

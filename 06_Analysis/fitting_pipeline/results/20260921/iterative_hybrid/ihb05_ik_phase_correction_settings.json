@@ -1,0 +1,18 @@
+{
+  "method": "Fit axis-specific base I0,K0 multipliers to continuous zero-crossing times; known spacer increments preserved",
+  "exploratory_multiplier_bounds": [
+    0.95,
+    1.05
+  ],
+  "validation_split": "one highest-repetition waveform held out per axis and spacer configuration",
+  "objective": "mean squared zero-crossing time error per training waveform, giving equal total weight to each waveform",
+  "fixed": {
+    "tau_from": "IHB-03 monotone one-pass energy method",
+    "rod_drag": 2.5486754169187504e-06,
+    "viscous_b": 0.0,
+    "epsilon_deg_s": 0.5,
+    "initial_state": "first accepted measured peak, zero angular velocity",
+    "phase_alignment": false
+  },
+  "note": "The 5% range is an exploratory sensitivity range, not a measured parameter uncertainty or an accepted physical bound."
+}
