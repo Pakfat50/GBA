@@ -75,7 +75,11 @@ def main():
 
         generated = temporary_date / "hybrid_identification" / "05_sphere_drag_identification"
         args.output_dir.mkdir(parents=True, exist_ok=True)
-        for file in generated.iterdir():
+        # レポートなど一時入力から持ち込まれた古いファイルはコピーせず、
+        # 今回の計算が新規生成する4つのデータ成果だけを保存します。
+        for name in ("stage5_settings.json", "interval_predictions.csv",
+                     "waveform_estimates.csv", "reynolds_assessment.csv"):
+            file = generated / name
             if file.is_file():
                 shutil.copy2(file, args.output_dir / file.name)
 
