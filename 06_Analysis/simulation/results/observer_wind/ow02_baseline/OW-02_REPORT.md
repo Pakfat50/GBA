@@ -22,7 +22,7 @@
 プラントと推定モデルで共通に用いた式を示す。摩擦の符号関数は、頂点付近の数値積分を安定させるため滑らかなtanh近似とした。
 
 $$
-I\ddot{\theta}+K\sin\theta+c|\dot{\theta}|\dot{\theta}+\tau\tanh\!\left(\frac{\dot{\theta}}{\epsilon}\right)=\ell F\cos\theta,\qquad b=0
+I\ddot{\theta}+K\sin\theta+c|\dot{\theta}|\dot{\theta}+\tau\tanh\left(\frac{\dot{\theta}}{\epsilon}\right)=\ell F\cos\theta,\qquad b=0
 $$
 
 各軸で風速RMSEが最小のオンライン方式は、次のとおり。
