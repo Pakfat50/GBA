@@ -83,7 +83,7 @@ A_3=\begin{bmatrix}0&1&0\\-K/I&-\tau/(I\epsilon)&\ell/I\\0&0&0\end{bmatrix},\qua
 $$
 
 $$
-z_p=\exp(-2\pi f_p\Delta t),\qquad\operatorname{eig}(A_{d,n}-L_nC)=\{z_p,\ldots,z_p\}\ (n\text{重根})
+z_p=\exp(-2\pi f_p\Delta t),\qquad\mathrm{eig}(A_{d,n}-L_nC)=\{z_p,\ldots,z_p\}\ (n\text{重根})
 $$
 
 ### RTS 3状態・4状態（EKF＋Rauch–Tung–Striebel平滑化）
@@ -109,7 +109,7 @@ $$
 全方式で、推定した符号付き力から同じ二乗抗力式を逆算する。`rho` は空気密度、`Cd` は球のIHB-05方式A等価抗力係数、`A_p` は投影面積である。力に比例して風速が変わるのではなく、力の平方根で換算される。
 
 $$
-\hat v_k=\operatorname{sgn}(\hat F_k)\sqrt{\frac{2|\hat F_k|}{\rho C_d A_p}},\qquad F=\frac{1}{2}\rho C_dA_pv|v|
+\hat v_k=\mathrm{sgn}(\hat F_k)\sqrt{\frac{2|\hat F_k|}{\rho C_d A_p}},\qquad F=\frac{1}{2}\rho C_dA_pv|v|
 $$
 
 | 方法 | 何を使うか | 今回の設定・注意 |
