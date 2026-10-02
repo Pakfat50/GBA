@@ -205,6 +205,7 @@ def write_report(path: Path, config: dict, wind_stats: dict,
         f"- 標本化周波数：{config['sample_rate_hz']:.1f} Hz。計算時間：{config['duration_s']:.0f} s。評価区間：{config['evaluation_start_s']:.0f}〜{config['evaluation_end_s']:.0f} s。",
         f"- 風：Kaimal型乱流、平均{config['mean_wind_speed_m_s']:.1f} m/s、最大{config['maximum_wind_speed_m_s']:.1f} m/s、目標TI {100*wind_stats['target_turbulence_intensity']:.1f}%。生成TIは{100*wind_stats['realized_turbulence_intensity']:.2f}%。乱数seed={config['wind_seed']}。",
         f"- 抗力係数：球のIHB-05方式A等価値 Cd={config['drag_coefficient']:.4f}。球径100 mm。作用腕長={config['force_lever_m']*1000:.2f} mm。",
+        f"- 実機の角度リミット：±{config['mechanical_angle_limit_deg']:.0f}°。新ハード自由振動46波形の初期振幅中央値は58.392°（Stage 1前処理レポート）で、リミット近傍まで振れている。",
         f"- センサー：角度ノイズ、量子化、遅延なし。推定器内のカルマン観測ノイズ仮定は{config['assumed_angle_noise_deg']:.3f}°で、これは計測波形に加えたノイズではない。",
         "- 損失モデル：b=0、ロッドと球の二乗抗力、および軸別tauを使用。摩擦符号関数は頂点近傍の数値積分を安定させるため0.5°/sのtanh近似。",
         "- ESO/RTS/LPFの調整値：旧モデルで得た値を固定。今回のモデル用には再調整していない。",
@@ -267,7 +268,7 @@ def write_report(path: Path, config: dict, wind_stats: dict,
         "",
         "この再計算で、プラントと推定側の運動モデルに採用済みのI、K、c、tauを反映し、従来候補を比較できる計算経路を用意した。旧モデル向け調整値を固定しているため、ESO/RTS間の優劣は暫定であり、新モデルに対する最適値を示していない。RTSは未来データを使うので、RMSEが小さくてもオンライン方式と同等の実装候補ではない。",
         "",
-        f"最大風速は6 m/sにせず3.5 m/sとした。以前の平均3.75 m/s・最大6 m/s条件を新しいBALL係数で確認すると、評価区間の最大絶対角度はIN {previous_case_check['IN']:.2f}°、OUT {previous_case_check['OUT']:.2f}°となり、想定可動範囲±45°を越える。このためOW-02では範囲内に収まる基準入力を選んだ。最大6 m/sを含む条件やガストはOW-03で、可動限界のモデル化を含めて評価する。",
+        f"平均2.0 m/s・最大3.5 m/sの基準入力は、通常域の比較用として設定した。以前の平均3.75 m/s・最大6 m/sの風系列では、評価区間の最大絶対角度はIN {previous_case_check['IN']:.2f}°、OUT {previous_case_check['OUT']:.2f}°だった。どちらも実機リミット±{config['mechanical_angle_limit_deg']:.0f}°以内だが、IN軸は上限まで約{config['mechanical_angle_limit_deg']-previous_case_check['IN']:.2f}°しか余裕がなく、リミット近傍の条件である。この単一風系列だけでは他の乱流やガストでも超過しないとは言えないため、OW-03では複数入力を評価し、リミット超過時の扱いを明記する。",
         "",
         "OW-03では調整用と評価用の入力風を分離し、候補ごとに新モデル上で調整をやり直す。OW-04では推定モデルだけのI、K、tau、cをずらし、係数誤差の影響を調べる。",
         "",
@@ -296,7 +297,7 @@ def run(config_path: Path, output_dir: Path) -> dict:
     angle_max: dict[str, float] = {}
 
     # Recreate the former 3.75 m/s mean, 6 m/s maximum wind input only to
-    # verify that it exceeds the new device's +/-45-degree use range.
+    # compare this historical wind case with the device's configured angle limit.
     old_case = config["previous_wind_case_probe"]
     _, old_speed, old_wind_stats = synthesize_kaimal_wind(
         config["sample_rate_hz"], config["duration_s"],

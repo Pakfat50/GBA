@@ -9,18 +9,18 @@
   "previous_wind_case_probe": {
     "mean_wind_speed_m_s": 3.75,
     "maximum_wind_speed_m_s": 6.0,
-    "target_turbulence_intensity": 0.20,
+    "target_turbulence_intensity": 0.2,
     "seed": 20260915
   },
   "mean_wind_speed_m_s": 2.0,
   "maximum_wind_speed_m_s": 3.5,
-  "target_turbulence_intensity": 0.20,
+  "target_turbulence_intensity": 0.2,
   "kaimal_integral_scale_m": 11.34,
   "air_density_kg_m3": 1.225,
   "projected_area_m2": 0.007853981633974483,
   "drag_coefficient": 0.4860496586340641,
   "force_lever_m": 0.18061,
-  "mechanical_angle_limit_deg": 45.0,
+  "mechanical_angle_limit_deg": 60.0,
   "friction_epsilon_deg_s": 0.5,
   "assumed_angle_noise_deg": 0.02,
   "observer_settings_from_previous_wind_study": {

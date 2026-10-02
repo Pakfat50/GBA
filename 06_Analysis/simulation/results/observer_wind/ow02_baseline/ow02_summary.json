@@ -39,7 +39,7 @@
     "IN": 18.940293927576192,
     "OUT": 18.160848930575526
   },
-  "mechanical_angle_limit_deg": 45.0,
+  "mechanical_angle_limit_deg": 60.0,
   "previous_model_tunings_reused_without_retuning": {
     "eso3_pole_hz": 45.0,
     "eso4_pole_hz": 20.0,
