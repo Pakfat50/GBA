@@ -26,7 +26,11 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 from hbk_model_coefficients import select_coefficients, simulate_hbk_plant
-from hbk_nonlinear_estimators import nonlinear_ekf_rts_force, nonlinear_luenberger_force
+from hbk_nonlinear_estimators import (
+    calculate_luenberger_gain,
+    nonlinear_ekf_rts_force,
+    nonlinear_luenberger_force,
+)
 from run_real_wind_doe import causal_lowpass, wind_speed_from_force
 from wind import drag_force_from_speed, synthesize_kaimal_wind
 
@@ -190,7 +194,8 @@ def save_divergence_figure(path: Path, time: np.ndarray, true_speed: np.ndarray,
 
 def write_report(path: Path, config: dict, wind_stats: dict,
                  angle_max_deg: dict[str, float], force_rows: list[dict],
-                 speed_rows: list[dict], previous_case_check: dict) -> None:
+                 speed_rows: list[dict], previous_case_check: dict,
+                 eso_gain_vectors: dict[str, dict[str, list[float]]]) -> None:
     """Write a concise Japanese report with assumptions and evaluation limits."""
     lines = [
         "# OW-02 採用HBK係数によるオブザーバー再比較",
@@ -280,6 +285,15 @@ def write_report(path: Path, config: dict, wind_stats: dict,
         "$$",
         r"z_p=\exp(-2\pi f_p\Delta t),\qquad\mathrm{eig}(A_{d,n}-L_nC)=\{z_p,\ldots,z_p\}\ (n\text{重根})",
         "$$",
+        "",
+        "この表の極周波数は旧調整値として引き継いだ設定である。一方、数値ゲイン `L_3`、`L_4` は、その極周波数とOW-02の採用係数（軸ごとの `I`、`K`、`c`、`tau`）から実行時に再計算した値であり、旧モデルで使った数値ゲインをそのまま流用したものではない。状態補正式に代入する列ベクトルを示す。成分の順は状態の順 `[theta, omega, F]` または `[theta, omega, F, r_F]` で、角度残差 `y_k-C xhat_k`（rad）に掛ける。OW-03でゲイン調整後に同じ表を再生成すれば、今回の基準値と比較できる。",
+        "",
+        "| 軸 | ESO | 極周波数 (Hz) | 離散極 `z_p` | 補正ゲイン列ベクトル `L` |",
+        "|---|---|---:|---:|---|",
+        *[f"| {axis} | {method} | {pole_hz:.3f} | {np.exp(-2*np.pi*pole_hz/config['sample_rate_hz']):.8g} | `[{', '.join(f'{value:.8g}' for value in eso_gain_vectors[axis][method])}]^T` |"
+          for axis in ("IN", "OUT")
+          for method, pole_hz in (("3状態", config["observer_settings_from_previous_wind_study"]["eso3_pole_hz"]),
+                                  ("4状態", config["observer_settings_from_previous_wind_study"]["eso4_pole_hz"]))],
         "",
         "### RTS 3状態・4状態（EKF＋Rauch–Tung–Striebel平滑化）",
         "",
@@ -441,6 +455,23 @@ def run(config_path: Path, output_dir: Path) -> dict:
             speed_rows.append({"axis": axis, "method": method,
                                **metrics(speed[evaluation_mask], estimate_speed[evaluation_mask])})
 
+    # Record the actual correction vectors, not only the bandwidth settings.
+    # Each vector is calculated from the adopted axis coefficients and the
+    # legacy pole-frequency setting so future tuning results can be compared.
+    tuning = config["observer_settings_from_previous_wind_study"]
+    epsilon_rad_s = np.deg2rad(config["friction_epsilon_deg_s"])
+    eso_gain_vectors = {}
+    for axis in ("IN", "OUT"):
+        coefficients = select_coefficients(axis, config["axis_configuration"])
+        eso_gain_vectors[axis] = {}
+        for method, pole_key, order in (("3状態", "eso3_pole_hz", 0),
+                                        ("4状態", "eso4_pole_hz", 1)):
+            gain = calculate_luenberger_gain(
+                coefficients, config["force_lever_m"], sample_period,
+                tuning[pole_key], order, epsilon_rad_s,
+            )
+            eso_gain_vectors[axis][method] = gain.reshape(-1).tolist()
+
     save_comparison_figure(output_dir / "ow02_wind_estimates.png", time, speed,
                            estimates_by_axis, config, evaluation_mask)
     save_divergence_figure(
@@ -466,6 +497,7 @@ def run(config_path: Path, output_dir: Path) -> dict:
         "maximum_abs_angle_deg": angle_max,
         "mechanical_angle_limit_deg": config["mechanical_angle_limit_deg"],
         "previous_model_tunings_reused_without_retuning": config["observer_settings_from_previous_wind_study"],
+        "eso_gain_vectors_recomputed_for_adopted_coefficients": eso_gain_vectors,
         "force_metrics": force_rows,
         "wind_speed_metrics": speed_rows,
         "interpretation": "Regression-style rerun with prior observer tuning values held fixed. Use OW-03 for separate-input retuning and broader wind scenarios.",
@@ -474,7 +506,8 @@ def run(config_path: Path, output_dir: Path) -> dict:
         json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     write_report(output_dir / "OW-02_REPORT.md", config, wind_stats,
-                 angle_max, force_rows, speed_rows, previous_case_check)
+                 angle_max, force_rows, speed_rows, previous_case_check,
+                 eso_gain_vectors)
     return summary
 
 
