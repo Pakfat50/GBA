@@ -1,68 +1,40 @@
-# Observer and model-wind follow-up tasks
+# オブザーバーとモデル風シミュレーションの後続タスク
 
-This roadmap follows completion of the HBK identification work. The first task
-records and makes the adopted mechanical coefficients selectable for the next
-simulation stage. Tasks OW-02 through OW-05 remain future work.
+HBKの係数同定が完了した後に実施するタスクをまとめる。最初のタスクでは、採用した機械係数を整理し、次のシミュレーションから選択して使えるようにする。OW-02からOW-05は今後実施する。
 
-| ID | Task | Status |
+| ID | タスク | 状況 |
 |---|---|---|
-| OW-01 | Register the adopted `I`, `K`, `c_ball`, and axis-specific `tau` by axis and configuration; set `b=0`; record source and provisional status; make the values selectable by simulation code. | Complete: registry, selector, and nonlinear plant integrator added; all 12 axis/configuration combinations checked. |
-| OW-02 | Rerun model-wind plant/observer comparisons using the adopted coefficients. Compare ESO, RTS, static conversion, and LPF under matched conditions. Mark RTS as an offline method that uses future measurements. | Pending |
-| OW-03 | Separate estimator tuning and evaluation wind inputs. Test mean wind, turbulence, and gusts; use the prior 6 m/s maximum-wind case and target TI 20%, and report the realized TI and spectrum. | Pending |
-| OW-04 | Evaluate more than RMSE: bias, 95th-percentile and maximum error, phase/delay, gust-peak tracking, and false estimates with no wind. Report direct force/torque error separately from converted wind-speed error. | Pending |
-| OW-05 | State the scope of model-wind validation. For real-wind validity, use a calibrated anemometer and account for reference-sensor separation and sample-rate differences. | Pending |
+| OW-01 | 採用した `I`、`K`、`c_ball`、軸別の `tau` を軸と構成ごとに登録する。`b=0`とし、出典と暫定性を記録して、シミュレーションから選択できるようにする。 | 完了：係数台帳、選択関数、非線形プラント積分を追加。軸と構成の組み合わせ全12ケースを確認済み。 |
+| OW-02 | 採用係数を使ってモデル風によるプラント・オブザーバー比較を再実施する。ESO、RTS、静的換算、LPFを同じ条件で比較する。RTSは将来の計測値を使うオフライン方式であることを明記する。 | 未着手 |
+| OW-03 | オブザーバーの調整用と評価用で風入力を分ける。平均風、乱流、ガストを試す。これまでの最大風速6 m/s、目標乱流強度TI 20%の条件を使い、実際に生成されたTIと風速スペクトルを記録する。 | 未着手 |
+| OW-04 | RMSE以外に、偏り、絶対誤差の95パーセンタイルと最大値、位相・遅れ、ガストピークの追従、無風時の誤推定を評価する。力・トルクの誤差と、風速へ換算した後の誤差を分けて示す。 | 未着手 |
+| OW-05 | モデル風シミュレーションで妥当性を確認できる範囲を明記する。実風に対する妥当性確認では、校正済み風速計を使い、基準風速計との位置の違いとサンプリング周期の違いを考慮する。 | 未着手 |
 
-## OW-01 result and use
+## OW-01の結果と使い方
 
-The adopted values are stored in `config/hbk_model_coefficients.json`. Select
-the motion axis and setup explicitly; for example:
+採用係数は `config/hbk_model_coefficients.json` に保存した。軸と構成を明示して選択する。たとえば、IN軸で球を取り付けた構成は次のように指定する。
 
 ```bash
 python 06_Analysis/simulation/src/hbk_model_coefficients.py --axis IN --configuration BALL
 ```
 
-The selector returns inertia, restoring stiffness, rod and sphere quadratic
-drag, viscous damping, and the one-integral Coulomb-friction coefficient. It
-rejects missing cases and nonzero viscous damping. `simulate_hbk_plant()` in
-the same module integrates the adopted nonlinear plant with RK4. It takes
-wind-generated force as input and includes quadratic drag and smoothed
-Coulomb friction. Supply the force lever explicitly; it is not inferred from
-the mechanical inertia registry. The registry includes the
-five spacer configurations (`SP00` to `SP04`) and `BALL`, for both `IN` and
-`OUT` axes.
+選択結果には、慣性モーメント、復元係数、ロッドと球の二乗抗力係数、粘性減衰係数、および一回積分法で求めたクーロン摩擦係数が含まれる。存在しないケースや、`b`がゼロでない係数はエラーとして扱う。同じモジュールの `simulate_hbk_plant()` は、風による力を入力として、二乗抗力と滑らかに近似したクーロン摩擦を含む非線形プラントをRK4で数値積分する。力の作用腕は機械係数の台帳から推定せず、呼び出し時に明示する。係数台帳には、IN・OUT両軸のスペーサー5構成（`SP00`から`SP04`）と球あり構成（`BALL`）を登録した。
 
-The I/K values for BALL use the accepted 180.61 mm effective ball-center arm
-and fixed 3.9 g sphere mass. The ball arm was selected from the free-decay
-period fit; it remains an effective model value until the physical center
-distance is independently measured. The sphere drag was identified with
-Method A and has an equivalent drag coefficient near 0.486. Rod drag is the
-theoretical value, corrected for exposed rod length in the BALL configuration.
-The friction coefficient is axis-specific. All records use `b=0`, consistent
-with the adopted identification model.
+球あり構成の `I` と `K` には、有効な球重心腕長180.61 mmと質量3.9 gを用いた。180.61 mmは自由振動の周期フィットで選んだ有効値であり、実機の寸法を独立に再計測して確定した値ではない。球の抗力係数は方式Aで同定し、等価抗力係数は約0.486である。ロッド抗力には理論値を用い、球あり構成では球に覆われていないロッド長に応じて補正した。`tau`は軸別の値を使い、すべての係数で`b=0`とした。これは採用した同定モデルに基づく。
 
-The older `config/real_wind_doe.json` and its result folder are historical
-Stage 2 outputs based on a prior single-configuration model. They are retained
-as provenance and are not silently relabeled as runs with adopted HBK
-coefficients. The new registry, selector, and plant integrator are the input
-for OW-02, which will connect these coefficients to matched wind/observer
-comparisons. OW-01 establishes the plant-side implementation; it does not
-claim updated observer comparison results.
+旧 `config/real_wind_doe.json` とその結果は、以前の単一構成モデルを使ったステージ2の記録として保持する。採用済みHBK係数で計算した結果として扱い直すことはしない。新しい係数台帳、選択関数、プラント積分関数をOW-02で使用し、風入力とオブザーバーを揃えた比較につなげる。OW-01で追加したのはプラント側の係数適用までであり、オブザーバーの比較結果を更新したものではない。
 
-## Coefficient provenance
+## 係数の出典
 
-| Quantity | Source and interpretation |
+| 係数 | 出典と扱い |
 |---|---|
-| `I`, `K` for SP00–SP04 | IHB-02 free-decay frequency identification by axis and setup. |
-| `I`, `K` for BALL | IHB-05 position-adjusted values for 180.61 mm effective arm, 3.9 g sphere. |
-| `c_rod` | IHB-04 theoretical cylinder-drag estimate. |
-| `c_ball` | IHB-05 Method A monotone-amplitude fit, common across axes. |
-| `tau` | IHB-03 monotone-smoothed amplitude, one-integral fit, one value per axis; reused by IHB-05. |
-| `b` | Fixed at zero by the adopted identification assumptions. |
+| `I`、`K`（SP00〜SP04） | IHB-02の自由振動周波数同定。軸と構成ごとの値を使用。 |
+| `I`、`K`（BALL） | IHB-05で位置補正した値。有効腕長180.61 mm、球質量3.9 g。 |
+| `c_rod` | IHB-04の円柱抗力理論値。 |
+| `c_ball` | IHB-05方式Aの単調振幅フィットで同定。IN・OUTで共通の値。 |
+| `tau` | IHB-03の単調平滑振幅を用いた一回積分法で同定した軸別の値。IHB-05でもこの値を固定して使用。 |
+| `b` | 採用した同定条件に従ってゼロに固定。 |
 
-## OW-01 checks
+## OW-01の確認内容
 
-The registry contains 12 unique cases. A command-line selection test is run
-for all 12; BALL returns adjusted inertia and stiffness, while spacer cases
-preserve IHB-02 values. The plant integrator is smoke-tested with a zero-force,
-nonzero-angle free response and produces a finite trajectory. The old Stage 2
-DOE is not rerun here; matched observer comparisons belong to OW-02.
+係数台帳には重複のない12ケースが登録されている。全ケースで選択処理を確認し、BALLでは位置補正後の慣性モーメントと復元係数が返り、スペーサー構成ではIHB-02の値が保持されることを確認した。プラント積分関数には、力をゼロ、初期角をゼロ以外とした自由応答を入力し、有限値の軌跡が得られることを確認した。旧ステージ2の実風DOEは再実行していない。採用係数を使ったオブザーバー比較はOW-02で行う。
