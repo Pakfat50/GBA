@@ -5,7 +5,7 @@
     python 06_Analysis/fitting_pipeline/iterative_hybrid/ihb05_ball_position_period_adjustment.py
 
 この処理は、質量をマニフェストの実測値 3.9 g に固定し、支点から球重心までの
-距離だけを現在値 174 mm の±3 mmで調整します。周期フィットはIHB-01と同じ
+距離だけを現在値 174 mm の±10 mmで調整します。周期フィットはIHB-01と同じ
 非線形振り子の式、代表振幅、25°以上・大振幅基準比±1%の採用条件を使います。
 位置候補は0.01 mm刻みで走査します。走査部分は楕円積分と四則演算だけで、ODEは
 最終候補の全波形確認にのみ使うため、反復数値最適化より計算負荷が小さくなります。
@@ -43,8 +43,8 @@ from iterative_hybrid.ihb05_ball_continuous_waveform_validation import (
 DATE = '20260921'
 BASE_MASS_KG = 0.0039
 BASE_ARM_M = 0.174
-ARM_MIN_M = 0.171
-ARM_MAX_M = 0.177
+ARM_MIN_M = 0.164
+ARM_MAX_M = 0.184
 ARM_STEP_M = 0.00001  # 0.01 mm
 PERIOD_RMSE_REFERENCE_PERCENT = 1.0  # Selection only, same as IHB-01.
 ODR_TESTPOINT = 25.0
@@ -201,6 +201,26 @@ def plot_period_fit(path: Path, accepted: pd.DataFrame, physics_nominal: dict,
     plt.close(fig)
 
 
+def plot_position_scan(path: Path, scan: pd.DataFrame, arm_nominal: float, arm_best: float):
+    """Show how period-fit RMSE changes with the single adjusted position."""
+    fig, ax = plt.subplots(figsize=(8.5, 4.8))
+    ax.plot(scan.arm_mm, scan.weighted_period_rmse_ms, color='#1769aa', lw=1.8)
+    best = scan.loc[scan.weighted_period_rmse_ms.idxmin()]
+    ax.scatter([best.arm_mm], [best.weighted_period_rmse_ms], color='#d62728', zorder=3,
+               label=f'Best: {arm_best * 1000:.2f} mm ({best.weighted_period_rmse_ms:.2f} ms)')
+    ax.axvline(arm_nominal * 1000, color='#666666', linestyle='--', lw=1.2,
+               label=f'Nominal: {arm_nominal * 1000:.0f} mm')
+    ax.set_xlabel('Ball center distance from pivot [mm]')
+    ax.set_ylabel('Waveform-balanced period RMSE [ms]')
+    ax.set_title('One-dimensional mounting-position scan')
+    ax.grid(alpha=.25)
+    ax.legend()
+    fig.tight_layout()
+    fig.savefig(path, format='svg', bbox_inches='tight')
+    fig.savefig(path.with_suffix('.png'), dpi=180, bbox_inches='tight')
+    plt.close(fig)
+
+
 def plot_waveforms(path: Path, records: list[dict]):
     """Plot all 12 measured and adjusted-ODE trajectories on one page."""
     matplotlib.rcParams['path.simplify'] = True
@@ -343,6 +363,7 @@ def main():
 
     plot_period_fit(out / 'ihb05_ball_position_period_fit.svg', accepted,
                     nominal_physics, adjusted_physics, BASE_ARM_M, arm_fit)
+    plot_position_scan(out / 'ihb05_ball_position_period_scan_fit.svg', scan, BASE_ARM_M, arm_fit)
     plot_waveforms(out / 'ihb05_position_adjusted_waveform_overlay.svg', records)
 
     nominal_i = nominal_physics
