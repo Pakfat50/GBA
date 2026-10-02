@@ -26,6 +26,105 @@ $$
 I\ddot{\theta}+K\sin\theta+c|\dot{\theta}|\dot{\theta}+\tau\tanh\left(\frac{\dot{\theta}}{\epsilon}\right)=\ell F\cos\theta,\qquad b=0
 $$
 
+## 推定方式の定義と計算式
+
+角度計測を `y_k=theta_k`、推定した風力を `F_k` とする。各推定器は、このレポート冒頭の非線形運動方程式を使い、既知の `I`、`K`、`c`、`tau` と作用腕 `ell` を与える。推定した符号付き力を最後に準定常抗力式で風速へ換算する。
+
+### 静的換算（オブザーバーではない比較基準）
+
+角速度と角加速度がほぼゼロで、摩擦・空力減衰の影響を無視できる静的釣り合いを仮定する。運動方程式の復元トルクと風トルクを釣り合わせると、角度から力を直接求められる。運動の履歴や角度変化の速さは使わない。
+
+$$
+\ell F\cos\theta=K\sin\theta\quad\Longrightarrow\quad\hat F_{\mathrm{static},k}=\frac{K}{\ell}\tan(y_k)
+$$
+
+### 因果3段LPF
+
+静的換算した力を、同じ一次ローパスフィルターに3回通す。OW-02では遮断周波数 `f_c=0.5 Hz`、標本間隔 `Delta t=0.01 s` とした。次式を各段 `j=1,2,3` に順に適用する。実装の差分式は各段で入力を1標本遅らせ、初期フィルター状態はゼロである。したがって3段の因果フィルターで遅れが生じる。風速に変換した後を平滑化するのではなく、力を平滑化してから風速へ換算する。
+
+$$
+q=\exp(-2\pi f_c\Delta t),\qquad z^{(j)}_k=qz^{(j)}_{k-1}+(1-q)u^{(j)}_{k-1},\quad u^{(1)}_k=\hat F_{\mathrm{static},k},\quad u^{(j)}_k=z^{(j-1)}_k
+$$
+
+### 3状態ESO（非線形Luenbergerオブザーバー）
+
+状態は `x=[theta, omega, F]^T` の3つである。`F` を、短い時間では一定とみなす未知外力（風力）として状態に加える。角度だけを計測し、角度予測と計測の差（イノベーション）を使って3状態すべてを補正する。3状態とは、角度・角速度・未知風力を推定状態として持つことを指す。
+
+$$
+\dot{x}=f_3(x)=\begin{bmatrix}\omega\\\frac{\ell F\cos\theta-K\sin\theta-c|\omega|\omega-\tau\tanh(\omega/\epsilon)}{I}\\0\end{bmatrix},\qquad y=Cx,\quad C=\begin{bmatrix}1&0&0\end{bmatrix}
+$$
+
+非線形状態方程式を1標本分RK4で予測し、静止位置の線形化モデルから離散時間の補正ゲイン `L_3` を設計する。実装上の更新は次式で、`Phi` はRK4による1標本予測である。予測で運動モデルを進め、角度残差を用いて次状態を補正する。
+
+$$
+\hat{x}_{k+1}=\Phi_{\Delta t}(\hat{x}_k)+L_3\bigl(y_k-C\hat{x}_k\bigr),\qquad \hat{F}_k=(\hat{x}_k)_3
+$$
+
+### 4状態ESO（風力変化率を加えた非線形Luenbergerオブザーバー）
+
+3状態との違いは、風力の変化率 `r_F` を4つ目の状態に加える点である。これにより、風力が短い時間に一定値でなく、おおむね一定の傾きで変わる状況を表せる。ただし、さらに変化率の変化（風力の二階微分）はゼロと仮定する。この追加状態は変化を追える可能性を増す一方、状態とゲインが増えるため、ノイズや調整値への感度も高くなる。
+
+$$
+x=\begin{bmatrix}\theta&\omega&F&r_F\end{bmatrix}^{\mathsf T},\qquad \dot{x}=f_4(x)=\begin{bmatrix}\omega\\\frac{\ell F\cos\theta-K\sin\theta-c|\omega|\omega-\tau\tanh(\omega/\epsilon)}{I}\\r_F\\0\end{bmatrix}
+$$
+
+更新式は3状態と同じ形だが、4次元の線形化モデルで4つの誤差極を配置して `L_4` を求める。
+
+$$
+\hat{x}_{k+1}=\Phi_{\Delta t}(\hat{x}_k)+L_4\bigl(y_k-C\hat{x}_k\bigr),\qquad C=\begin{bmatrix}1&0&0&0\end{bmatrix},\qquad \hat{F}_k=(\hat{x}_k)_3
+$$
+
+今回のESOはどちらも角度誤差極を反復配置するが、旧比較で使った帯域は3状態45 Hz、4状態20 Hzで異なる。したがってOW-02の3状態対4状態の誤差差は、状態数だけでなく帯域設定の差も含む。今回の比較から「4状態の方が本質的に劣る」とは結論できない。
+
+両ESOのゲインは、静止位置 `(theta, omega, F, r_F)=(0,0,0,0)` で線形化し、標本時間に対して離散化したモデルから求める。原点では二乗抵抗の微分はゼロ、平滑化クーロン摩擦の傾きは `tau/epsilon` となる。各方式で `n` 状態の全誤差極が同じ `z_p` になるようにゲインを置く。
+
+$$
+A_3=\begin{bmatrix}0&1&0\\-K/I&-\tau/(I\epsilon)&\ell/I\\0&0&0\end{bmatrix},\quad A_4=\begin{bmatrix}0&1&0&0\\-K/I&-\tau/(I\epsilon)&\ell/I&0\\0&0&0&1\\0&0&0&0\end{bmatrix},\quad A_{d,n}=\exp(A_n\Delta t)
+$$
+
+$$
+z_p=\exp(-2\pi f_p\Delta t),\qquad\operatorname{eig}(A_{d,n}-L_nC)=\{z_p,\ldots,z_p\}\ (n\text{重根})
+$$
+
+### RTS 3状態・4状態（EKF＋Rauch–Tung–Striebel平滑化）
+
+RTS候補も同じ3状態・4状態のモデルを使うが、誤差を角度残差で直接補正するESOではなく、拡張カルマンフィルター（EKF）で共分散に応じて補正する。3状態では風力 `F` にランダムウォーク雑音を、4状態では風力変化率 `r_F` にランダムウォーク雑音を与える。さらに記録の末尾から先頭へ平滑化し、未来の角度計測も使って過去の状態推定を修正するため、RTS出力はオフライン専用である。
+
+$$
+\hat{x}_{k|k-1}=f_{\Delta t}(\hat{x}_{k-1|k-1}),\quad P_{k|k-1}=A_kP_{k-1|k-1}A_k^{\mathsf T}+Q,\quad S_k=CP_{k|k-1}C^{\mathsf T}+R
+$$
+
+$$
+K_k=P_{k|k-1}C^{\mathsf T}S_k^{-1},\quad\hat{x}_{k|k}=\hat{x}_{k|k-1}+K_k(y_k-C\hat{x}_{k|k-1}),\quad P_{k|k}=(I-K_kC)P_{k|k-1}(I-K_kC)^{\mathsf T}+K_kRK_k^{\mathsf T}
+$$
+
+$$
+G_k=P_{k|k}A_{k+1}^{\mathsf T}(P_{k+1|k})^{-1},\qquad\hat{x}_{k|N}=\hat{x}_{k|k}+G_k(\hat{x}_{k+1|N}-\hat{x}_{k+1|k})
+$$
+
+ここで `A_k` は非線形運動モデルの局所線形化、`Q` は状態雑音、`R` は角度計測雑音の分散、`N` は記録末尾である。OW-02では計測ノイズを波形へ加えていないが、EKF内部の仮定として標準偏差0.020°を設定した。過去設定はRTS 3状態で `F` の雑音30 N/標本、RTS 4状態で `r_F` の雑音10 N/s/標本である。
+
+### 力から風速への換算と今回の設定値
+
+全方式で、推定した符号付き力から同じ二乗抗力式を逆算する。`rho` は空気密度、`Cd` は球のIHB-05方式A等価抗力係数、`A_p` は投影面積である。力に比例して風速が変わるのではなく、力の平方根で換算される。
+
+$$
+\hat v_k=\operatorname{sgn}(\hat F_k)\sqrt{\frac{2|\hat F_k|}{\rho C_d A_p}},\qquad F=\frac{1}{2}\rho C_dA_pv|v|
+$$
+
+| 方法 | 何を使うか | 今回の設定・注意 |
+|---|---|---|
+| 静的換算 | 角度と静的な復元力の釣り合い | 履歴・角速度・角加速度を無視 |
+| 3段LPF | 静的換算した力の過去値 | 0.5 Hzを3段直列。因果処理なので遅れる |
+| 3状態ESO | `theta, omega, F` | `F` を短時間一定と仮定。旧設定45 Hz |
+| 4状態ESO | `theta, omega, F, r_F` | `r_F` を追加し、短時間の力の傾きを表す。旧設定20 Hz |
+| RTS 3状態 | `theta, omega, F` | EKF＋後向き平滑化。30 N/標本の力雑音仮定。オフライン |
+| RTS 4状態 | `theta, omega, F, r_F` | EKF＋後向き平滑化。10 N/s/標本の力変化率雑音仮定。オフライン |
+
+$$
+\epsilon=0.5\ ^\circ/\mathrm{s}\text{相当の角速度をラジアン毎秒で表した値},\qquad \Delta t=0.01\ \mathrm{s},\qquad f_c=0.5\ \mathrm{Hz}
+$$
+
 各軸で風速RMSEが最小のオンライン方式は、次のとおり。
 
 - IN軸：ESO 3状態（RMSE 0.1030 m/s）。
