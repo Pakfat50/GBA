@@ -72,9 +72,15 @@ def _continuous_jacobian(state: np.ndarray, coefficients: dict,
     return jacobian
 
 
-def _observer_gain(coefficients: dict, force_lever_m: float, dt: float,
-                   pole_hz: float, order: int, epsilon_rad_s: float) -> np.ndarray:
-    """Place repeated discrete error poles at the linearized rest position."""
+def calculate_luenberger_gain(coefficients: dict, force_lever_m: float, dt: float,
+                              pole_hz: float, order: int,
+                              epsilon_rad_s: float) -> np.ndarray:
+    """Calculate the ESO correction gains for the selected pole bandwidth.
+
+    The matrix is linearized at rest, discretized at ``dt``, then assigned
+    ``3 + order`` identical discrete error poles.  The returned vector is
+    used in ``x_next = model_prediction + gain * angle_residual``.
+    """
     n = 3 + order
     origin = np.zeros(n)
     continuous = _continuous_jacobian(origin, coefficients, force_lever_m, epsilon_rad_s)
@@ -107,8 +113,10 @@ def nonlinear_luenberger_force(angle_rad: np.ndarray, coefficients: dict,
         raise ValueError("The adopted nonlinear estimator requires b=0")
 
     epsilon = math.radians(friction_epsilon_deg_s)
-    gain = _observer_gain(coefficients, force_lever_m, sample_period_s,
-                          repeated_pole_hz, disturbance_order, epsilon)
+    gain = calculate_luenberger_gain(
+        coefficients, force_lever_m, sample_period_s,
+        repeated_pole_hz, disturbance_order, epsilon,
+    )
     state = np.zeros(3 + disturbance_order)
     force = np.zeros(len(angle))
     for index, measurement in enumerate(angle):
