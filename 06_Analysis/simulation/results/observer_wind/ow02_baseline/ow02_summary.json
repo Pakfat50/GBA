@@ -1,0 +1,271 @@
+{
+  "task_id": "OW-02",
+  "coefficient_match": true,
+  "sensor_noise_added": false,
+  "plant_equation": "I*theta_ddot + K*sin(theta) + c*abs(omega)*omega + tau*tanh(omega/epsilon) = lever*F*cos(theta); b=0",
+  "plant_model": "RK4 nonlinear integration",
+  "estimator_model": "nonlinear Luenberger/ESO and extended Kalman RTS; adopted I, K, c and tau included",
+  "wind_metadata": {
+    "target_turbulence_intensity": 0.2,
+    "realized_turbulence_intensity": 0.2,
+    "fluctuation_scale_for_bounds": 1.0,
+    "minimum_speed_m_s": 0.5895466971663557,
+    "maximum_speed_m_s": 3.4468988817433166
+  },
+  "previous_wind_case_safety_check": {
+    "input": {
+      "mean_wind_speed_m_s": 3.75,
+      "maximum_wind_speed_m_s": 6.0,
+      "target_turbulence_intensity": 0.2,
+      "seed": 20260915
+    },
+    "realized_wind": {
+      "target_turbulence_intensity": 0.2,
+      "realized_turbulence_intensity": 0.16567305782262062,
+      "fluctuation_scale_for_bounds": 0.828365289113103,
+      "minimum_speed_m_s": 1.4156354522379138,
+      "maximum_speed_m_s": 6.0
+    },
+    "maximum_abs_angle_deg": {
+      "IN": 59.42845873690825,
+      "OUT": 54.63137346143821
+    }
+  },
+  "evaluation_window_s": [
+    30.0,
+    150.0
+  ],
+  "maximum_abs_angle_deg": {
+    "IN": 18.940293927576192,
+    "OUT": 18.160848930575526
+  },
+  "mechanical_angle_limit_deg": 45.0,
+  "previous_model_tunings_reused_without_retuning": {
+    "eso3_pole_hz": 45.0,
+    "eso4_pole_hz": 20.0,
+    "rts3_force_random_walk_n_per_sample": 30.0,
+    "rts4_force_rate_random_walk_n_per_s_per_sample": 10.0,
+    "causal_lpf_cutoff_hz": 0.5
+  },
+  "force_metrics": [
+    {
+      "axis": "IN",
+      "method": "静的換算",
+      "rmse": 0.0034748540341991885,
+      "bias": 7.72940950484046e-06,
+      "mae": 0.002675548232137823,
+      "p95_absolute_error": 0.007222378817614758,
+      "maximum_absolute_error": 0.012922467810194918
+    },
+    {
+      "axis": "IN",
+      "method": "因果LPF",
+      "rmse": 0.0026997126217954584,
+      "bias": 5.122128871843113e-05,
+      "mae": 0.0021332163493797004,
+      "p95_absolute_error": 0.005251284815111473,
+      "maximum_absolute_error": 0.009649211732504645
+    },
+    {
+      "axis": "IN",
+      "method": "ESO 3状態",
+      "rmse": 0.0010007850199737524,
+      "bias": 4.861186872786808e-07,
+      "mae": 0.0007807943927703666,
+      "p95_absolute_error": 0.00199821884321515,
+      "maximum_absolute_error": 0.0049337872849460115
+    },
+    {
+      "axis": "IN",
+      "method": "ESO 4状態",
+      "rmse": 0.001491080844241426,
+      "bias": -5.357699798188887e-07,
+      "mae": 0.0011668110663974561,
+      "p95_absolute_error": 0.0029683157348780534,
+      "maximum_absolute_error": 0.0076770281699373635
+    },
+    {
+      "axis": "IN",
+      "method": "RTS 3状態（オフライン）",
+      "rmse": 5.5649542759462485e-05,
+      "bias": 9.505438029359512e-09,
+      "mae": 4.1417674540206576e-05,
+      "p95_absolute_error": 0.00011387856020180116,
+      "maximum_absolute_error": 0.00036072132121044327
+    },
+    {
+      "axis": "IN",
+      "method": "RTS 4状態（オフライン）",
+      "rmse": 0.00032879143669946917,
+      "bias": 8.144496582942228e-08,
+      "mae": 0.0002560848377843437,
+      "p95_absolute_error": 0.0006514259291741341,
+      "maximum_absolute_error": 0.0017443091308983923
+    },
+    {
+      "axis": "OUT",
+      "method": "静的換算",
+      "rmse": 0.002117751703525024,
+      "bias": -2.594523564705981e-05,
+      "mae": 0.001652356549924865,
+      "p95_absolute_error": 0.004237961755193363,
+      "maximum_absolute_error": 0.010006933796008005
+    },
+    {
+      "axis": "OUT",
+      "method": "因果LPF",
+      "rmse": 0.0027608662119815576,
+      "bias": 1.7826223129768685e-05,
+      "mae": 0.002183157219910003,
+      "p95_absolute_error": 0.00530178503639817,
+      "maximum_absolute_error": 0.009780485535006385
+    },
+    {
+      "axis": "OUT",
+      "method": "ESO 3状態",
+      "rmse": 0.0012456777682514398,
+      "bias": -2.813024345654506e-06,
+      "mae": 0.0009659380578696313,
+      "p95_absolute_error": 0.0025109739328021095,
+      "maximum_absolute_error": 0.005964631486250389
+    },
+    {
+      "axis": "OUT",
+      "method": "ESO 4状態",
+      "rmse": 6.360633243593648,
+      "bias": 0.32196656278376895,
+      "mae": 5.745957918269811,
+      "p95_absolute_error": 9.321691002962941,
+      "maximum_absolute_error": 9.653046802773368
+    },
+    {
+      "axis": "OUT",
+      "method": "RTS 3状態（オフライン）",
+      "rmse": 7.871756452672632e-05,
+      "bias": 8.217297438066712e-08,
+      "mae": 5.4984154873325035e-05,
+      "p95_absolute_error": 0.0001749544138721134,
+      "maximum_absolute_error": 0.000500502478546121
+    },
+    {
+      "axis": "OUT",
+      "method": "RTS 4状態（オフライン）",
+      "rmse": 0.0003283484801891118,
+      "bias": -5.1785826018382e-08,
+      "mae": 0.0002557537992251723,
+      "p95_absolute_error": 0.0006473144365186159,
+      "maximum_absolute_error": 0.0017451475072662488
+    }
+  ],
+  "wind_speed_metrics": [
+    {
+      "axis": "IN",
+      "method": "静的換算",
+      "rmse": 0.4716296459666385,
+      "bias": -0.049971886200491464,
+      "mae": 0.31473939042452986,
+      "p95_absolute_error": 0.8094391744987288,
+      "maximum_absolute_error": 3.040699744848928
+    },
+    {
+      "axis": "IN",
+      "method": "因果LPF",
+      "rmse": 0.27989021818377025,
+      "bias": 0.015301004609641797,
+      "mae": 0.22373601832403614,
+      "p95_absolute_error": 0.5447139442329905,
+      "maximum_absolute_error": 1.1964034709651568
+    },
+    {
+      "axis": "IN",
+      "method": "ESO 3状態",
+      "rmse": 0.10298004053430332,
+      "bias": -0.0003747816533746076,
+      "mae": 0.0821541494113077,
+      "p95_absolute_error": 0.20439449676088683,
+      "maximum_absolute_error": 0.44806187965328004
+    },
+    {
+      "axis": "IN",
+      "method": "ESO 4状態",
+      "rmse": 0.15567601670822723,
+      "bias": -0.005235206808874686,
+      "mae": 0.12366305562738551,
+      "p95_absolute_error": 0.30512403460847826,
+      "maximum_absolute_error": 0.6720474945592363
+    },
+    {
+      "axis": "IN",
+      "method": "RTS 3状態（オフライン）",
+      "rmse": 0.00574483190836151,
+      "bias": -1.0013577786593362e-05,
+      "mae": 0.004368190424328317,
+      "p95_absolute_error": 0.011414777749313654,
+      "maximum_absolute_error": 0.03197478440889556
+    },
+    {
+      "axis": "IN",
+      "method": "RTS 4状態（オフライン）",
+      "rmse": 0.03377375541429347,
+      "bias": 0.00011609116087448716,
+      "mae": 0.026925918032309547,
+      "p95_absolute_error": 0.0660511767359977,
+      "maximum_absolute_error": 0.13034836735044952
+    },
+    {
+      "axis": "OUT",
+      "method": "静的換算",
+      "rmse": 0.21804119101377017,
+      "bias": -0.007049720870604172,
+      "mae": 0.17421933261333844,
+      "p95_absolute_error": 0.4223036453797153,
+      "maximum_absolute_error": 0.8590150453901237
+    },
+    {
+      "axis": "OUT",
+      "method": "因果LPF",
+      "rmse": 0.2879771734925552,
+      "bias": 0.012215490067170633,
+      "mae": 0.2297785227974593,
+      "p95_absolute_error": 0.5606399673879061,
+      "maximum_absolute_error": 1.3435433249951156
+    },
+    {
+      "axis": "OUT",
+      "method": "ESO 3状態",
+      "rmse": 0.12830583652021227,
+      "bias": -0.0026051703527887305,
+      "mae": 0.10165301709256783,
+      "p95_absolute_error": 0.25358107288840825,
+      "maximum_absolute_error": 0.5849236466437864
+    },
+    {
+      "axis": "OUT",
+      "method": "ESO 4状態",
+      "rmse": 49.54970874554599,
+      "bias": -0.49697985319515053,
+      "mae": 47.46132663049806,
+      "p95_absolute_error": 62.04625772586764,
+      "maximum_absolute_error": 64.26456738119239
+    },
+    {
+      "axis": "OUT",
+      "method": "RTS 3状態（オフライン）",
+      "rmse": 0.007969482718199458,
+      "bias": -1.3460215897167397e-05,
+      "mae": 0.005714383929614544,
+      "p95_absolute_error": 0.016709622017446968,
+      "maximum_absolute_error": 0.04530590578078675
+    },
+    {
+      "axis": "OUT",
+      "method": "RTS 4状態（オフライン）",
+      "rmse": 0.033715763099443054,
+      "bias": 0.0001043310343778438,
+      "mae": 0.026881484509905157,
+      "p95_absolute_error": 0.065503291867401,
+      "maximum_absolute_error": 0.13446979380263202
+    }
+  ],
+  "interpretation": "Regression-style rerun with prior observer tuning values held fixed. Use OW-03 for separate-input retuning and broader wind scenarios."
+}

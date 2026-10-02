@@ -1,0 +1,34 @@
+{
+  "description": "OW-02 standard-input rerun using the adopted HBK nonlinear mechanical model.",
+  "axis_configuration": "BALL",
+  "sample_rate_hz": 100.0,
+  "duration_s": 180.0,
+  "evaluation_start_s": 30.0,
+  "evaluation_end_s": 150.0,
+  "wind_seed": 20260915,
+  "previous_wind_case_probe": {
+    "mean_wind_speed_m_s": 3.75,
+    "maximum_wind_speed_m_s": 6.0,
+    "target_turbulence_intensity": 0.20,
+    "seed": 20260915
+  },
+  "mean_wind_speed_m_s": 2.0,
+  "maximum_wind_speed_m_s": 3.5,
+  "target_turbulence_intensity": 0.20,
+  "kaimal_integral_scale_m": 11.34,
+  "air_density_kg_m3": 1.225,
+  "projected_area_m2": 0.007853981633974483,
+  "drag_coefficient": 0.4860496586340641,
+  "force_lever_m": 0.18061,
+  "mechanical_angle_limit_deg": 45.0,
+  "friction_epsilon_deg_s": 0.5,
+  "assumed_angle_noise_deg": 0.02,
+  "observer_settings_from_previous_wind_study": {
+    "eso3_pole_hz": 45.0,
+    "eso4_pole_hz": 20.0,
+    "rts3_force_random_walk_n_per_sample": 30.0,
+    "rts4_force_rate_random_walk_n_per_s_per_sample": 10.0,
+    "causal_lpf_cutoff_hz": 0.5
+  },
+  "interpretation": "Previous observer tunings are held fixed to isolate the effect of changing the mechanical model. They were selected under the previous model and are not claimed as final tunings for the adopted model. OW-03 will tune on separate inputs."
+}
