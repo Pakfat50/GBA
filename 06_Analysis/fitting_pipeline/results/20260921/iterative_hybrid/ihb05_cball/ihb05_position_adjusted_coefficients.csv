@@ -1,0 +1,3 @@
+﻿axis,ball_mass_g_fixed,nominal_arm_mm,adjusted_arm_mm,inertia_before_kg_m2,inertia_after_kg_m2,inertia_change_percent,restoring_before_n_m,restoring_after_n_m,restoring_change_percent
+IN,3.9,174,177,0.000359070449532,0.000363177149532,1.1437031383,0.0152161325943,0.0151013555943,-0.754311250173
+OUT,3.9,174,177,0.000361796085951,0.000365902785951,1.13508690654,0.0144739701179,0.0143591931179,-0.792989062883

@@ -1,0 +1,173 @@
+{
+  "method": "IHB-01 nonlinear period-amplitude fit on approved BALL cycles; one-dimensional bounded grid scan",
+  "mass_fixed_kg": 0.0039,
+  "arm_nominal_m": 0.174,
+  "arm_bounds_m": [
+    0.171,
+    0.177
+  ],
+  "arm_scan_step_m": 1e-05,
+  "arm_fitted_m": 0.177,
+  "c_ball_refitted_n_m_s2_per_rad2": 1.365239111463903e-05,
+  "equivalent_Cd_at_adjusted_arm": 0.5117913577477913,
+  "tau_by_axis_n_m": {
+    "IN": 7.945731419193821e-05,
+    "OUT": 0.0001769496760658
+  },
+  "period_selection": "representative amplitude >=25 deg; ratio within 1% of per-waveform high-amplitude reference",
+  "fit_waveforms": 12,
+  "fit_cycles": 147,
+  "energy_fit_metrics": [
+    {
+      "scope": "ALL",
+      "intervals": 379,
+      "waveforms": 12,
+      "pearson_r": 0.9964099525661089,
+      "rmse_mj": 0.021042541689777868,
+      "r_squared": 0.991738561040646
+    },
+    {
+      "scope": "IN",
+      "intervals": 227,
+      "waveforms": 6,
+      "pearson_r": 0.9996244590705974,
+      "rmse_mj": 0.01366995423179833,
+      "r_squared": 0.9953042065947467
+    },
+    {
+      "scope": "OUT",
+      "intervals": 152,
+      "waveforms": 6,
+      "pearson_r": 0.9986283028944118,
+      "rmse_mj": 0.026433113188435036,
+      "r_squared": 0.9893650747053989
+    }
+  ],
+  "waveform_summary": [
+    {
+      "axis": "IN",
+      "waveforms": 6,
+      "sample_rmse_mean_deg": 6.671655367882093,
+      "sample_mae_mean_deg": 5.623307646072756,
+      "zero_crossing_shift_rmse_mean_ms": 103.3908163833715,
+      "zero_crossing_shift_bias_mean_ms": -87.73738573638595,
+      "matched_zero_crossings": 227
+    },
+    {
+      "axis": "OUT",
+      "waveforms": 6,
+      "sample_rmse_mean_deg": 3.969774882746565,
+      "sample_mae_mean_deg": 3.3602836646959147,
+      "zero_crossing_shift_rmse_mean_ms": 60.77101394638936,
+      "zero_crossing_shift_bias_mean_ms": -51.17352528076797,
+      "matched_zero_crossings": 150
+    },
+    {
+      "axis": "ALL",
+      "waveforms": 12,
+      "sample_rmse_mean_deg": 5.320715125314329,
+      "sample_mae_mean_deg": 4.491795655384335,
+      "zero_crossing_shift_rmse_mean_ms": 82.08091516488044,
+      "zero_crossing_shift_bias_mean_ms": -69.45545550857696,
+      "matched_zero_crossings": 377
+    }
+  ],
+  "amplitude_fit_diagnostics": [
+    {
+      "segment_id": "IN_BALL_P_R01",
+      "peaks": 41,
+      "amplitude_pearson_r": 0.9992995841506194,
+      "amplitude_rmse_deg": 0.5587491181562348,
+      "amplitude_bias_deg": 1.327935051893114e-14,
+      "amplitude_fit_review": "within_margin"
+    },
+    {
+      "segment_id": "IN_BALL_N_R01",
+      "peaks": 41,
+      "amplitude_pearson_r": 0.9995023851440054,
+      "amplitude_rmse_deg": 0.46471349837051323,
+      "amplitude_bias_deg": 5.6106880659105474e-15,
+      "amplitude_fit_review": "reference_range"
+    },
+    {
+      "segment_id": "IN_BALL_P_R02",
+      "peaks": 41,
+      "amplitude_pearson_r": 0.999445958361752,
+      "amplitude_rmse_deg": 0.5034531547212288,
+      "amplitude_bias_deg": 8.870952752858568e-15,
+      "amplitude_fit_review": "within_margin"
+    },
+    {
+      "segment_id": "IN_BALL_N_R02",
+      "peaks": 42,
+      "amplitude_pearson_r": 0.9994295226053798,
+      "amplitude_rmse_deg": 0.5072164670684497,
+      "amplitude_bias_deg": 5.122886242198937e-15,
+      "amplitude_fit_review": "within_margin"
+    },
+    {
+      "segment_id": "IN_BALL_P_R03",
+      "peaks": 43,
+      "amplitude_pearson_r": 0.9994032347190382,
+      "amplitude_rmse_deg": 0.5222240552979807,
+      "amplitude_bias_deg": 7.301652822418471e-15,
+      "amplitude_fit_review": "within_margin"
+    },
+    {
+      "segment_id": "IN_BALL_N_R03",
+      "peaks": 42,
+      "amplitude_pearson_r": 0.9995048251074267,
+      "amplitude_rmse_deg": 0.46372704251986285,
+      "amplitude_bias_deg": 3.517820955169424e-14,
+      "amplitude_fit_review": "reference_range"
+    },
+    {
+      "segment_id": "OUT_BALL_N_R01",
+      "peaks": 30,
+      "amplitude_pearson_r": 0.9997901604668792,
+      "amplitude_rmse_deg": 0.30336567102922973,
+      "amplitude_bias_deg": -1.27675647831893e-15,
+      "amplitude_fit_review": "reference_range"
+    },
+    {
+      "segment_id": "OUT_BALL_P_R02",
+      "peaks": 31,
+      "amplitude_pearson_r": 0.999817268623293,
+      "amplitude_rmse_deg": 0.29769120398503823,
+      "amplitude_bias_deg": 7.578167484215585e-15,
+      "amplitude_fit_review": "reference_range"
+    },
+    {
+      "segment_id": "OUT_BALL_N_R02",
+      "peaks": 31,
+      "amplitude_pearson_r": 0.9996599532892118,
+      "amplitude_rmse_deg": 0.3834773806538468,
+      "amplitude_bias_deg": -1.192594410323152e-14,
+      "amplitude_fit_review": "reference_range"
+    },
+    {
+      "segment_id": "OUT_BALL_P_R03",
+      "peaks": 32,
+      "amplitude_pearson_r": 0.9997467949308061,
+      "amplitude_rmse_deg": 0.35222028949114925,
+      "amplitude_bias_deg": -3.337034606976097e-10,
+      "amplitude_fit_review": "reference_range"
+    },
+    {
+      "segment_id": "OUT_BALL_N_R03",
+      "peaks": 32,
+      "amplitude_pearson_r": 0.9998121533991177,
+      "amplitude_rmse_deg": 0.28338010798888263,
+      "amplitude_bias_deg": 2.8796409701214998e-15,
+      "amplitude_fit_review": "reference_range"
+    },
+    {
+      "segment_id": "OUT_BALL_P_R04",
+      "peaks": 32,
+      "amplitude_pearson_r": 0.999909233973138,
+      "amplitude_rmse_deg": 0.21142801130861413,
+      "amplitude_bias_deg": 1.309369279667294e-14,
+      "amplitude_fit_review": "reference_range"
+    }
+  ]
+}
