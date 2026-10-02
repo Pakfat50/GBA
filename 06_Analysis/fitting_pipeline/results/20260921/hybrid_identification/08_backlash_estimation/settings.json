@@ -1,0 +1,54 @@
+{
+  "date": "20260921",
+  "waveform_count": 46,
+  "minimum_peak_amplitude_deg": 4.0,
+  "total_width_scan_deg": [
+    0.0,
+    2.0
+  ],
+  "total_width_step_deg": 0.02,
+  "integration_step_s": 0.01,
+  "measurement_rate_hz": 100.0,
+  "bootstrap_replicates": 1000,
+  "random_seed": 54108,
+  "waveform_weighting": "equal configuration, then equal waveform within configuration",
+  "initial_state": "measured first eligible turning angle, zero speed; play state at direction-specific boundary",
+  "fitted_parameters": [
+    "one shared play half-width per axis"
+  ],
+  "fixed_parameters": {
+    "I_K_source": "IHB-02 per configuration; BALL uses the accepted ±10 mm IHB-05 update",
+    "tau_source": "IHB-03 monotone-amplitude one-integral values used by IHB-05",
+    "b_rad_s": 0.0,
+    "c_rod": 2.5486754169187504e-06,
+    "c_rod_ball": 2.5664419286471763e-07,
+    "c_ball": 1.3775329466423476e-05,
+    "tau_by_axis": {
+      "IN": 7.945731419193821e-05,
+      "OUT": 0.0001769496760658
+    }
+  },
+  "results": [
+    {
+      "axis": "IN",
+      "best_total_width_deg": 0.0,
+      "best_half_width_deg": 0.0,
+      "bootstrap_95_lower_deg": 0.0,
+      "bootstrap_95_upper_deg": 0.0,
+      "no_backlash_rmse_deg": 9.459014709380353,
+      "best_rmse_deg": 9.459014709380353,
+      "relative_rmse_change_percent": 0.0
+    },
+    {
+      "axis": "OUT",
+      "best_total_width_deg": 0.0,
+      "best_half_width_deg": 0.0,
+      "bootstrap_95_lower_deg": 0.0,
+      "bootstrap_95_upper_deg": 0.0,
+      "no_backlash_rmse_deg": 5.971214750145027,
+      "best_rmse_deg": 5.971214750145027,
+      "relative_rmse_change_percent": 0.0
+    }
+  ],
+  "scope_limit": "conditional model-based estimate; does not include fixed coefficient uncertainty"
+}
