@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "status": "adopted_for_next_simulation_provisional_physical_validation",
+  "created_from": "20260921 IHB-02 / IHB-03 / IHB-04 / IHB-05 results",
+  "ball_position_note": "180.61 mm is a period-fit effective center arm, not an independently remeasured dimension.",
+  "ball_mass_note": "3.9 g fixed during position and drag identification.",
+  "records": [
+    {
+      "axis": "IN",
+      "configuration": "SP00",
+      "inertia_kg_m2": 0.0002446541342093358,
+      "restoring_n_m_per_rad": 0.022358476696625686,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 7.945731419193821e-05,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "IN",
+      "configuration": "SP01",
+      "inertia_kg_m2": 0.0003025568391801691,
+      "restoring_n_m_per_rad": 0.019794436996625687,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 7.945731419193821e-05,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "IN",
+      "configuration": "SP02",
+      "inertia_kg_m2": 0.00035787534415100247,
+      "restoring_n_m_per_rad": 0.017288276296625688,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 7.945731419193821e-05,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "IN",
+      "configuration": "SP03",
+      "inertia_kg_m2": 0.00041066864912183576,
+      "restoring_n_m_per_rad": 0.014839994596625685,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 7.945731419193821e-05,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "IN",
+      "configuration": "SP04",
+      "inertia_kg_m2": 0.00046099575409266913,
+      "restoring_n_m_per_rad": 0.012449591896625686,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 7.945731419193821e-05,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "IN",
+      "configuration": "BALL",
+      "inertia_kg_m2": 0.000368211940722,
+      "restoring_n_m_per_rad": 0.0149632406043,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5664419286471763e-07,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 1.3775329466423476e-05,
+      "total_quadratic_drag_n_m_s2_per_rad2": 1.4031973659288193e-05,
+      "tau_n_m": 7.945731419193821e-05,
+      "ball_center_arm_m": 0.18061,
+      "ball_mass_kg": 0.0039,
+      "sources": {
+        "I_and_K": "IHB-05 position-adjusted coefficient table; arm=180.61 mm, mass=3.9 g",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "OUT",
+      "configuration": "SP00",
+      "inertia_kg_m2": 0.0002481915850729643,
+      "restoring_n_m_per_rad": 0.021636830579373822,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 0.0001769496760658,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "OUT",
+      "configuration": "SP01",
+      "inertia_kg_m2": 0.0003060942900437976,
+      "restoring_n_m_per_rad": 0.019072790879373823,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 0.0001769496760658,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "OUT",
+      "configuration": "SP02",
+      "inertia_kg_m2": 0.000361412795014631,
+      "restoring_n_m_per_rad": 0.01656663017937382,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 0.0001769496760658,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "OUT",
+      "configuration": "SP03",
+      "inertia_kg_m2": 0.00041420609998546427,
+      "restoring_n_m_per_rad": 0.014118348479373821,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 0.0001769496760658,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "OUT",
+      "configuration": "SP04",
+      "inertia_kg_m2": 0.00046453320495629764,
+      "restoring_n_m_per_rad": 0.011727945779373822,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 0.0,
+      "total_quadratic_drag_n_m_s2_per_rad2": 2.5486754169187504e-06,
+      "tau_n_m": 0.0001769496760658,
+      "ball_center_arm_m": null,
+      "ball_mass_kg": null,
+      "sources": {
+        "I_and_K": "IHB-02 identified_inertia_restoring.csv",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    {
+      "axis": "OUT",
+      "configuration": "BALL",
+      "inertia_kg_m2": 0.000370937577141,
+      "restoring_n_m_per_rad": 0.0142210781279,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5664419286471763e-07,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 1.3775329466423476e-05,
+      "total_quadratic_drag_n_m_s2_per_rad2": 1.4031973659288193e-05,
+      "tau_n_m": 0.0001769496760658,
+      "ball_center_arm_m": 0.18061,
+      "ball_mass_kg": 0.0039,
+      "sources": {
+        "I_and_K": "IHB-05 position-adjusted coefficient table; arm=180.61 mm, mass=3.9 g",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    }
+  ]
+}
