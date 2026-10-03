@@ -121,7 +121,7 @@ OATでは、I/KずれがESO 3状態に対しても明確に誤差を増やし、
 
 ### 独立Kaimal乱流 平均2 m/s TI20%
 
-最大RMSE条件は **OUT軸・ESO 3状態・joint_mass_high_arm_high_tau-high_c-high** で、RMSEは **0.17477 m/s**。評価区間内の最大絶対誤差は **0.85555 m/s**、発生時刻は **100.34 s**。図は **98.34–102.34 s** を表示する。
+最大RMSE条件は **OUT軸・ESO 3状態・joint_mass_high_arm_high_tau-high_c-high** で、RMSEは **0.17477 m/s**。評価区間内の最大絶対誤差は **0.85555 m/s**、発生時刻は **100.34 s**。この時刻の符号付き誤差（推定値−真値）は **−0.85555 m/s**（推定値は真値より0.85555 m/s低い）です。図は **98.34–102.34 s** を表示する。
 
 ![独立Kaimal乱流 平均2 m/s TI20%で最大誤差となった条件の時系列拡大](ow04_worst_kaimal_timeseries.png)
 

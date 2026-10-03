@@ -505,6 +505,7 @@ def save_worst_case_waveforms(output: Path, config: dict, plants: dict,
             "case": case, "axis": axis, "method": method,
             "scenario": worst["scenario"], "rmse_m_s": worst["rmse_m_s"],
             "max_abs_error_m_s": worst["max_abs_error_m_s"],
+            "error_at_peak_m_s": float(error[peak_index]),
             "peak_error_time_s": peak_time, "plot_window_start_s": max(0.0, peak_time-window_s),
             "plot_window_end_s": peak_time+window_s,
         })
@@ -602,7 +603,9 @@ def write_report(path: Path, config: dict, bounds: dict, bound_rows: list[dict],
         stem = "kaimal" if row["case"] == "独立Kaimal乱流 平均2 m/s TI20%" else "gust"
         lines += [
             f"### {row['case']}", "",
-            f"最大RMSE条件は **{row['axis']}軸・{row['method']}・{row['scenario']}** で、RMSEは **{row['rmse_m_s']:.5f} m/s**。評価区間内の最大絶対誤差は **{row['max_abs_error_m_s']:.5f} m/s**、発生時刻は **{row['peak_error_time_s']:.2f} s**。図は **{row['plot_window_start_s']:.2f}–{row['plot_window_end_s']:.2f} s** を表示する。", "",
+            f"最大RMSE条件は **{row['axis']}軸・{row['method']}・{row['scenario']}** で、RMSEは **{row['rmse_m_s']:.5f} m/s**。評価区間内の最大絶対誤差は **{row['max_abs_error_m_s']:.5f} m/s**、発生時刻は **{row['peak_error_time_s']:.2f} s**。"
+            + (f"この時刻の符号付き誤差（推定値−真値）は **{row['error_at_peak_m_s']:+.5f} m/s** で、真値との差の向きも下段に示す。" if row["case"] == "独立Kaimal乱流 平均2 m/s TI20%" else "")
+            + f"図は **{row['plot_window_start_s']:.2f}–{row['plot_window_end_s']:.2f} s** を表示する。", "",
             f"![{row['case']}で最大誤差となった条件の時系列拡大](ow04_worst_{stem}_timeseries.png)", "",
         ]
     lines += [
