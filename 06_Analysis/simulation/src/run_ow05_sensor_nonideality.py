@@ -14,6 +14,7 @@ from hbk_nonlinear_estimators import nonlinear_ekf_rts_force, nonlinear_luenberg
 from run_ow03_hbk_observer_tuning import applied_force, force_to_speed, make_wind, metrics
 from run_ow04_hbk_coefficient_sensitivity import best_parameter_values
 from sensor_model import AngleSensorParameters, apply_angle_sensor_model
+from run_ow03_hbk_observer_tuning import static_force
 
 SIM=Path(__file__).resolve().parents[1]
 OUT=SIM/'results/observer_wind/ow05_sensor_nonideality'
@@ -54,23 +55,42 @@ def run():
             tuning_rows.append({'axis':axis,'method':method,'parameter':p,'training_rmse_m_s':met['rmse_m_s']})
           except (ValueError,FloatingPointError,np.linalg.LinAlgError): pass
         tunings[(axis,method)]=best[1]
-    rows=[]; wave={}
+    rows=[]; noise_rows=[]; wave={}
     modes={'ideal':None,'nominal':pars,'noise_2x':AngleSensorParameters(sample_rate_hz=rate,resolution_bits=14,white_noise_std_deg=.03,coloured_noise_std_deg=.02,coloured_noise_time_constant_s=pars.coloured_noise_time_constant_s,fixed_delay_s=.01)}
     for cname,axis in plants:
       plant=plants[(cname,axis)]
       for sens,sp in modes.items():
-        angle=plant['ang'] if sp is None else apply_angle_sensor_model(plant['t'],plant['ang'],sp,20261100+len(rows))[0]
+        sensor_seed=20261100+len(rows)
+        angle=plant['ang'] if sp is None else apply_angle_sensor_model(plant['t'],plant['ang'],sp,sensor_seed)[0]
+        if sp is not None:
+          # Match all deterministic sensor effects and remove only random angle noise.
+          angle0_params=AngleSensorParameters(sample_rate_hz=sp.sample_rate_hz,resolution_bits=sp.resolution_bits,full_scale_deg=sp.full_scale_deg,white_noise_std_deg=0.0,coloured_noise_std_deg=0.0,coloured_noise_time_constant_s=sp.coloured_noise_time_constant_s,fixed_delay_s=sp.fixed_delay_s,sampling_jitter_std_s=sp.sampling_jitter_std_s,gain_error_fraction=sp.gain_error_fraction,offset_deg=sp.offset_deg)
+          angle0=apply_angle_sensor_model(plant['t'],plant['ang'],angle0_params,sensor_seed)[0]
+          dtheta=angle-angle0
         for method in ['ESO 3状態','RTS 3状態（オフライン）']:
           p=tunings[(axis,method)]; co=select_coefficients(axis,'BALL')
           try:
             if method.startswith('ESO'): force=nonlinear_luenberger_force(angle,co,dt,cfg['force_lever_m'],p,0,cfg['friction_epsilon_deg_s'])
             else: _,force=nonlinear_ekf_rts_force(angle,co,dt,cfg['force_lever_m'],np.deg2rad(.02),p,0,cfg['friction_epsilon_deg_s'])
             est=force_to_speed(cfg,force); met=metrics(plant['v'],est,plant['mask'])
+            if sp is not None:
+              if method.startswith('ESO'): force0=nonlinear_luenberger_force(angle0,co,dt,cfg['force_lever_m'],p,0,cfg['friction_epsilon_deg_s'])
+              else: _,force0=nonlinear_ekf_rts_force(angle0,co,dt,cfg['force_lever_m'],np.deg2rad(.02),p,0,cfg['friction_epsilon_deg_s'])
+              est0=force_to_speed(cfg,force0)
+              h=1e-5
+              vplus=force_to_speed(cfg,static_force(angle0+h,co,cfg['force_lever_m']))
+              vminus=force_to_speed(cfg,static_force(angle0-h,co,cfg['force_lever_m']))
+              slope=(vplus-vminus)/(2*h); linear_ref=slope*dtheta; observer_delta=est-est0; m=plant['mask']
+              rmse_ref=float(np.sqrt(np.mean(linear_ref[m]**2))); rmse_out=float(np.sqrt(np.mean(observer_delta[m]**2)))
+              max_ref=float(np.max(np.abs(linear_ref[m]))); max_out=float(np.max(np.abs(observer_delta[m])))
+              p95_ref=float(np.quantile(np.abs(linear_ref[m]),0.95)); p95_out=float(np.quantile(np.abs(observer_delta[m]),0.95))
+              linear_valid=float(np.mean(np.abs(dtheta[m])<=0.1*np.abs(angle0[m])))
+              noise_rows.append({'case':cname,'axis':axis,'sensor_case':sens,'method':method,'angle_noise_rmse_deg':float(np.rad2deg(np.sqrt(np.mean(dtheta[m]**2)))),'angle_noise_max_abs_deg':float(np.max(np.abs(np.rad2deg(dtheta[m])))),'local_linear_valid_fraction':linear_valid,'linear_reference_rmse_m_s':rmse_ref,'linear_reference_max_abs_m_s':max_ref,'observer_noise_rmse_m_s':rmse_out,'observer_noise_max_abs_m_s':max_out,'linear_reference_p95_abs_m_s':p95_ref,'observer_noise_p95_abs_m_s':p95_out,'p95_amplification_ratio':p95_out/p95_ref if p95_ref>0 else None,'rmse_amplification_ratio':rmse_out/rmse_ref if rmse_ref>0 else None,'max_amplification_ratio':max_out/max_ref if max_ref>0 else None})
           except (ValueError,FloatingPointError,np.linalg.LinAlgError): est=np.full_like(plant['v'],np.nan); met={'rmse_m_s':None,'bias_m_s':None,'mae_m_s':None,'p95_abs_error_m_s':None,'max_abs_error_m_s':None}
           row={'case':cname,'axis':axis,'sensor_case':sens,'method':method,'tuning_parameter':p,**met,'maximum_abs_angle_deg':plant['maxang'],'within_plus_minus_60_deg':plant['maxang']<=60,'offline':method.startswith('RTS')}
           rows.append(row)
           if sens=='nominal': wave[(cname,axis,method)]=(plant,est,row)
-    write_csv(OUT/'ow05_metrics.csv',rows); write_csv(OUT/'ow05_tuning_scan.csv',tuning_rows)
+    write_csv(OUT/'ow05_metrics.csv',rows); write_csv(OUT/'ow05_tuning_scan.csv',tuning_rows); write_csv(OUT/'ow05_noise_amplification.csv',noise_rows)
     # Plot sensor-impact comparison for both valid wind models, zoom around global max error for each.
     figs=[]
     # Give ESO and RTS identical wind and error scales for each case and axis.
@@ -97,11 +117,14 @@ def run():
       vals={r['method']:r for r in rows if r['case']==cname and r['axis']==axis and r['sensor_case']=='nominal'}
       report.append(f"| {cname} | {axis} | {vals['ESO 3状態']['rmse_m_s']:.5f} m/s | {vals['RTS 3状態（オフライン）']['rmse_m_s']:.5f} m/s |")
     report += ['', '## センサー条件', '',f"角度サンプルは{rate:.0f} Hz、MT6701の14 bit（量子化幅{360/2**14:.8f}°）、白色ノイズσ={pars.white_noise_std_deg:.3f}°、有色ノイズσ={pars.coloured_noise_std_deg:.3f}°・時定数{pars.coloured_noise_time_constant_s:.3f} s、固定遅延{pars.fixed_delay_s*1000:.0f} msを公称条件とした。センサー段階評価に従った設定であり、量子化/サンプリング仕様以外のノイズと遅延は実測前の暫定仮定である。感度としてノイズσを2倍にした条件も計算した。", '',
-      '## 公称センサー条件の拡大時系列','', '各図は最大誤差時刻を中心に±2秒を表示する。上段は真値と推定風速、下段は誤差。同じ風条件・軸のESO図とRTS図では、上段と下段それぞれの縦軸範囲を共通にして比較できるようにした。描画環境に日本語フォントがないため、図中ラベルは英語表記とし、本文と図題は日本語で記載する。', '']
+      '## 角度ノイズから風速への増幅倍率','', '線形基準は、ノイズなしセンサー角度θ₀で静的な角度→風速写像を評価し、各時点の角度摂動Δθを局所微分 dV/dθ|θ₀ で風速摂動へ変換した値である。角度摂動は、同じ遅延・ゲイン・オフセット・量子化・ジッタを保って乱数ノイズだけを0にしたセンサー出力との差と定義した。局所線形化が十分小さい摂動の近似であることを確認するため |Δθ|≤0.1|θ₀| を満たした評価点の割合も併記した。この条件を満たさない点では、特にθ₀が0°付近の場合、線形基準倍率の解釈に注意が必要である。観測器側は同一条件のノイズあり/なし推定出力差 ΔV̂ を全評価時点（15秒以降）で比較し、RMSEと最大絶対値を算出した。RMSE倍率=RMSE[ΔV̂]/RMSE[(dV/dθ)Δθ]、最大値倍率=max|ΔV̂|/max|(dV/dθ)Δθ|。遅延等だけの差はノイズ増幅に混ぜていない。', '', '| 風条件 | 軸 | ノイズ条件 | 推定器 | 角度ノイズRMSE [deg] | 局所線形条件成立 [%] | 線形基準RMSE [m/s] | 推定器出力RMSE [m/s] | RMSE倍率 | 95%値倍率 | 線形基準最大値 [m/s] | 推定器出力最大値 [m/s] | 最大値倍率 |','|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|']
+    for nr in noise_rows:
+      report.append(f"| {nr['case']} | {nr['axis']} | {'公称' if nr['sensor_case']=='nominal' else '2倍'} | {nr['method']} | {nr['angle_noise_rmse_deg']:.5f} | {100*nr['local_linear_valid_fraction']:.1f} | {nr['linear_reference_rmse_m_s']:.6f} | {nr['observer_noise_rmse_m_s']:.6f} | {nr['rmse_amplification_ratio']:.3f} | {nr['p95_amplification_ratio']:.3f} | {nr['linear_reference_max_abs_m_s']:.6f} | {nr['observer_noise_max_abs_m_s']:.6f} | {nr['max_amplification_ratio']:.3f} |")
+    report += ['', '増幅倍率は全点RMSE比を主指標、絶対値95パーセンタイル比を外れ値に頑健な補助指標、最大絶対値比をピーク影響の補助指標として併記した。最大値倍率は単一点に強く左右されるため慎重に読む。線形基準は準静的な写像であり、動的な真値風速誤差の代用ではない。観測器の履歴依存性はノイズあり/なし出力差側に反映される。全値は `ow05_noise_amplification.csv` に保存した。', '', '## 公称センサー条件の拡大時系列','', '各図は最大誤差時刻を中心に±2秒を表示する。上段は真値と推定風速、下段は誤差。同じ風条件・軸のESO図とRTS図では、上段と下段それぞれの縦軸範囲を共通にして比較できるようにした。描画環境に日本語フォントがないため、図中ラベルは英語表記とし、本文と図題は日本語で記載する。', '']
     for name in figs: report += [f'![OW-05 拡大時系列]({name})','']
-    report += ['## 解釈と選定','', 'RTS 3状態はオフライン評価で未来サンプルを使用するため、RMSEが小さくてもオンライン実装候補とは分ける。オンライン用途はESO 3状態を候補とし、公称ノイズ条件に対する帯域選定を反映した値を使用する。RTSはログ解析や遅延許容用途の基準として残す。ノイズ2倍感度を含む全数値は `ow05_metrics.csv`、調整スキャンは `ow05_tuning_scan.csv` に保存した。', '', '## 再実行','', '```bash','python 06_Analysis/simulation/src/run_ow05_sensor_nonideality.py','```','']
+    report += ['## 解釈と選定','', 'RTS 3状態はオフライン評価で未来サンプルを使用するため、RMSEが小さくてもオンライン実装候補とは分ける。オンライン用途はESO 3状態を候補とし、公称ノイズ条件に対する帯域選定を反映した値を使用する。RTSはログ解析や遅延許容用途の基準として残す。ノイズ2倍感度を含む推定誤差は `ow05_metrics.csv`、増幅倍率は `ow05_noise_amplification.csv`、調整スキャンは `ow05_tuning_scan.csv` に保存した。', '', '## 再実行','', '```bash','python 06_Analysis/simulation/src/run_ow05_sensor_nonideality.py','```','']
     (OUT/'OW-05_REPORT.md').write_text('\n'.join(report),encoding='utf-8')
-    summary={'task_id':'OW-05','sensor_nominal':nominal,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
+    summary={'task_id':'OW-05','sensor_nominal':nominal,'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
     (OUT/'ow05_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2,allow_nan=False)+'\n',encoding='utf-8')
     print('rows',len(rows),'tunings',tunings)
 
