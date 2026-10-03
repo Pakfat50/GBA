@@ -64,9 +64,9 @@ def analyze_measured_sensor_noise():
             break
         if selected is None:
           continue
-        sample=np.arange(window_n,dtype=float)
-        trend=np.polyval(np.polyfit(sample,selected,1),sample)
-        residual=selected-trend
+        # Remove only each static window's mean: the plotted trace represents
+        # measured high-frequency fluctuation, without removing its waveform.
+        residual=selected-float(np.mean(selected))
         # For independent sample noise, second difference has variance 1.5*sigma^2.
         innovations=(residual[1:-1]-0.5*(residual[:-2]+residual[2:]))/np.sqrt(1.5)
         windows.append({'segment_id':str(record['segment_id']),'data_file':relative_path,
@@ -112,9 +112,9 @@ def analyze_measured_sensor_noise():
       residuals=v['residuals']; sigma=v['white_equivalent_sigma_deg']
       joined=np.concatenate(residuals)
       axes[0].plot(np.arange(len(joined))*0.01,joined,lw=.8,color='#2673a8')
-      axes[0].axhspan(-3*sigma,3*sigma,color='#4c9f70',alpha=.16,label=f'Measured ±3σ = ±{3*sigma:.4f}°')
-      axes[0].axhline(0,color='#444',lw=.7); axes[0].set_ylabel('Demeaned angle [deg]')
-      axes[0].set_xlabel('Concatenated stationary-window time [s]'); axes[0].set_title(f'{axis} axis: pre-release stationary residuals')
+      axes[0].axhspan(-3*sigma,3*sigma,color='#4c9f70',alpha=.16,label=f'Measured fluctuation ±3σ = ±{3*sigma:.4f}°')
+      axes[0].axhline(0,color='#444',lw=.7); axes[0].set_ylabel('Window-mean-subtracted angle [deg]')
+      axes[0].set_xlabel('Concatenated stationary-window time [s]'); axes[0].set_title(f'{axis} axis: measured static-window readings (window mean removed)')
       axes[0].legend(loc='upper right'); axes[0].grid(alpha=.2)
       e=v['innovations']; bins=np.linspace(-0.06,0.06,81)
       axes[1].hist(e,bins=bins,density=True,color='#79a9c9',alpha=.65,label='Measured high-frequency innovations')
@@ -132,7 +132,7 @@ def analyze_measured_sensor_noise():
       lags=np.arange(1,len(v['acf'])+1); bound=v['acf_95_bound']
       axes[2].bar(lags,v['acf'],color='#8172b2',width=.8); axes[2].axhline(0,color='#444',lw=.7)
       axes[2].axhspan(-bound,bound,color='#777',alpha=.16,label=f'Approx. 95% white-noise bound ±{bound:.3f}')
-      axes[2].set_xlabel('Lag [samples]'); axes[2].set_ylabel('ACF'); axes[2].set_title(f"Static-window residual autocorrelation; lag 1 = {v['residual_acf_lag1']:.3f}")
+      axes[2].set_xlabel('Lag [samples]'); axes[2].set_ylabel('ACF'); axes[2].set_title(f"Static-window demeaned residual autocorrelation; lag 1 = {v['residual_acf_lag1']:.3f}")
       axes[2].legend(loc='upper right',fontsize=8); axes[2].grid(alpha=.2)
       fig.savefig(OUT/f'ow05_measured_noise_{axis.lower()}.png',dpi=170); plt.close(fig)
     return estimates
