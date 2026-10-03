@@ -341,6 +341,7 @@ def summarize_oat(rows: list[dict]) -> list[dict]:
                  and r["delta_rmse_percent"] is not None]
         changes = [r["delta_rmse_percent"] for r in valid]
         absolute_changes = [r["rmse_m_s"] - r["baseline_rmse_m_s"] for r in valid]
+        max_errors = [r["max_abs_error_m_s"] for r in valid if r["max_abs_error_m_s"] is not None]
         summaries.append({
             "case": case, "axis": axis, "method": method, "parameter": parameter,
             "valid_endpoints": len(valid),
@@ -349,6 +350,8 @@ def summarize_oat(rows: list[dict]) -> list[dict]:
             "most_adverse_abs_percent": max((abs(x) for x in changes), default=None),
             "delta_rmse_min_m_s": min(absolute_changes) if absolute_changes else None,
             "delta_rmse_max_m_s": max(absolute_changes) if absolute_changes else None,
+            "max_abs_error_min_m_s": min(max_errors) if max_errors else None,
+            "max_abs_error_max_m_s": max(max_errors) if max_errors else None,
             "baseline_rmse_m_s": items[0].get("baseline_rmse_m_s"),
         })
     return summaries
@@ -366,6 +369,7 @@ def summarize_joint(rows: list[dict]) -> list[dict]:
         valid = [r for r in items if r["bounded_estimate"] and r["within_angle_limit"]]
         rmse_values = [r["rmse_m_s"] for r in valid if r["rmse_m_s"] is not None]
         delta_values = [r["delta_rmse_percent"] for r in valid if r["delta_rmse_percent"] is not None]
+        max_errors = [r["max_abs_error_m_s"] for r in valid if r["max_abs_error_m_s"] is not None]
         summaries.append({
             "case": case, "axis": axis, "method": method,
             "scenarios_total": len(items), "scenarios_valid": len(valid),
@@ -373,6 +377,9 @@ def summarize_joint(rows: list[dict]) -> list[dict]:
             "rmse_min_m_s": min(rmse_values) if rmse_values else None,
             "rmse_max_m_s": max(rmse_values) if rmse_values else None,
             "rmse_median_m_s": float(np.median(rmse_values)) if rmse_values else None,
+            "max_abs_error_min_m_s": min(max_errors) if max_errors else None,
+            "max_abs_error_max_m_s": max(max_errors) if max_errors else None,
+            "max_abs_error_median_m_s": float(np.median(max_errors)) if max_errors else None,
             "delta_rmse_min_percent": min(delta_values) if delta_values else None,
             "delta_rmse_max_percent": max(delta_values) if delta_values else None,
             "delta_rmse_median_percent": float(np.median(delta_values)) if delta_values else None,
@@ -540,38 +547,39 @@ def write_report(path: Path, config: dict, bounds: dict, bound_rows: list[dict],
         "- 数値暴走：評価区間に非有限値がある、または推定絶対風速が20 m/sを越える場合は有界判定不合格とした。これはOW-03と同じ暴走除外目安で、数学的な安定性証明ではない。", "",
         "## 公称モデルでの基準値", "",
         "以下は今回使った独立Kaimal 2 m/sとガスト条件の公称モデル結果である。高風速Kaimal系列（平均3.75 m/s、最大6 m/s）は±60°を越えたため、他ケースの参考値とともに付属CSVへ残すが、性能比較からは除外した。", "",
-        "| ケース | 軸 | 方式 | RMSE [m/s] | 偏り [m/s] | 95%絶対誤差 [m/s] | 最大角度 |",
-        "|---|---|---|---:|---:|---:|---:|",
+        "| ケース | 軸 | 方式 | RMSE [m/s] | 最大絶対誤差 [m/s] | 偏り [m/s] | 95%絶対誤差 [m/s] | 最大角度 |",
+        "|---|---|---|---:|---:|---:|---:|---:|",
     ]
     relevant_methods = ("ESO 3状態", "RTS 3状態（オフライン）", "静的換算", "因果LPF")
     for row in baseline_rows:
         if row["case"] not in config["sensitivity_cases"] or row["method"] not in relevant_methods:
             continue
         if row["rmse_m_s"] is None:
-            vals = ("発散", "—", "—")
+            vals = ("発散", "—", "—", "—")
         else:
-            vals = (f"{row['rmse_m_s']:.5f}", f"{row['bias_m_s']:.5f}", f"{row['p95_abs_error_m_s']:.5f}")
-        lines.append(f"| {row['case']} | {row['axis']} | {row['method']} | {vals[0]} | {vals[1]} | {vals[2]} | {row['max_angle_deg']:.2f}° |")
+            vals = (f"{row['rmse_m_s']:.5f}", f"{row['max_abs_error_m_s']:.5f}", f"{row['bias_m_s']:.5f}", f"{row['p95_abs_error_m_s']:.5f}")
+        lines.append(f"| {row['case']} | {row['axis']} | {row['method']} | {vals[0]} | {vals[1]} | {vals[2]} | {vals[3]} | {row['max_angle_deg']:.2f}° |")
     lines += [
         "", "## 一因子ずつ動かした結果（OAT）", "",
         "OATでは対象の係数だけを下側端または上側端へ動かし、残りの係数を公称値に固定した。静的換算・因果LPFは式にKしか含まれないため、Kずれだけを比較した。表と図のRMSE変化率は、公称モデルに対する増減を表す。マイナスはその端点で偶然RMSEが小さくなったことを示すが、ずれた値を採用すべきという意味ではない。", "",
         "![係数一つずつの端点変化によるRMSE感度](ow04_oat_rmse_sensitivity.png)", "",
         "変化率は公称RMSEが小さい場合に過大表示となるため、表には変化率とRMSEの絶対変化を併記した。判断には絶対変化も見る。", "",
-        "| ケース | 軸 | 方式 | 係数 | RMSE変化率 | RMSE絶対変化 [m/s] |",
-        "|---|---|---|---|---:|---:|",
+        "| ケース | 軸 | 方式 | 係数 | RMSE変化率 | RMSE絶対変化 [m/s] | 最大絶対誤差の範囲 [m/s] |",
+        "|---|---|---|---|---:|---:|---:|",
     ]
     for row in oat_summary:
         if row["case"] != config["sensitivity_cases"][0]:
             continue
         value = "算出不可" if row["delta_rmse_min_percent"] is None else f"{row['delta_rmse_min_percent']:+.2f}% ～ {row['delta_rmse_max_percent']:+.2f}%"
         abs_value = "算出不可" if row["delta_rmse_min_m_s"] is None else f"{row['delta_rmse_min_m_s']:+.5f} ～ {row['delta_rmse_max_m_s']:+.5f}"
-        lines.append(f"| {row['case']} | {row['axis']} | {row['method']} | {PARAMETER_LABELS.get(row['parameter'], row['parameter'])} | {value} | {abs_value} |")
+        peak_value = "算出不可" if row["max_abs_error_min_m_s"] is None else f"{row['max_abs_error_min_m_s']:.5f} ～ {row['max_abs_error_max_m_s']:.5f}"
+        lines.append(f"| {row['case']} | {row['axis']} | {row['method']} | {PARAMETER_LABELS.get(row['parameter'], row['parameter'])} | {value} | {abs_value} | {peak_value} |")
     lines += [
         "", "## 複数係数を組み合わせた結果", "",
         "各ケースの16端点シナリオから得たRMSEの最小値・中央値・最大値を、公称係数のRMSE（赤い点線）と比較する。公称ガスト誤差がほぼ0のため、複合条件の主評価は不安定な変化率ではなく絶対RMSEとした。端点の組み合わせであるため、区間内のすべての結果を覆う保証や確率的な解釈はない。", "",
         "![物理量由来の係数ずれを組み合わせたときのRMSE範囲](ow04_joint_rmse_envelope.png)", "",
-        "| ケース | 軸 | 方式 | 有効/16 | 公称RMSE [m/s] | 組合せRMSE min/中央値/max [m/s] |",
-        "|---|---|---|---:|---:|---:|",
+        "| ケース | 軸 | 方式 | 有効/16 | 公称RMSE [m/s] | 組合せRMSE min/中央値/max [m/s] | 最大絶対誤差 min/中央値/max [m/s] |",
+        "|---|---|---|---:|---:|---:|---:|",
     ]
     for row in joint_summary:
         rmse_text = "算出不可" if row["rmse_min_m_s"] is None else f"{row['rmse_min_m_s']:.5f} ～ {row['rmse_max_m_s']:.5f}"
@@ -580,7 +588,8 @@ def write_report(path: Path, config: dict, bounds: dict, bound_rows: list[dict],
             rmse_text = "算出不可"
         else:
             rmse_text = f"{row['rmse_min_m_s']:.5f} / {row['rmse_median_m_s']:.5f} / {row['rmse_max_m_s']:.5f}"
-        lines.append(f"| {row['case']} | {row['axis']} | {row['method']} | {row['scenarios_valid']}/{row['scenarios_total']} | {base} | {rmse_text} |")
+        max_error_text = "算出不可" if row["max_abs_error_min_m_s"] is None else f"{row['max_abs_error_min_m_s']:.5f} / {row['max_abs_error_median_m_s']:.5f} / {row['max_abs_error_max_m_s']:.5f}"
+        lines.append(f"| {row['case']} | {row['axis']} | {row['method']} | {row['scenarios_valid']}/{row['scenarios_total']} | {base} | {rmse_text} | {max_error_text} |")
     lines += [
         "", "## 考察と次段階", "",
         "OATでは、I/KずれがESO 3状態に対しても明確に誤差を増やし、c_ballのずれは今回の範囲ではほとんど影響しなかった。RTS 3状態は特にI/Kに敏感で、独立Kaimal条件の非常に小さい公称RMSEを基準にすると変化率が大きく見えるため、絶対RMSEと合わせて読む必要がある。τの影響は主にOUT軸に現れた。", "",
