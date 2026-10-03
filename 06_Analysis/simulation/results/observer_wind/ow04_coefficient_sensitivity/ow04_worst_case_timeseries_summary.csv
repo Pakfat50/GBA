@@ -1,0 +1,3 @@
+﻿case,axis,method,scenario,rmse_m_s,max_abs_error_m_s,peak_error_time_s,plot_window_start_s,plot_window_end_s
+独立Kaimal乱流 平均2 m/s TI20%,OUT,ESO 3状態,joint_mass_high_arm_high_tau-high_c-high,0.1747732621069587,0.8555517117123346,100.34,98.34,102.34
+ガスト 2→6 m/s,OUT,RTS 3状態（オフライン）,joint_mass_high_arm_high_tau-high_c-high,0.16333140646069627,0.28730313062001933,36.19,34.19,38.19

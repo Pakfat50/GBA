@@ -438,17 +438,82 @@ def save_plots(output: Path, oat_summary: list[dict], joint_summary: list[dict],
     fig.savefig(output / "ow04_joint_rmse_envelope.png", dpi=160)
     plt.close(fig)
 
+def save_worst_case_waveforms(output: Path, config: dict, plants: dict,
+                              nominal_by_axis: dict, settings_by_axis: dict,
+                              joint_rows: list[dict], bounds: dict,
+                              ow03_config: dict) -> list[dict]:
+    """Plot each wind case's worst valid joint-boundary RMSE near its peak error."""
+    dt = 1.0 / config["sample_rate_hz"]
+    limit = ow03_config["mechanical_angle_limit_deg"]
+    results = []
+    safe_case_names = {
+        "独立Kaimal乱流 平均2 m/s TI20%": "kaimal",
+        "ガスト 2→6 m/s": "gust",
+    }
+    for case in config["sensitivity_cases"]:
+        eligible = [r for r in joint_rows if r["case"] == case
+                    and r["bounded_estimate"] and r["within_angle_limit"]
+                    and r["rmse_m_s"] is not None]
+        if not eligible:
+            continue
+        worst = max(eligible, key=lambda row: row["rmse_m_s"])
+        axis, method = worst["axis"], worst["method"]
+        plant = plants[(case, axis)]
+        scenario = next(s for s in make_joint_scenarios(axis, bounds)
+                        if s["scenario"] == worst["scenario"])
+        model = apply_parameter_changes(nominal_by_axis[axis], scenario["changes"])
+        estimate = estimate_wind(method, plant["angle"], model, settings_by_axis[axis],
+                                 config, dt)
+        error = estimate - plant["speed"]
+        valid_indices = np.flatnonzero(plant["mask"] & np.isfinite(error))
+        peak_index = int(valid_indices[np.argmax(np.abs(error[valid_indices]))])
+        peak_time = float(plant["time"][peak_index])
+        window_s = 2.0
+        view = (plant["time"] >= peak_time - window_s) & (plant["time"] <= peak_time + window_s)
+        stem = safe_case_names.get(case, f"case_{len(results)+1}")
+        fig, (ax, err_ax) = plt.subplots(2, 1, figsize=(10, 6.5), sharex=True,
+                                         gridspec_kw={"height_ratios": [2, 1]},
+                                         layout="constrained")
+        ax.plot(plant["time"][view], plant["speed"][view], color="#222222", lw=1.5,
+                label="True wind speed")
+        ax.plot(plant["time"][view], estimate[view], color=METHOD_COLORS[method], lw=1.2,
+                label=METHOD_PLOT_LABELS[method])
+        ax.axvline(peak_time, color="#b34b35", ls="--", lw=1,
+                   label=f"Peak |error| at {peak_time:.2f} s")
+        ax.set_ylabel("Wind speed [m/s]")
+        ax.set_title(f"Worst joint-boundary case: {CASE_PLOT_LABELS.get(case, case)}\n"
+                     f"{axis} / {METHOD_PLOT_LABELS[method]} / RMSE {worst['rmse_m_s']:.4f} m/s")
+        ax.grid(alpha=0.25)
+        ax.legend(fontsize=8, loc="best")
+        err_ax.plot(plant["time"][view], error[view], color=METHOD_COLORS[method], lw=1.0)
+        err_ax.axhline(0, color="#555555", lw=0.8)
+        err_ax.axvline(peak_time, color="#b34b35", ls="--", lw=1)
+        err_ax.scatter([peak_time], [error[peak_index]], color="#b34b35", zorder=3)
+        err_ax.set_xlabel("Time [s]")
+        err_ax.set_ylabel("Estimate − true\n[m/s]")
+        err_ax.grid(alpha=0.25)
+        fig.savefig(output / f"ow04_worst_{stem}_timeseries.png", dpi=180)
+        plt.close(fig)
+        results.append({
+            "case": case, "axis": axis, "method": method,
+            "scenario": worst["scenario"], "rmse_m_s": worst["rmse_m_s"],
+            "max_abs_error_m_s": worst["max_abs_error_m_s"],
+            "peak_error_time_s": peak_time, "plot_window_start_s": max(0.0, peak_time-window_s),
+            "plot_window_end_s": peak_time+window_s,
+        })
+    return results
 
 def write_report(path: Path, config: dict, bounds: dict, bound_rows: list[dict],
                  baseline_rows: list[dict], oat_summary: list[dict],
-                 joint_summary: list[dict], nominal: dict, elapsed_s: float) -> None:
+                 joint_summary: list[dict], worst_waveforms: list[dict],
+                 nominal: dict, elapsed_s: float) -> None:
     """Write the Japanese OW-04 report from the generated tables."""
     lines = [
         "# OW-04 係数ずれに対する感度評価", "",
         "## 目的と結論", "",
         "OW-03で採用したBALL係数を真のプラントに固定し、推定側だけの係数をずらした。したがって今回の差は機械そのものの変化ではなく、推定モデルがI、K、τ、球抗力係数を正確に知らないときの影響である。OW-03で決めたゲイン・プロセス雑音・LPF遮断周波数は固定し、係数ずれに合わせた再調整や最適化は行っていない。センサーはOW-03同様に理想値である。", "",
         "OW-03の結果を引き継ぎ、OUT軸4状態ESOは比較対象から除外した。主要比較はオンラインの3状態ESOと、OW-03で最小誤差だった3状態RTS（オフライン）で行い、Kずれに限り静的換算・因果LPFも参考比較した。", "",
-        "本レポートの数値は、明示した係数範囲の中でどの程度RMSEが変わるかを示す感度結果であり、係数誤差の確率分布や将来の実機RMSEを保証する信頼区間ではない。RTSは未来角度を使うため、実装時に利用できる方式であるESOとの順位をRMSEだけで決めない。", "",
+        "本レポートの誤差範囲は今回指定した風速モデルごとに算出している。具体的には、独立Kaimal乱流（平均2 m/s、TI 20%）と2→6 m/sガストについて、それぞれ同じ固定プラント波形を使い、推定側の係数端点シナリオ間でRMSEを比較した範囲である。したがって別の乱流系列、風速条件、実測風に対する範囲ではない。また係数誤差の確率分布や将来の実機RMSEを保証する信頼区間でもない。RTSは未来角度を使うため、実装時に利用できる方式であるESOとの順位をRMSEだけで決めない。", "",
         "## 係数のずれ幅と根拠", "",
         "IとKは、IHB-05の公称球質量3.9 g・有効重心腕180.61 mmに、許容した質量誤差±0.5 gと位置誤差±10 mmを与えて再計算した。この腕長は実測で確定した寸法ではなく、IHB-05の周期適合で得た有効値である。球の質量・位置はIとKを同時に変えるため、組合せ解析では同じ質量・位置からI/Kを一緒に算出した。", "",
         "τの上下端は、IHB-03でスペーサー条件を一つずつ外したときの同定値変化率を採用値へ適用した。球抗力係数c_ballは、IHB-05方式Aの波形クラスタ・ブートストラップ95%区間を使った。この区間は波形間のばらつきのみを表し、他係数や質量・寸法の不確かさを含まない。c_rodの理論値は固定した。", "",
@@ -521,6 +586,17 @@ def write_report(path: Path, config: dict, bounds: dict, bound_rows: list[dict],
         "OATでは、I/KずれがESO 3状態に対しても明確に誤差を増やし、c_ballのずれは今回の範囲ではほとんど影響しなかった。RTS 3状態は特にI/Kに敏感で、独立Kaimal条件の非常に小さい公称RMSEを基準にすると変化率が大きく見えるため、絶対RMSEと合わせて読む必要がある。τの影響は主にOUT軸に現れた。", "",
         "組合せ端点では、係数ずれがあると両方式とも公称条件よりRMSEが増え、RTS 3状態の大きな公称優位は縮まった。よって、RTS 3状態がOW-03で優勢だった結論は係数一致・理想センサー条件では維持されるが、係数ずれを含む実環境での優位は未確定である。RTSは未来サンプルを使うオフライン方式なので、オンライン選定にはESO 3状態との比較が必要である。", "",
         "今回の端点は機械係数同定と既知の球質量・腕長条件から定めた。実際のI/K/τ/c_ballの誤差がこの幅を越えていないかは、係数の再計測で直接証明したわけではない。またc_ballのブートストラップ区間には質量・腕長の誤差が含まれない。このため複合端点の範囲は、感度を見落とさないためのシナリオであり、統計的な信頼区間としては解釈しない。", "",
+        "## 風モデルごとの最大誤差条件と時系列", "",
+        "次の図は、各風モデルで16個の複合係数端点のうちRMSEが最大となった有界・角度範囲内の条件を選び、その条件で絶対誤差が最大となる時刻を中心に前後2秒を拡大したものである。上段は真の風速と推定風速、下段は推定誤差を示す。対象にした風モデルは本解析で係数感度評価を行った2条件である。", "",
+    ]
+    for row in worst_waveforms:
+        stem = "kaimal" if row["case"] == "独立Kaimal乱流 平均2 m/s TI20%" else "gust"
+        lines += [
+            f"### {row['case']}", "",
+            f"最大RMSE条件は **{row['axis']}軸・{row['method']}・{row['scenario']}** で、RMSEは **{row['rmse_m_s']:.5f} m/s**。評価区間内の最大絶対誤差は **{row['max_abs_error_m_s']:.5f} m/s**、発生時刻は **{row['peak_error_time_s']:.2f} s**。図は **{row['plot_window_start_s']:.2f}–{row['plot_window_end_s']:.2f} s** を表示する。", "",
+            f"![{row['case']}で最大誤差となった条件の時系列拡大](ow04_worst_{stem}_timeseries.png)", "",
+        ]
+    lines += [
         "OW-05ではセンサーノイズ、量子化、遅延を加える。今回のOW-04は係数ずれだけを扱ったので、OW-05で係数ずれとセンサー非理想性を同時に加え、RTS 3状態（オフライン）とESO 3状態（オンライン）を実装条件も含めて最終比較する。", "",
         f"計算時間（この実行環境）：{elapsed_s:.1f} s。全ケースで同じ固定風波形・固定オブザーバー調整値を再利用し、反復最適化を行わず、OAT端点と16個の組合せだけを評価した。", "",
         "## 再実行", "",
@@ -622,12 +698,17 @@ def run(config_path: Path, output_dir: Path) -> dict:
 
     oat_summary = summarize_oat(oat_rows)
     joint_summary = summarize_joint(joint_rows)
+    worst_waveforms = save_worst_case_waveforms(
+        output_dir, analysis_config, plants, nominal_by_axis, settings_by_axis,
+        joint_rows, bounds, ow03_config,
+    )
     write_csv(output_dir / "ow04_coefficient_bounds.csv", bound_rows)
     write_csv(output_dir / "ow04_nominal_baseline.csv", baseline_rows)
     write_csv(output_dir / "ow04_oat_scenarios.csv", oat_rows)
     write_csv(output_dir / "ow04_oat_summary.csv", oat_summary)
     write_csv(output_dir / "ow04_joint_scenarios.csv", joint_rows)
     write_csv(output_dir / "ow04_joint_summary.csv", joint_summary)
+    write_csv(output_dir / "ow04_worst_case_timeseries_summary.csv", worst_waveforms)
     save_plots(output_dir, oat_summary, joint_summary, cases)
     elapsed_s = time.perf_counter() - started
     summary = {
@@ -637,7 +718,8 @@ def run(config_path: Path, output_dir: Path) -> dict:
         "sensitivity_cases": cases, "uncertainty_bounds_by_axis": bounds,
         "oat_scenarios_count": len(oat_rows), "joint_scenarios_count": len(joint_rows),
         "nominal_baseline": baseline_rows, "oat_summary": oat_summary,
-        "joint_summary": joint_summary, "elapsed_s": elapsed_s,
+        "joint_summary": joint_summary, "worst_case_waveforms": worst_waveforms,
+        "elapsed_s": elapsed_s,
     }
     (output_dir / "ow04_summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
@@ -645,7 +727,8 @@ def run(config_path: Path, output_dir: Path) -> dict:
     )
     write_report(
         output_dir / "OW-04_REPORT.md", config, bounds, bound_rows,
-        baseline_rows, oat_summary, joint_summary, nominal_by_axis, elapsed_s,
+        baseline_rows, oat_summary, joint_summary, worst_waveforms,
+        nominal_by_axis, elapsed_s,
     )
     return summary
 

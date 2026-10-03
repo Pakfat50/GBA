@@ -1510,5 +1510,29 @@
       "delta_rmse_median_percent": 17918490.6295396
     }
   ],
-  "elapsed_s": 115.78953358100034
+  "worst_case_waveforms": [
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "OUT",
+      "method": "ESO 3状態",
+      "scenario": "joint_mass_high_arm_high_tau-high_c-high",
+      "rmse_m_s": 0.1747732621069587,
+      "max_abs_error_m_s": 0.8555517117123346,
+      "peak_error_time_s": 100.34,
+      "plot_window_start_s": 98.34,
+      "plot_window_end_s": 102.34
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "OUT",
+      "method": "RTS 3状態（オフライン）",
+      "scenario": "joint_mass_high_arm_high_tau-high_c-high",
+      "rmse_m_s": 0.16333140646069627,
+      "max_abs_error_m_s": 0.28730313062001933,
+      "peak_error_time_s": 36.19,
+      "plot_window_start_s": 34.19,
+      "plot_window_end_s": 38.19
+    }
+  ],
+  "elapsed_s": 120.10792705799986
 }
