@@ -73,11 +73,21 @@ def run():
     write_csv(OUT/'ow05_metrics.csv',rows); write_csv(OUT/'ow05_tuning_scan.csv',tuning_rows)
     # Plot sensor-impact comparison for both valid wind models, zoom around global max error for each.
     figs=[]
+    # Give ESO and RTS identical wind and error scales for each case and axis.
+    # Each method is centered on its own peak-error time, so shared limits are
+    # needed to make visual comparisons fair.
+    shared_limits={}
+    for cname in dict.fromkeys(key[0] for key in wave):
+      for axis in cfg['axis_names']:
+        pair=[wave[(cname,axis,m)] for m in ('ESO 3状態','RTS 3状態（オフライン）')]
+        speed_max=max(float(np.nanmax(np.abs(item[0]['v']))) for item in pair)
+        error_max=max(float(np.nanmax(np.abs(item[1][item[0]['mask']]-item[0]['v'][item[0]['mask']]))) for item in pair)
+        shared_limits[(cname,axis)]=(max(0.0,speed_max*1.05),max(0.05,error_max*1.10))
     for (cname,axis,method),(p,e,r) in wave.items():
       err=e-p['v']; ids=np.flatnonzero(p['mask']&np.isfinite(err)); i=int(ids[np.argmax(np.abs(err[ids]))]); center=p['t'][i]; view=(p['t']>=center-2)&(p['t']<=center+2)
       fig,(a,b)=plt.subplots(2,1,figsize=(9,5.6),sharex=True,layout='constrained')
-      a.plot(p['t'][view],p['v'][view],label='真値風速',color='#222'); a.plot(p['t'][view],e[view],label='推定風速（公称センサー）'); a.set_ylabel('Wind speed [m/s]'); a.set_title(f"{'Independent Kaimal, mean 2 m/s' if 'Kaimal' in cname else 'Gust, 2 to 6 m/s'} / {axis} / {'RTS 3-state (offline)' if method.startswith('RTS') else 'ESO 3-state'}"); a.legend(); a.grid(alpha=.25)
-      b.plot(p['t'][view],err[view]); b.axhline(0,color='#555'); b.axvline(center,color='#b34b35',ls='--'); b.set_xlabel('Time [s]'); b.set_ylabel('Estimate - true\n[m/s]'); b.grid(alpha=.25)
+      a.plot(p['t'][view],p['v'][view],label='True wind speed',color='#222'); a.plot(p['t'][view],e[view],label='Estimated wind speed (nominal sensor)'); a.set_ylabel('Wind speed [m/s]'); a.set_ylim(0,shared_limits[(cname,axis)][0]); a.set_title(f"{'Independent Kaimal, mean 2 m/s' if 'Kaimal' in cname else 'Gust, 2 to 6 m/s'} / {axis} / {'RTS 3-state (offline)' if method.startswith('RTS') else 'ESO 3-state'}"); a.legend(); a.grid(alpha=.25)
+      b.plot(p['t'][view],err[view]); b.axhline(0,color='#555'); b.axvline(center,color='#b34b35',ls='--'); b.set_xlabel('Time [s]'); b.set_ylabel('Estimate - true\n[m/s]'); b.set_ylim(-shared_limits[(cname,axis)][1],shared_limits[(cname,axis)][1]); b.grid(alpha=.25)
       name=f"ow05_{'kaimal' if 'Kaimal' in cname else 'gust'}_{axis}_{'rts' if method.startswith('RTS') else 'eso'}.png"; fig.savefig(OUT/name,dpi=160); plt.close(fig); figs.append(name)
     report=['# OW-05 センサー非理想性とオブザーバー選定','','## 目的・結論','',
       'OW-03で角度±60°内だった独立Kaimal乱流（平均2 m/s、TI 20%）と2→6 m/sガストを使い、採用BALLプラントにセンサーの量子化、ノイズ、遅延を含めて比較した。比較対象はオンラインの3状態ESOと未来データを使うオフライン3状態RTS。4状態ESOはOW-03で除外済みのため含めない。', '',
@@ -87,7 +97,7 @@ def run():
       vals={r['method']:r for r in rows if r['case']==cname and r['axis']==axis and r['sensor_case']=='nominal'}
       report.append(f"| {cname} | {axis} | {vals['ESO 3状態']['rmse_m_s']:.5f} m/s | {vals['RTS 3状態（オフライン）']['rmse_m_s']:.5f} m/s |")
     report += ['', '## センサー条件', '',f"角度サンプルは{rate:.0f} Hz、MT6701の14 bit（量子化幅{360/2**14:.8f}°）、白色ノイズσ={pars.white_noise_std_deg:.3f}°、有色ノイズσ={pars.coloured_noise_std_deg:.3f}°・時定数{pars.coloured_noise_time_constant_s:.3f} s、固定遅延{pars.fixed_delay_s*1000:.0f} msを公称条件とした。センサー段階評価に従った設定であり、量子化/サンプリング仕様以外のノイズと遅延は実測前の暫定仮定である。感度としてノイズσを2倍にした条件も計算した。", '',
-      '## 公称センサー条件の拡大時系列','', '各図は最大誤差時刻を中心に±2秒を表示する。上段は真値と推定風速、下段は誤差。', '']
+      '## 公称センサー条件の拡大時系列','', '各図は最大誤差時刻を中心に±2秒を表示する。上段は真値と推定風速、下段は誤差。同じ風条件・軸のESO図とRTS図では、上段と下段それぞれの縦軸範囲を共通にして比較できるようにした。描画環境に日本語フォントがないため、図中ラベルは英語表記とし、本文と図題は日本語で記載する。', '']
     for name in figs: report += [f'![OW-05 拡大時系列]({name})','']
     report += ['## 解釈と選定','', 'RTS 3状態はオフライン評価で未来サンプルを使用するため、RMSEが小さくてもオンライン実装候補とは分ける。オンライン用途はESO 3状態を候補とし、公称ノイズ条件に対する帯域選定を反映した値を使用する。RTSはログ解析や遅延許容用途の基準として残す。ノイズ2倍感度を含む全数値は `ow05_metrics.csv`、調整スキャンは `ow05_tuning_scan.csv` に保存した。', '', '## 再実行','', '```bash','python 06_Analysis/simulation/src/run_ow05_sensor_nonideality.py','```','']
     (OUT/'OW-05_REPORT.md').write_text('\n'.join(report),encoding='utf-8')
