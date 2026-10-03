@@ -1,0 +1,35 @@
+{
+  "task_id": "OW-03",
+  "description": "Tune observer settings on the adopted HBK model, then evaluate on independent wind inputs.",
+  "sample_rate_hz": 100.0,
+  "duration_s": 120.0,
+  "evaluation_start_s": 15.0,
+  "configuration": "BALL",
+  "axis_names": ["IN", "OUT"],
+  "air_density_kg_m3": 1.225,
+  "projected_area_m2": 0.007853981633974483,
+  "drag_coefficient": 0.4860496586340641,
+  "force_lever_m": 0.18061,
+  "mechanical_angle_limit_deg": 60.0,
+  "friction_epsilon_deg_s": 0.5,
+  "assumed_angle_noise_deg": 0.02,
+  "kaimal_integral_scale_m": 11.34,
+  "tuning_wind": {
+    "kind": "kaimal",
+    "mean_wind_speed_m_s": 3.0,
+    "target_turbulence_intensity": 0.2,
+    "maximum_wind_speed_m_s": 5.0,
+    "seed": 20261003
+  },
+  "validation_winds": [
+    {"name": "無風", "kind": "calm", "seed": 20261010},
+    {"name": "一定風 2 m/s", "kind": "steady", "mean_wind_speed_m_s": 2.0, "seed": 20261011},
+    {"name": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s", "kind": "kaimal", "mean_wind_speed_m_s": 3.75, "target_turbulence_intensity": 0.2, "maximum_wind_speed_m_s": 6.0, "seed": 20261012},
+    {"name": "独立Kaimal乱流 平均2 m/s TI20%", "kind": "kaimal", "mean_wind_speed_m_s": 2.0, "target_turbulence_intensity": 0.2, "maximum_wind_speed_m_s": 4.0, "seed": 20261013},
+    {"name": "ガスト 2→6 m/s", "kind": "gust", "base_wind_speed_m_s": 2.0, "gust_peak_m_s": 6.0, "seed": 20261014}
+  ],
+  "eso_pole_grid_hz": [0.2, 0.5, 1.0, 2.0, 3.0, 5.0, 8.0, 12.0, 20.0, 30.0, 40.0, 45.0, 49.0, 49.9],
+  "rts3_force_random_walk_grid_n_per_sample": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0],
+  "rts4_force_rate_random_walk_grid_n_per_s_per_sample": [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0, 3.0, 10.0, 30.0],
+  "lpf_cutoff_grid_hz": [0.05, 0.1, 0.2, 0.3, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0]
+}

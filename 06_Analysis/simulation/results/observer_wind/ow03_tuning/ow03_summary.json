@@ -1,0 +1,979 @@
+{
+  "task_id": "OW-03",
+  "configuration": "BALL",
+  "coefficient_match": true,
+  "ideal_sensor": true,
+  "tuning_wind": {
+    "kind": "kaimal",
+    "mean_wind_speed_m_s": 3.0,
+    "target_turbulence_intensity": 0.2,
+    "maximum_wind_speed_m_s": 5.0,
+    "seed": 20261003,
+    "metadata": {
+      "target_turbulence_intensity": 0.2,
+      "realized_turbulence_intensity": 0.20000000000000004,
+      "fluctuation_scale_for_bounds": 1.0,
+      "minimum_speed_m_s": 0.9006226390369387,
+      "maximum_speed_m_s": 4.974819843696205,
+      "mean_m_s": 3.0,
+      "seed": 20261003
+    }
+  },
+  "validation_winds": {
+    "無風": {
+      "mean_m_s": 0.0,
+      "realized_ti": 0.0,
+      "minimum_m_s": 0.0,
+      "maximum_m_s": 0.0,
+      "seed": 20261010
+    },
+    "一定風 2 m/s": {
+      "mean_m_s": 2.0,
+      "realized_ti": 0.0,
+      "minimum_m_s": 2.0,
+      "maximum_m_s": 2.0,
+      "seed": 20261011
+    },
+    "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s": {
+      "target_turbulence_intensity": 0.2,
+      "realized_turbulence_intensity": 0.1561764745449429,
+      "fluctuation_scale_for_bounds": 0.7808823727247145,
+      "minimum_speed_m_s": 1.861398920369477,
+      "maximum_speed_m_s": 6.0,
+      "mean_m_s": 3.75,
+      "seed": 20261012
+    },
+    "独立Kaimal乱流 平均2 m/s TI20%": {
+      "target_turbulence_intensity": 0.2,
+      "realized_turbulence_intensity": 0.2,
+      "fluctuation_scale_for_bounds": 1.0,
+      "minimum_speed_m_s": 0.7468833890123021,
+      "maximum_speed_m_s": 3.2704330899395186,
+      "mean_m_s": 2.0,
+      "seed": 20261013
+    },
+    "ガスト 2→6 m/s": {
+      "mean_m_s": 3.0026513092701594,
+      "realized_ti": 0.4506039523210569,
+      "minimum_m_s": 2.0000000000915894,
+      "maximum_m_s": 6.0,
+      "seed": 20261014
+    }
+  },
+  "selected_tunings_by_axis": {
+    "IN": {
+      "静的換算": {
+        "parameter": null
+      },
+      "ESO 3状態": {
+        "parameter": 49.9,
+        "parameter_name": "極周波数",
+        "setting_key": "eso3_hz",
+        "training_rmse_m_s": 0.17384508929077053,
+        "stable_candidate_found": true
+      },
+      "ESO 4状態": {
+        "parameter": 12.0,
+        "parameter_name": "極周波数",
+        "setting_key": "eso4_hz",
+        "training_rmse_m_s": 0.25317604490933027,
+        "stable_candidate_found": true
+      },
+      "RTS 3状態（オフライン）": {
+        "parameter": 10.0,
+        "parameter_name": "風力プロセス雑音",
+        "setting_key": "rts3_q",
+        "training_rmse_m_s": 0.00509215755356198,
+        "stable_candidate_found": true
+      },
+      "RTS 4状態（オフライン）": {
+        "parameter": 10.0,
+        "parameter_name": "力変化率プロセス雑音",
+        "setting_key": "rts4_q",
+        "training_rmse_m_s": 0.057867788569911385,
+        "stable_candidate_found": true
+      },
+      "因果LPF": {
+        "parameter": 0.5,
+        "parameter_name": "遮断周波数",
+        "setting_key": "lpf_hz",
+        "training_rmse_m_s": 0.4816840096631084,
+        "stable_candidate_found": true
+      }
+    },
+    "OUT": {
+      "静的換算": {
+        "parameter": null
+      },
+      "ESO 3状態": {
+        "parameter": 40.0,
+        "parameter_name": "極周波数",
+        "setting_key": "eso3_hz",
+        "training_rmse_m_s": 0.22388057951598236,
+        "stable_candidate_found": true
+      },
+      "ESO 4状態": {
+        "parameter": 3.0,
+        "parameter_name": "極周波数",
+        "setting_key": "eso4_hz",
+        "training_rmse_m_s": 25.01850488724309,
+        "stable_candidate_found": false
+      },
+      "RTS 3状態（オフライン）": {
+        "parameter": 3.0,
+        "parameter_name": "風力プロセス雑音",
+        "setting_key": "rts3_q",
+        "training_rmse_m_s": 0.007401452949880559,
+        "stable_candidate_found": true
+      },
+      "RTS 4状態（オフライン）": {
+        "parameter": 10.0,
+        "parameter_name": "力変化率プロセス雑音",
+        "setting_key": "rts4_q",
+        "training_rmse_m_s": 0.05798683378267485,
+        "stable_candidate_found": true
+      },
+      "因果LPF": {
+        "parameter": 0.75,
+        "parameter_name": "遮断周波数",
+        "setting_key": "lpf_hz",
+        "training_rmse_m_s": 0.46456693557817813,
+        "stable_candidate_found": true
+      }
+    }
+  },
+  "eso_gain_vectors_by_axis": {
+    "IN": {
+      "ESO 3状態": [
+        2.6468642053838813,
+        192.14240105114294,
+        20.144977545073612
+      ],
+      "ESO 4状態": [
+        1.8953662168585337,
+        110.56383475301597,
+        11.823385062084604,
+        180.96409997645188
+      ]
+    },
+    "OUT": {
+      "ESO 3状態": [
+        2.332931254301717,
+        145.7274802476467,
+        20.698912679690523
+      ],
+      "ESO 4状態": [
+        0.2631223055481068,
+        6.786257150548089,
+        0.5165983830244545,
+        2.3230311365629404
+      ]
+    }
+  },
+  "validation_metrics": [
+    {
+      "case": "無風",
+      "axis": "IN",
+      "method": "静的換算",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "IN",
+      "method": "因果LPF",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "IN",
+      "method": "ESO 3状態",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "IN",
+      "method": "ESO 4状態",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "IN",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "IN",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "OUT",
+      "method": "静的換算",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "OUT",
+      "method": "因果LPF",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "OUT",
+      "method": "ESO 3状態",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "OUT",
+      "method": "ESO 4状態",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "OUT",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "無風",
+      "axis": "OUT",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 0.0,
+      "bias_m_s": 0.0,
+      "mae_m_s": 0.0,
+      "p95_abs_error_m_s": 0.0,
+      "max_abs_error_m_s": 0.0,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 0.0,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "IN",
+      "method": "静的換算",
+      "rmse_m_s": 3.150392274085143e-11,
+      "bias_m_s": -3.25978148178289e-12,
+      "mae_m_s": 3.25978148178289e-12,
+      "p95_abs_error_m_s": 5.222489107836672e-14,
+      "max_abs_error_m_s": 6.040932198914106e-10,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.440811683344457,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "IN",
+      "method": "因果LPF",
+      "rmse_m_s": 3.994565887894437e-10,
+      "bias_m_s": -4.1306598903239383e-11,
+      "mae_m_s": 4.1306598903239383e-11,
+      "p95_abs_error_m_s": 6.625033854845611e-13,
+      "max_abs_error_m_s": 7.659404888116228e-09,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.440811683344457,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "IN",
+      "method": "ESO 3状態",
+      "rmse_m_s": 1.527674335605884e-14,
+      "bias_m_s": -1.1392157058967964e-15,
+      "mae_m_s": 1.511432249198411e-14,
+      "p95_abs_error_m_s": 1.6209256159527285e-14,
+      "max_abs_error_m_s": 4.596323321948148e-14,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.440811683344457,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "IN",
+      "method": "ESO 4状態",
+      "rmse_m_s": 8.496668236679775e-15,
+      "bias_m_s": -3.253587875308637e-15,
+      "mae_m_s": 8.267989467672773e-15,
+      "p95_abs_error_m_s": 1.1102230246251565e-14,
+      "max_abs_error_m_s": 2.4424906541753444e-14,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.440811683344457,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "IN",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 5.160591041258431e-14,
+      "bias_m_s": -2.7834242847088068e-15,
+      "mae_m_s": 3.90224572232087e-14,
+      "p95_abs_error_m_s": 1.099120794378905e-13,
+      "max_abs_error_m_s": 3.9390712913700554e-13,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.440811683344457,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "IN",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 1.179031881576801e-14,
+      "bias_m_s": -2.7156478124435947e-15,
+      "mae_m_s": 1.0484925097454748e-14,
+      "p95_abs_error_m_s": 1.7985612998927536e-14,
+      "max_abs_error_m_s": 5.306866057708248e-14,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.440811683344457,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "OUT",
+      "method": "静的換算",
+      "rmse_m_s": 5.268159518771881e-07,
+      "bias_m_s": -8.594731632051632e-08,
+      "mae_m_s": 8.594731632051632e-08,
+      "p95_abs_error_m_s": 1.503224737020573e-07,
+      "max_abs_error_m_s": 6.435235293755781e-06,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.773894451591106,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "OUT",
+      "method": "因果LPF",
+      "rmse_m_s": 8.728876011405757e-07,
+      "bias_m_s": -1.4240710497708572e-07,
+      "mae_m_s": 1.4240710497708572e-07,
+      "p95_abs_error_m_s": 2.490709321678595e-07,
+      "max_abs_error_m_s": 1.0662621187540466e-05,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.773894451591106,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "OUT",
+      "method": "ESO 3状態",
+      "rmse_m_s": 1.3522239857970964e-14,
+      "bias_m_s": -9.399972863580583e-15,
+      "mae_m_s": 1.343314877322839e-14,
+      "p95_abs_error_m_s": 1.7763568394002505e-14,
+      "max_abs_error_m_s": 1.7763568394002505e-14,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.773894451591106,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "OUT",
+      "method": "ESO 4状態",
+      "rmse_m_s": 26.481204095992258,
+      "bias_m_s": 0.8250065569196033,
+      "mae_m_s": 25.26618860294359,
+      "p95_abs_error_m_s": 33.33502793592041,
+      "max_abs_error_m_s": 33.561308736467396,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.773894451591106,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "OUT",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 5.879376483291043e-14,
+      "bias_m_s": -6.7378483744765355e-15,
+      "mae_m_s": 4.622380785013731e-14,
+      "p95_abs_error_m_s": 1.0436096431476471e-13,
+      "max_abs_error_m_s": 3.4727776210274897e-13,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.773894451591106,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "一定風 2 m/s",
+      "axis": "OUT",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 1.815286398494152e-14,
+      "bias_m_s": -6.1206489612058725e-15,
+      "mae_m_s": 1.4383330505465674e-14,
+      "p95_abs_error_m_s": 3.68594044175552e-14,
+      "max_abs_error_m_s": 6.616929226765933e-14,
+      "peak_delay_s": null,
+      "maximum_abs_angle_deg": 6.773894451591106,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "IN",
+      "method": "静的換算",
+      "rmse_m_s": 1.8017700352795334,
+      "bias_m_s": -0.21279685445307608,
+      "mae_m_s": 1.232284097845764,
+      "p95_abs_error_m_s": 4.383448237825961,
+      "max_abs_error_m_s": 7.982938398907126,
+      "peak_delay_s": 0.21999999999999886,
+      "maximum_abs_angle_deg": 77.97441550929194,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "IN",
+      "method": "因果LPF",
+      "rmse_m_s": 0.6104857395772083,
+      "bias_m_s": 0.17025176910008905,
+      "mae_m_s": 0.4630500390288994,
+      "p95_abs_error_m_s": 1.2142668899159292,
+      "max_abs_error_m_s": 2.439452266946284,
+      "peak_delay_s": 0.7999999999999972,
+      "maximum_abs_angle_deg": 77.97441550929194,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "IN",
+      "method": "ESO 3状態",
+      "rmse_m_s": 0.17956957813466368,
+      "bias_m_s": 0.0006714125279628167,
+      "mae_m_s": 0.14294847008389636,
+      "p95_abs_error_m_s": 0.35304273960224886,
+      "max_abs_error_m_s": 0.7788034652501952,
+      "peak_delay_s": 0.01999999999999602,
+      "maximum_abs_angle_deg": 77.97441550929194,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "IN",
+      "method": "ESO 4状態",
+      "rmse_m_s": 0.25415989533037914,
+      "bias_m_s": -0.006351778685971167,
+      "mae_m_s": 0.2019571870670257,
+      "p95_abs_error_m_s": 0.49816534258212075,
+      "max_abs_error_m_s": 0.9576330503576775,
+      "peak_delay_s": 0.029999999999986926,
+      "maximum_abs_angle_deg": 77.97441550929194,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "IN",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 0.004225939427925884,
+      "bias_m_s": 2.8244732086840905e-06,
+      "mae_m_s": 0.0031413392864889735,
+      "p95_abs_error_m_s": 0.00857155531113398,
+      "max_abs_error_m_s": 0.06078108861559439,
+      "peak_delay_s": 0.0,
+      "maximum_abs_angle_deg": 77.97441550929194,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "IN",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 0.060209877453153766,
+      "bias_m_s": 0.00022807717867506482,
+      "mae_m_s": 0.04814029486483564,
+      "p95_abs_error_m_s": 0.11854254823394628,
+      "max_abs_error_m_s": 0.2526866437492097,
+      "peak_delay_s": -0.010000000000005116,
+      "maximum_abs_angle_deg": 77.97441550929194,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "OUT",
+      "method": "静的換算",
+      "rmse_m_s": 1.2192424602868224,
+      "bias_m_s": -0.09387123065483623,
+      "mae_m_s": 0.8288500345738958,
+      "p95_abs_error_m_s": 2.31075861205065,
+      "max_abs_error_m_s": 7.0156722300867305,
+      "peak_delay_s": 0.23999999999999488,
+      "maximum_abs_angle_deg": 69.41745825728268,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "OUT",
+      "method": "因果LPF",
+      "rmse_m_s": 0.5406268292849796,
+      "bias_m_s": 0.0897063094496425,
+      "mae_m_s": 0.42181202492095904,
+      "p95_abs_error_m_s": 1.0748080472991672,
+      "max_abs_error_m_s": 2.0306486513484776,
+      "peak_delay_s": 0.6699999999999875,
+      "maximum_abs_angle_deg": 69.41745825728268,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "OUT",
+      "method": "ESO 3状態",
+      "rmse_m_s": 0.224047014600662,
+      "bias_m_s": -0.0030100420783730117,
+      "mae_m_s": 0.17778563587473656,
+      "p95_abs_error_m_s": 0.44223695829065024,
+      "max_abs_error_m_s": 0.918052463033336,
+      "peak_delay_s": 0.01999999999999602,
+      "maximum_abs_angle_deg": 69.41745825728268,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "OUT",
+      "method": "ESO 4状態",
+      "rmse_m_s": 23.702408267528945,
+      "bias_m_s": 1.1421759451048132,
+      "mae_m_s": 22.31477279055774,
+      "p95_abs_error_m_s": 32.409328262623724,
+      "max_abs_error_m_s": 40.13127858750703,
+      "peak_delay_s": 5.079999999999998,
+      "maximum_abs_angle_deg": 69.41745825728268,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "OUT",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 0.007287337015880851,
+      "bias_m_s": 9.5482666622743e-06,
+      "mae_m_s": 0.005470239241074123,
+      "p95_abs_error_m_s": 0.013916073232901982,
+      "max_abs_error_m_s": 0.07138794313142727,
+      "peak_delay_s": -0.010000000000005116,
+      "maximum_abs_angle_deg": 69.41745825728268,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s",
+      "axis": "OUT",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 0.06019797710651293,
+      "bias_m_s": 0.00023876668688686665,
+      "mae_m_s": 0.048107882169059535,
+      "p95_abs_error_m_s": 0.11884646661263579,
+      "max_abs_error_m_s": 0.2521582906678268,
+      "peak_delay_s": -0.010000000000005116,
+      "maximum_abs_angle_deg": 69.41745825728268,
+      "within_mechanical_limit": false
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "IN",
+      "method": "静的換算",
+      "rmse_m_s": 0.6502982187526157,
+      "bias_m_s": -0.08878981821940757,
+      "mae_m_s": 0.4136535964154085,
+      "p95_abs_error_m_s": 1.1903524134408119,
+      "max_abs_error_m_s": 3.5181138881543648,
+      "peak_delay_s": 3.3599999999999994,
+      "maximum_abs_angle_deg": 18.86195965596561,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "IN",
+      "method": "因果LPF",
+      "rmse_m_s": 0.29087597097877155,
+      "bias_m_s": 0.009718919222551057,
+      "mae_m_s": 0.23434755008706729,
+      "p95_abs_error_m_s": 0.5527641837219761,
+      "max_abs_error_m_s": 1.0292950859034975,
+      "peak_delay_s": 4.099999999999994,
+      "maximum_abs_angle_deg": 18.86195965596561,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "IN",
+      "method": "ESO 3状態",
+      "rmse_m_s": 0.10366459939348828,
+      "bias_m_s": -0.0005430129179787417,
+      "mae_m_s": 0.08275756249984187,
+      "p95_abs_error_m_s": 0.2027416957806684,
+      "max_abs_error_m_s": 0.4568240110003432,
+      "peak_delay_s": -0.010000000000005116,
+      "maximum_abs_angle_deg": 18.86195965596561,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "IN",
+      "method": "ESO 4状態",
+      "rmse_m_s": 0.15207549023020506,
+      "bias_m_s": -0.004599972046542082,
+      "mae_m_s": 0.12128199063489357,
+      "p95_abs_error_m_s": 0.295779196513013,
+      "max_abs_error_m_s": 0.6629564760435449,
+      "peak_delay_s": 0.0,
+      "maximum_abs_angle_deg": 18.86195965596561,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "IN",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 0.0033267526903837967,
+      "bias_m_s": -3.15792927890771e-06,
+      "mae_m_s": 0.002652366982800201,
+      "p95_abs_error_m_s": 0.006572240881723434,
+      "max_abs_error_m_s": 0.043561572121397774,
+      "peak_delay_s": 0.0,
+      "maximum_abs_angle_deg": 18.86195965596561,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "IN",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 0.03416625137197314,
+      "bias_m_s": 0.00010365376853473373,
+      "mae_m_s": 0.027275732255351764,
+      "p95_abs_error_m_s": 0.06628265007564631,
+      "max_abs_error_m_s": 0.14760403236136055,
+      "peak_delay_s": 0.0,
+      "maximum_abs_angle_deg": 18.86195965596561,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "OUT",
+      "method": "静的換算",
+      "rmse_m_s": 0.254636497640415,
+      "bias_m_s": -0.006624938194617121,
+      "mae_m_s": 0.1962162527893116,
+      "p95_abs_error_m_s": 0.5078884826798946,
+      "max_abs_error_m_s": 1.204201057652289,
+      "peak_delay_s": 3.450000000000003,
+      "maximum_abs_angle_deg": 17.438323299965692,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "OUT",
+      "method": "因果LPF",
+      "rmse_m_s": 0.27856845563483845,
+      "bias_m_s": 0.004105515996613581,
+      "mae_m_s": 0.22408779197461987,
+      "p95_abs_error_m_s": 0.5436176292237273,
+      "max_abs_error_m_s": 0.978865889467385,
+      "peak_delay_s": 4.079999999999998,
+      "maximum_abs_angle_deg": 17.438323299965692,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "OUT",
+      "method": "ESO 3状態",
+      "rmse_m_s": 0.12953266875657926,
+      "bias_m_s": -0.002522611752792089,
+      "mae_m_s": 0.10259481792914207,
+      "p95_abs_error_m_s": 0.2562304947419312,
+      "max_abs_error_m_s": 0.6003886784033854,
+      "peak_delay_s": -0.010000000000005116,
+      "maximum_abs_angle_deg": 17.438323299965692,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "OUT",
+      "method": "ESO 4状態",
+      "rmse_m_s": 26.406473901288113,
+      "bias_m_s": 0.7916909121062001,
+      "mae_m_s": 25.18386423102315,
+      "p95_abs_error_m_s": 33.46503677375169,
+      "max_abs_error_m_s": 35.726364014239756,
+      "peak_delay_s": -2.3700000000000045,
+      "maximum_abs_angle_deg": 17.438323299965692,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "OUT",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 0.004592119942729935,
+      "bias_m_s": 7.610635984736409e-06,
+      "mae_m_s": 0.003440474793955198,
+      "p95_abs_error_m_s": 0.009192416737878116,
+      "max_abs_error_m_s": 0.04774329136257904,
+      "peak_delay_s": 0.0,
+      "maximum_abs_angle_deg": 17.438323299965692,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "独立Kaimal乱流 平均2 m/s TI20%",
+      "axis": "OUT",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 0.03406924045411022,
+      "bias_m_s": 0.00010775907896271084,
+      "mae_m_s": 0.027199436475017717,
+      "p95_abs_error_m_s": 0.0658843308382592,
+      "max_abs_error_m_s": 0.14770022258644255,
+      "peak_delay_s": 0.0,
+      "maximum_abs_angle_deg": 17.438323299965692,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "IN",
+      "method": "静的換算",
+      "rmse_m_s": 0.0243714125292916,
+      "bias_m_s": 0.0002484472918476433,
+      "mae_m_s": 0.020262643338683585,
+      "p95_abs_error_m_s": 0.039172897715615176,
+      "max_abs_error_m_s": 0.043248279468905526,
+      "peak_delay_s": 43.36,
+      "maximum_abs_angle_deg": 45.41781164534084,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "IN",
+      "method": "因果LPF",
+      "rmse_m_s": 0.22800346801229446,
+      "bias_m_s": 0.002028964078798841,
+      "mae_m_s": 0.16696657293780182,
+      "p95_abs_error_m_s": 0.4618873349871887,
+      "max_abs_error_m_s": 0.49960024070432585,
+      "peak_delay_s": 44.269999999999996,
+      "maximum_abs_angle_deg": 45.41781164534084,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "IN",
+      "method": "ESO 3状態",
+      "rmse_m_s": 0.004845555794688676,
+      "bias_m_s": 6.443843127570149e-06,
+      "mae_m_s": 0.0034363346841956213,
+      "p95_abs_error_m_s": 0.010240500958091387,
+      "max_abs_error_m_s": 0.011080838105708146,
+      "peak_delay_s": 43.040000000000006,
+      "maximum_abs_angle_deg": 45.41781164534084,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "IN",
+      "method": "ESO 4状態",
+      "rmse_m_s": 0.0010788836799991625,
+      "bias_m_s": -5.88917208953105e-06,
+      "mae_m_s": 0.0007632885823857715,
+      "p95_abs_error_m_s": 0.0022639153152391065,
+      "max_abs_error_m_s": 0.002491659446111072,
+      "peak_delay_s": 0.00999999999999801,
+      "maximum_abs_angle_deg": 45.41781164534084,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "IN",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 4.401461213901815e-07,
+      "bias_m_s": -2.1530237701432904e-07,
+      "mae_m_s": 2.5503498096541527e-07,
+      "p95_abs_error_m_s": 1.1607443551664428e-06,
+      "max_abs_error_m_s": 2.0836120429024163e-06,
+      "peak_delay_s": 43.0,
+      "maximum_abs_angle_deg": 45.41781164534084,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "IN",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 0.0010758373126191268,
+      "bias_m_s": 1.4537197461002227e-08,
+      "mae_m_s": 0.0007606172847248364,
+      "p95_abs_error_m_s": 0.0022633875033268858,
+      "max_abs_error_m_s": 0.0024263481689024147,
+      "peak_delay_s": 43.0,
+      "maximum_abs_angle_deg": 45.41781164534084,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "OUT",
+      "method": "静的換算",
+      "rmse_m_s": 0.05366932297336945,
+      "bias_m_s": 0.0021265120323368087,
+      "mae_m_s": 0.04488263765997986,
+      "p95_abs_error_m_s": 0.08592770024577641,
+      "max_abs_error_m_s": 0.09379840420034613,
+      "peak_delay_s": 43.66,
+      "maximum_abs_angle_deg": 46.75197699780666,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "OUT",
+      "method": "因果LPF",
+      "rmse_m_s": 0.18622617763318614,
+      "bias_m_s": 0.002920397436247835,
+      "mae_m_s": 0.14326752713844046,
+      "p95_abs_error_m_s": 0.35307697545439876,
+      "max_abs_error_m_s": 0.37631554499740005,
+      "peak_delay_s": 44.290000000000006,
+      "maximum_abs_angle_deg": 46.75197699780666,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "OUT",
+      "method": "ESO 3状態",
+      "rmse_m_s": 0.003683251883436412,
+      "bias_m_s": 1.6344949953369732e-05,
+      "mae_m_s": 0.00265911625509105,
+      "p95_abs_error_m_s": 0.007737595521502481,
+      "max_abs_error_m_s": 0.008402381528509473,
+      "peak_delay_s": 0.030000000000001137,
+      "maximum_abs_angle_deg": 46.75197699780666,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "OUT",
+      "method": "ESO 4状態",
+      "rmse_m_s": 24.6403382993469,
+      "bias_m_s": 0.8021870699112363,
+      "mae_m_s": 23.281276762298507,
+      "p95_abs_error_m_s": 33.0586425302529,
+      "max_abs_error_m_s": 33.594412338165874,
+      "peak_delay_s": -9.16,
+      "maximum_abs_angle_deg": 46.75197699780666,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "OUT",
+      "method": "RTS 3状態（オフライン）",
+      "rmse_m_s": 5.881087753177904e-07,
+      "bias_m_s": -2.345263114052661e-07,
+      "mae_m_s": 3.3025110712166175e-07,
+      "p95_abs_error_m_s": 1.3124356883942312e-06,
+      "max_abs_error_m_s": 5.941971569889404e-06,
+      "peak_delay_s": 43.0,
+      "maximum_abs_angle_deg": 46.75197699780666,
+      "within_mechanical_limit": true
+    },
+    {
+      "case": "ガスト 2→6 m/s",
+      "axis": "OUT",
+      "method": "RTS 4状態（オフライン）",
+      "rmse_m_s": 0.0010758361684433076,
+      "bias_m_s": 1.4490839267993004e-08,
+      "mae_m_s": 0.0007606143665031415,
+      "p95_abs_error_m_s": 0.0022633876406187746,
+      "max_abs_error_m_s": 0.0024263482942536996,
+      "peak_delay_s": 43.0,
+      "maximum_abs_angle_deg": 46.75197699780666,
+      "within_mechanical_limit": true
+    }
+  ],
+  "maximum_abs_angle_deg": {
+    "無風": {
+      "IN": 0.0,
+      "OUT": 0.0
+    },
+    "一定風 2 m/s": {
+      "IN": 6.440811683344457,
+      "OUT": 6.773894451591106
+    },
+    "Kaimal乱流 平均3.75 m/s TI20% 最大6 m/s": {
+      "IN": 77.97441550929194,
+      "OUT": 69.41745825728268
+    },
+    "独立Kaimal乱流 平均2 m/s TI20%": {
+      "IN": 18.86195965596561,
+      "OUT": 17.438323299965692
+    },
+    "ガスト 2→6 m/s": {
+      "IN": 45.41781164534084,
+      "OUT": 46.75197699780666
+    }
+  },
+  "mechanical_angle_limit_deg": 60.0,
+  "interpretation": "Settings selected on the independent tuning record and held fixed for all validation cases. Sensor nonidealities and coefficient mismatch are deferred to OW-05 and OW-04 respectively."
+}
