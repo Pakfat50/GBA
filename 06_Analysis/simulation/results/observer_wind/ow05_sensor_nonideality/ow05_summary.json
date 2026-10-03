@@ -11,6 +11,40 @@
     "gain_error_fraction": 0.0,
     "offset_deg": 0.0
   },
+  "measured_sensor_noise": {
+    "IN": {
+      "n_windows": 20,
+      "n_samples": 1000,
+      "n_innovations": 960,
+      "white_equivalent_sigma_deg": 0.004840142963747639,
+      "three_sigma_deg": 0.014520428891242918,
+      "assumed_white_sigma_deg": 0.015,
+      "assumed_white_three_sigma_deg": 0.045,
+      "innovation_skewness": 0.04768552539329529,
+      "innovation_excess_kurtosis": 3.337269770856002,
+      "normality_k2": 80.78053255755678,
+      "normality_p_value": 2.8756116375389478e-18,
+      "fraction_within_three_sigma": 0.9802083333333333,
+      "residual_acf_lag1": 0.896599813482047,
+      "acf_95_bound": 0.061980642139300234
+    },
+    "OUT": {
+      "n_windows": 24,
+      "n_samples": 1200,
+      "n_innovations": 1152,
+      "white_equivalent_sigma_deg": 0.005540229548757062,
+      "three_sigma_deg": 0.016620688646271187,
+      "assumed_white_sigma_deg": 0.015,
+      "assumed_white_three_sigma_deg": 0.045,
+      "innovation_skewness": 0.1815994485001367,
+      "innovation_excess_kurtosis": 5.477791585538238,
+      "normality_k2": 150.0009908809526,
+      "normality_p_value": 2.6773101853324156e-33,
+      "fraction_within_three_sigma": 0.9869791666666666,
+      "residual_acf_lag1": 0.9178405196510704,
+      "acf_95_bound": 0.056580326380583315
+    }
+  },
   "noise_amplification": [
     {
       "case": "独立Kaimal乱流 平均2 m/s TI20%",
