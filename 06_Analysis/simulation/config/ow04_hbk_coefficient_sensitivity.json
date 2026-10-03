@@ -1,0 +1,41 @@
+{
+  "task_id": "OW-04",
+  "description": "Quantify observer-model coefficient mismatch while the plant remains at adopted BALL coefficients.",
+  "base_task": "OW-03",
+  "physical_configuration": "BALL",
+  "sample_rate_hz": 100.0,
+  "duration_s": 120.0,
+  "evaluation_start_s": 15.0,
+  "force_lever_m": 0.18061,
+  "mechanical_angle_limit_deg": 60.0,
+  "friction_epsilon_deg_s": 0.5,
+  "assumed_angle_noise_deg": 0.02,
+  "air_density_kg_m3": 1.225,
+  "projected_area_m2": 0.007853981633974483,
+  "drag_coefficient": 0.4860496586340641,
+  "ball_mass_nominal_g": 3.9,
+  "ball_mass_error_g": 0.5,
+  "ball_center_arm_nominal_mm": 180.61,
+  "ball_center_arm_error_mm": 10.0,
+  "ball_radius_m": 0.05,
+  "gravity_m_s2": 9.80665,
+  "c_ball_bootstrap_95ci_n_m_s2_per_rad2": [
+    1.3009058e-5,
+    1.4157291e-5
+  ],
+  "tau_leave_one_configuration_out_csv": "../fitting_pipeline/results/20260921/iterative_hybrid/ihb03_sensitivity.csv",
+  "sensitivity_cases": [
+    "独立Kaimal乱流 平均2 m/s TI20%",
+    "ガスト 2→6 m/s"
+  ],
+  "observer_methods": [
+    "ESO 3状態",
+    "RTS 3状態（オフライン）"
+  ],
+  "static_baselines_for_K_only": [
+    "静的換算",
+    "因果LPF"
+  ],
+  "bounded_estimate_limit_m_s": 20.0,
+  "note": "Mass and arm variations generate correlated I/K changes for joint cases. OAT ranges are deterministic sensitivity limits, not probability distributions."
+}
