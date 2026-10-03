@@ -506,6 +506,22 @@ def save_worst_case_waveforms(output: Path, config: dict, plants: dict,
             "scenario": worst["scenario"], "rmse_m_s": worst["rmse_m_s"],
             "max_abs_error_m_s": worst["max_abs_error_m_s"],
             "error_at_peak_m_s": float(error[peak_index]),
+            "mass_g": worst.get("mass_g"),
+            "arm_mm": worst.get("arm_mm"),
+            "coefficients_used": {
+                "I_kg_m2": model["inertia_kg_m2"],
+                "K_n_m_per_rad": model["restoring_n_m_per_rad"],
+                "c_ball_n_m_s2_per_rad2": model["ball_quadratic_drag_n_m_s2_per_rad2"],
+                "c_total_n_m_s2_per_rad2": model["total_quadratic_drag_n_m_s2_per_rad2"],
+                "tau_n_m": model["tau_n_m"],
+            },
+            "coefficient_offsets_percent": {
+                "I": 100.0 * (model["inertia_kg_m2"] / nominal_by_axis[axis]["inertia_kg_m2"] - 1.0),
+                "K": 100.0 * (model["restoring_n_m_per_rad"] / nominal_by_axis[axis]["restoring_n_m_per_rad"] - 1.0),
+                "c_ball": 100.0 * (model["ball_quadratic_drag_n_m_s2_per_rad2"] / nominal_by_axis[axis]["ball_quadratic_drag_n_m_s2_per_rad2"] - 1.0),
+                "c_total": 100.0 * (model["total_quadratic_drag_n_m_s2_per_rad2"] / nominal_by_axis[axis]["total_quadratic_drag_n_m_s2_per_rad2"] - 1.0),
+                "tau": 100.0 * (model["tau_n_m"] / nominal_by_axis[axis]["tau_n_m"] - 1.0),
+            },
             "peak_error_time_s": peak_time, "plot_window_start_s": max(0.0, peak_time-window_s),
             "plot_window_end_s": peak_time+window_s,
         })
@@ -604,7 +620,7 @@ def write_report(path: Path, config: dict, bounds: dict, bound_rows: list[dict],
         lines += [
             f"### {row['case']}", "",
             f"最大RMSE条件は **{row['axis']}軸・{row['method']}・{row['scenario']}** で、RMSEは **{row['rmse_m_s']:.5f} m/s**。評価区間内の最大絶対誤差は **{row['max_abs_error_m_s']:.5f} m/s**、発生時刻は **{row['peak_error_time_s']:.2f} s**。"
-            + (f"この時刻の符号付き誤差（推定値−真値）は **{row['error_at_peak_m_s']:+.5f} m/s** で、真値との差の向きも下段に示す。" if row["case"] == "独立Kaimal乱流 平均2 m/s TI20%" else "")
+            + (f"この時刻の符号付き誤差（推定値−真値）は **{row['error_at_peak_m_s']:+.5f} m/s** で、真値との差の向きも下段に示す。推定器に設定したOUT軸係数はI={row['coefficients_used']['I_kg_m2']:.6g} kg·m²（公称比{row['coefficient_offsets_percent']['I']:+.3f}%）、K={row['coefficients_used']['K_n_m_per_rad']:.6g} N·m/rad（{row['coefficient_offsets_percent']['K']:+.3f}%）、球抗力係数c_ball={row['coefficients_used']['c_ball_n_m_s2_per_rad2']:.6g} N·m·s²/rad²（{row['coefficient_offsets_percent']['c_ball']:+.3f}%）、τ={row['coefficients_used']['tau_n_m']:.6g} N·m（{row['coefficient_offsets_percent']['tau']:+.3f}%）だった。総二乗抗力係数cは{row['coefficients_used']['c_total_n_m_s2_per_rad2']:.6g} N·m·s²/rad²（{row['coefficient_offsets_percent']['c_total']:+.3f}%）。I/Kは球質量{row['mass_g']:.2f} g・有効腕長{row['arm_mm']:.2f} mmから同時算出し、ロッド抗力は理論値で固定した。プラント側は公称係数のまま。" if row["case"] == "独立Kaimal乱流 平均2 m/s TI20%" else "")
             + f"図は **{row['plot_window_start_s']:.2f}–{row['plot_window_end_s']:.2f} s** を表示する。", "",
             f"![{row['case']}で最大誤差となった条件の時系列拡大](ow04_worst_{stem}_timeseries.png)", "",
         ]

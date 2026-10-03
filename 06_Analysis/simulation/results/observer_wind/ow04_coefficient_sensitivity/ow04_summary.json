@@ -1625,7 +1625,21 @@
       "peak_error_time_s": 100.34,
       "plot_window_start_s": 98.34,
       "plot_window_end_s": 102.34,
-      "error_at_peak_m_s": -0.8555517117123346
+      "error_at_peak_m_s": -0.8555517117123346,
+      "coefficients_used": {
+        "I_kg_m2": 0.00040408124319100003,
+        "K_n_m_per_rad": 0.012903995999649998,
+        "c_ball_n_m_s2_per_rad2": 0.000014157291,
+        "c_total_n_m_s2_per_rad2": 0.000014413935192864716,
+        "tau_n_m": 0.00018026976059303294
+      },
+      "coefficient_offsets_percent": {
+        "I": 8.935106091287581,
+        "K": -9.261478745876861,
+        "c_ball": 2.772794178952531,
+        "c_total": 2.7220798930426504,
+        "tau": 1.8762874287480136
+      }
     },
     {
       "case": "ガスト 2→6 m/s",
