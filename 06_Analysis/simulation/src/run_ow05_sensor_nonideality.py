@@ -300,18 +300,22 @@ def run():
     report += ['', '増幅倍率は全点RMSE比を主指標、絶対値95パーセンタイル比を外れ値に頑健な補助指標、最大絶対値比をピーク影響の補助指標として併記した。最大値倍率は単一点に強く左右されるため慎重に読む。線形基準は準静的な写像であり、動的な真値風速誤差の代用ではない。観測器の履歴依存性はノイズあり/なし出力差側に反映される。全値は `ow05_noise_amplification.csv` に保存した。', '', '## 静止窓摂動σを使った追加オブザーバー評価','',
       '静止窓の平均からの摂動標準偏差を、OW-05センサーモデルの白色ノイズσとして置いた追加条件である（IN σ={:.5f}°、OUT σ={:.5f}°、±3σ幅はそれぞれ±{:.5f}°、±{:.5f}°）。モデルのσ欄には標準偏差を入力し、±3σを標準偏差として入力していない。有色ノイズは0にし、静止窓σを総ノイズ標準偏差の白色近似として評価した。'.format(measured_sigma['IN'],measured_sigma['OUT'],3*measured_sigma['IN'],3*measured_sigma['OUT']),
       '静止窓で観測した変動にはセンサー以外の微小運動も含まれ得る。実測摂動は時間相関（ラグ1自己相関約0.92）を持つ一方、今回の追加評価では同じ標準偏差の白色ノイズに近似しており、相関構造までは再現しない。ESO/RTSの調整値は公称条件で決めたものを固定し、追加条件に再調整せず適用した。','',
-      '| 風条件 | 軸 | ノイズσ [°] | 推定器 | RMSE [m/s] | MAE [m/s] | 95%絶対誤差 [m/s] | 最大絶対誤差 [m/s] |','|---|---|---:|---|---:|---:|---:|---:|']
+      '| 風条件 | 軸 | ノイズσ [°] | 推定器 | RMSE [m/s] | 公称比 | MAE [m/s] | 95%絶対誤差 [m/s] | 最大絶対誤差 [m/s] |','|---|---|---:|---|---:|---:|---:|---:|---:|']
     for cname,axis in plants:
       for method in ('ESO 3状態','RTS 3状態（オフライン）'):
         rr=next(r for r in rows if r['case']==cname and r['axis']==axis and r['sensor_case']=='static_window_sigma' and r['method']==method)
-        report.append(f"| {cname} | {axis} | {measured_sigma[axis]:.5f} | {method} | {rr['rmse_m_s']:.5f} | {rr['mae_m_s']:.5f} | {rr['p95_abs_error_m_s']:.5f} | {rr['max_abs_error_m_s']:.5f} |")
-    report += ['', '追加条件の風速推定と誤差。各図は両推定器のピーク誤差を含む時刻を中心に±2秒表示し、誤差軸は共通。', '']
+        nominal_rmse=next(r['rmse_m_s'] for r in rows if r['case']==cname and r['axis']==axis and r['method']==method and r['sensor_case']=='nominal')
+        rmse_ratio=rr['rmse_m_s']/nominal_rmse
+        report.append(f"| {cname} | {axis} | {measured_sigma[axis]:.5f} | {method} | {rr['rmse_m_s']:.5f} | {rmse_ratio:.2f}× | {rr['mae_m_s']:.5f} | {rr['p95_abs_error_m_s']:.5f} | {rr['max_abs_error_m_s']:.5f} |")
+    eso_ratios=[r['rmse_m_s']/next(n['rmse_m_s'] for n in rows if n['case']==r['case'] and n['axis']==r['axis'] and n['method']==r['method'] and n['sensor_case']=='nominal') for r in rows if r['sensor_case']=='static_window_sigma' and r['method']=='ESO 3状態']
+    rts_ratios=[r['rmse_m_s']/next(n['rmse_m_s'] for n in rows if n['case']==r['case'] and n['axis']==r['axis'] and n['method']==r['method'] and n['sensor_case']=='nominal') for r in rows if r['sensor_case']=='static_window_sigma' and r['method']=='RTS 3状態（オフライン）']
+    report += ['', f"公称条件とのRMSE比は、ESOで{min(eso_ratios):.1f}〜{max(eso_ratios):.1f}倍、RTSで{min(rts_ratios):.1f}〜{max(rts_ratios):.1f}倍だった。今回設定した白色近似では両方式とも誤差が増え、RTSのRMSEはESOより小さい。ただしRTSは未来データを使うオフライン評価であり、実測摂動の時間相関も再現していないため、この順位や倍率を実機の相関ノイズ条件へ直接一般化できない。", '', '追加条件の風速推定と誤差。各図は両推定器のピーク誤差を含む時刻を中心に±2秒表示し、誤差軸は共通。', '']
     for name in static_figs: report += [f'![静止窓摂動σによるオブザーバー比較]({name})','']
     report += ['', '## 公称センサー条件の拡大時系列','', '各図は最大誤差時刻を中心に±2秒を表示する。上段は真値と推定風速、下段は誤差。同じ風条件・軸のESO図とRTS図では、上段と下段それぞれの縦軸範囲を共通にして比較できるようにした。描画環境に日本語フォントがないため、図中ラベルは英語表記とし、本文と図題は日本語で記載する。', '']
     for name in figs: report += [f'![OW-05 拡大時系列]({name})','']
     report += ['## 解釈と選定','', 'RTS（Rauch–Tung–Striebel）スムーザーは、まず時系列を前向きに推定し、その後、将来の観測も使って過去の状態推定を後向きに修正する。時間的に独立なホワイトノイズによる一時的な観測の揺れが、運動モデルや前後の観測と整合しない場合、その揺れを実際の状態変化ではなく観測ノイズとして扱いやすくなり、推定への影響を弱められる。これは未来の観測が過去の観測ノイズを物理的に打ち消すという意味ではなく、全時系列に最も整合する状態系列を再推定する効果である。', '', 'この平滑化は、運動モデルが十分妥当で、観測ノイズとモデル誤差の大きさ（観測・プロセス雑音の共分散）が適切に設定されていることを前提とする。ノイズが時間相関を持つ場合、その影響は独立な白色ノイズほど平均化されない。また、実際の急な風速変化をモデルが説明できないときに平滑化が強すぎると、真の変化まで抑えたり、遅らせたりする可能性がある。したがって、オフラインRTSは必ずノイズに強いわけではなく、今回の低い誤差をホワイトノイズ単独の効果と断定することもできない。今回のセンサー条件には白色ノイズに加えて有色ノイズも含まれるため、成分ごとの寄与を分けるには追加の比較が必要である。', '', 'RTS 3状態は将来データを使うオフライン評価であるため、RMSEが小さくてもオンライン実装候補とは分ける。オンライン用途はESO 3状態を候補とし、公称ノイズ条件に対する帯域選定を反映した値を使用する。RTSはログ解析や遅延許容用途の基準として残す。ノイズ2倍感度を含む推定誤差は `ow05_metrics.csv`、増幅倍率は `ow05_noise_amplification.csv`、調整スキャンは `ow05_tuning_scan.csv` に保存した。', '', '## 再実行','', '```bash','python 06_Analysis/simulation/src/run_ow05_sensor_nonideality.py','```','']
     (OUT/'OW-05_REPORT.md').write_text('\n'.join(report),encoding='utf-8')
-    summary={'task_id':'OW-05','sensor_nominal':nominal,'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','perturbations')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
+    summary={'task_id':'OW-05','sensor_nominal':nominal,'static_window_sigma_condition':{'white_noise_std_deg_by_axis':measured_sigma,'coloured_noise_std_deg':0.0,'interpretation':'White-noise equivalent of static-window mean-centered perturbation sigma; temporal correlation and possible mechanical micro-motion are not represented.','observer_tuning':'Fixed values selected under nominal sensor noise.'},'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','perturbations')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
     (OUT/'ow05_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2,allow_nan=False)+'\n',encoding='utf-8')
     print('rows',len(rows),'tunings',tunings)
 
