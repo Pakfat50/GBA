@@ -112,7 +112,7 @@ def analyze_measured_sensor_noise():
       residuals=v['residuals']; sigma=v['white_equivalent_sigma_deg']
       joined=np.concatenate(residuals)
       axes[0].plot(np.arange(len(joined))*0.01,joined,lw=.8,color='#2673a8')
-      axes[0].axhspan(-3*sigma,3*sigma,color='#4c9f70',alpha=.16,label=f'Measured fluctuation ±3σ = ±{3*sigma:.4f}°')
+      axes[0].text(.01,.96,'±3σ band omitted: σ is estimated from high-frequency innovations, not this trace.',transform=axes[0].transAxes,va='top',fontsize=8,color='#444')
       axes[0].axhline(0,color='#444',lw=.7); axes[0].set_ylabel('Window-mean-subtracted angle [deg]')
       axes[0].set_xlabel('Concatenated stationary-window time [s]'); axes[0].set_title(f'{axis} axis: measured static-window readings (window mean removed)')
       axes[0].legend(loc='upper right'); axes[0].grid(alpha=.2)
