@@ -26,6 +26,7 @@ from run_ow03_hbk_observer_tuning import force_to_speed
 
 
 METHODS = ("ESO 3状態", "RTS 3状態（オフライン）")
+RTS_PROCESS_NOISE_GRID = (1e-6, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2)
 
 
 def _free_decay_reference(angle0: float, rate0: float, n: int, dt: float,
@@ -65,6 +66,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
     records = []
     sensitivity_records = []
     axis_diagnostic_records = []
+    rts_sensitivity_records = []
     series = {}
     envelope_series = {}
     margin_start_s, margin_end_s = 3.0, 0.5
@@ -134,6 +136,26 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
             "axis": axis, "time": t, "measured": envelope_pair["measured"],
             "model": envelope_pair["model"],
         }
+
+        for q_std in RTS_PROCESS_NOISE_GRID:
+            try:
+                _, force_rts = nonlinear_ekf_rts_force(
+                    angle, coefficients, dt, cfg["force_lever_m"], angle_noise_rad,
+                    q_std, 0, cfg["friction_epsilon_deg_s"], initial_state=initial_state,
+                )
+                wind_rts = force_to_speed(cfg, force_rts)[score]
+                q_bias = float(np.mean(wind_rts))
+                centered_rms = _rms(wind_rts - q_bias)
+                total_rmse = _rms(wind_rts)
+            except (ValueError, FloatingPointError, OverflowError, np.linalg.LinAlgError):
+                q_bias, centered_rms, total_rmse = float("nan"), float("nan"), float("nan")
+            rts_sensitivity_records.append({
+                "segment_id": str(row["segment_id"]), "axis": axis,
+                "process_noise_std": q_std, "bias_m_s": q_bias,
+                "bias_removed_variability_rms_m_s": centered_rms,
+                "zero_wind_total_rmse_m_s": total_rmse,
+                "samples_scored": int(score.sum()),
+            })
 
         estimated = {}
         clean = {}
@@ -308,6 +330,26 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
     pd.DataFrame(axis_summary).to_csv(out / "ow05_free_decay_axis_summary.csv", index=False,
                                       encoding="utf-8-sig", float_format="%.10g")
 
+    rts_sensitivity = pd.DataFrame(rts_sensitivity_records)
+    tuning_scan = pd.read_csv(out / "ow05_tuning_scan.csv")
+    training_rts = tuning_scan[tuning_scan["method"] == METHODS[1]][["axis", "parameter", "training_rmse_m_s"]]
+    rts_sensitivity_summary = []
+    for (axis, q_std), group in rts_sensitivity.groupby(["axis", "process_noise_std"], sort=True):
+        weights = group["samples_scored"].to_numpy(float)
+        train = training_rts[(training_rts["axis"] == axis) & np.isclose(training_rts["parameter"], q_std)]
+        rts_sensitivity_summary.append({
+            "axis": axis, "process_noise_std": float(q_std),
+            "bias_removed_variability_rms_m_s": float(np.sqrt(np.average(group["bias_removed_variability_rms_m_s"] ** 2, weights=weights))),
+            "zero_wind_total_rmse_m_s": float(np.sqrt(np.average(group["zero_wind_total_rmse_m_s"] ** 2, weights=weights))),
+            "mean_bias_m_s": float(np.average(group["bias_m_s"], weights=weights)),
+            "training_wind_rmse_m_s": float(train.iloc[0]["training_rmse_m_s"]) if len(train) else float("nan"),
+            "segments": int(group["segment_id"].nunique()),
+        })
+    rts_sensitivity.to_csv(out / "ow05_rts_smoothing_sensitivity.csv", index=False,
+                           encoding="utf-8-sig", float_format="%.10g")
+    pd.DataFrame(rts_sensitivity_summary).to_csv(out / "ow05_rts_smoothing_sensitivity_summary.csv", index=False,
+        encoding="utf-8-sig", float_format="%.10g")
+
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), sharey=True, layout="constrained")
     for ax, axis in zip(axes, ("IN", "OUT")):
         sid = representative_envelopes[axis]
@@ -448,6 +490,25 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
     fig.savefig(out / centered_png, dpi=170)
     plt.close(fig)
 
+    fig, ax = plt.subplots(figsize=(8.5, 5.0), layout="constrained")
+    rts_sens_summary_frame = pd.DataFrame(rts_sensitivity_summary)
+    for axis, color in (("IN", "#2673a8"), ("OUT", "#dd8452")):
+        group = rts_sens_summary_frame[rts_sens_summary_frame["axis"] == axis].sort_values("process_noise_std")
+        ax.plot(group["process_noise_std"], group["bias_removed_variability_rms_m_s"],
+                marker="o", color=color, label=f"{axis} free-decay variation")
+    ax.axhline(next(x["wind_zero_centered_rms_m_s"] for x in summary if x["axis"] == "OUT" and x["method"] == METHODS[1]),
+               color="#555555", ls="--", label="OUT at selected q=0.001")
+    ax.axvline(float(tunings[("IN", METHODS[1])]), color="#2673a8", ls=":", label="Selected q=0.001")
+    ax.set_xscale("log")
+    ax.set_xlabel("RTS disturbance process-noise standard deviation q")
+    ax.set_ylabel("Bias-removed free-decay variation RMS [m/s]")
+    ax.set_title("RTS smoothing sensitivity | lower q enforces a smoother disturbance")
+    ax.grid(alpha=.25, which="both")
+    ax.legend(fontsize=8)
+    rts_sensitivity_png = "ow05_rts_smoothing_sensitivity.png"
+    fig.savefig(out / rts_sensitivity_png, dpi=170)
+    plt.close(fig)
+
     return {
         "segments": int(detail["segment_id"].nunique()),
         "source": "04_Data/05_Fitting/20260921/Raw/球/LOG00012_ANGLE.csv",
@@ -462,5 +523,6 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         "axis_diagnostics": axis_summary,
         "axis_diagnostic_segments": axis_diagnostic_records,
         "representative_envelopes": representative_envelopes,
-        "figures": [waveform_png, gain_png, response_png, centered_png, sensitivity_png, envelope_png],
+        "rts_smoothing_sensitivity": rts_sensitivity_summary,
+        "figures": [waveform_png, gain_png, response_png, centered_png, rts_sensitivity_png, sensitivity_png, envelope_png],
     }

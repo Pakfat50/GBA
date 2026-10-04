@@ -175,7 +175,7 @@ def run():
             tuning_rows.append({'axis':axis,'method':method,'parameter':p,'training_rmse_m_s':met['rmse_m_s']})
           except (ValueError,FloatingPointError,np.linalg.LinAlgError): pass
         tunings[(axis,method)]=best[1]
-    rows=[]; noise_rows=[]; wave={}; static_sigma_wave={}
+    rows=[]; noise_rows=[]; rts_wind_sensitivity_rows=[]; wave={}; static_sigma_wave={}
     measured_sigma={axis:measured_noise[axis]['static_perturbation_sigma_deg'] for axis in ('IN','OUT')}
     modes={'ideal':None,'nominal':pars,'noise_2x':AngleSensorParameters(sample_rate_hz=rate,resolution_bits=14,white_noise_std_deg=.03,coloured_noise_std_deg=.02,coloured_noise_time_constant_s=pars.coloured_noise_time_constant_s,fixed_delay_s=.01)}
     static_sigma_modes={axis:AngleSensorParameters(sample_rate_hz=rate,resolution_bits=14,white_noise_std_deg=measured_sigma[axis],coloured_noise_std_deg=0.0,coloured_noise_time_constant_s=pars.coloured_noise_time_constant_s,fixed_delay_s=pars.fixed_delay_s) for axis in cfg['axis_names']}
@@ -195,6 +195,14 @@ def run():
             if method.startswith('ESO'): force=nonlinear_luenberger_force(angle,co,dt,cfg['force_lever_m'],p,0,cfg['friction_epsilon_deg_s'])
             else: _,force=nonlinear_ekf_rts_force(angle,co,dt,cfg['force_lever_m'],np.deg2rad(.02),p,0,cfg['friction_epsilon_deg_s'])
             est=force_to_speed(cfg,force); met=metrics(plant['v'],est,plant['mask'])
+            if sens=='nominal' and method.startswith('RTS'):
+              for q_std in (1e-6,3e-5,1e-4,3e-4,1e-3):
+                try:
+                  _,force_q=nonlinear_ekf_rts_force(angle,co,dt,cfg['force_lever_m'],np.deg2rad(.02),q_std,0,cfg['friction_epsilon_deg_s'])
+                  est_q=force_to_speed(cfg,force_q); met_q=metrics(plant['v'],est_q,plant['mask'])
+                  rts_wind_sensitivity_rows.append({'case':cname,'axis':axis,'process_noise_std':q_std,**met_q})
+                except (ValueError,FloatingPointError,np.linalg.LinAlgError):
+                  rts_wind_sensitivity_rows.append({'case':cname,'axis':axis,'process_noise_std':q_std,'rmse_m_s':float('nan'),'bias_m_s':float('nan'),'mae_m_s':float('nan'),'p95_abs_error_m_s':float('nan'),'max_abs_error_m_s':float('nan')})
             if sp is not None:
               if method.startswith('ESO'): force0=nonlinear_luenberger_force(angle0,co,dt,cfg['force_lever_m'],p,0,cfg['friction_epsilon_deg_s'])
               else: _,force0=nonlinear_ekf_rts_force(angle0,co,dt,cfg['force_lever_m'],np.deg2rad(.02),p,0,cfg['friction_epsilon_deg_s'])
@@ -214,6 +222,21 @@ def run():
           if sens=='nominal': wave[(cname,axis,method)]=(plant,est,row)
           if sens=='static_window_sigma': static_sigma_wave[(cname,axis,method)]=(plant,est,row)
     write_csv(OUT/'ow05_metrics.csv',rows); write_csv(OUT/'ow05_tuning_scan.csv',tuning_rows); write_csv(OUT/'ow05_noise_amplification.csv',noise_rows)
+    write_csv(OUT/'ow05_rts_smoothing_wind_sensitivity.csv',rts_wind_sensitivity_rows)
+    rts_sens_wind_plot=[]
+    fig,axes=plt.subplots(1,2,figsize=(12,4.8),sharey=True,layout='constrained')
+    case_labels={cases[0]['name']:'Kaimal validation',cases[1]['name']:'Gust validation'}
+    for ax,axis in zip(axes,cfg['axis_names']):
+      for cname,color in zip(dict.fromkeys(key[0] for key in wave),('#2673a8','#dd8452')):
+        group=pd.DataFrame(rts_wind_sensitivity_rows)
+        group=group[(group['axis']==axis)&(group['case']==cname)].sort_values('process_noise_std')
+        ax.plot(group['process_noise_std'],group['rmse_m_s'],marker='o',color=color,label=case_labels[cname])
+      ax.axvline(.001,color='#555',ls=':',label='Selected q=0.001')
+      ax.set_xscale('log'); ax.set_title(axis); ax.set_xlabel('RTS process-noise standard deviation q')
+      ax.set_ylabel('Wind-speed RMSE [m/s]'); ax.grid(alpha=.25,which='both'); ax.legend(fontsize=8)
+    fig.suptitle('RTS smoothing sensitivity on separate wind simulations')
+    rts_wind_sensitivity_png='ow05_rts_smoothing_wind_sensitivity.png'
+    fig.savefig(OUT/rts_wind_sensitivity_png,dpi=170); plt.close(fig)
     free_decay_validation=evaluate_free_decay(cfg,tunings,OUT,REPO)
     # Plot sensor-impact comparison for both valid wind models, zoom around global max error for each.
     figs=[]
@@ -329,6 +352,27 @@ def run():
     rts_in = next(fr for fr in free_decay_validation['summary'] if fr['axis']=='IN' and fr['method']=='RTS 3状態（オフライン）')
     rts_out = next(fr for fr in free_decay_validation['summary'] if fr['axis']=='OUT' and fr['method']=='RTS 3状態（オフライン）')
     report += [f"図の下段のESO総RMSEはIN {eso_in['wind_zero_rmse_m_s']:.3f} m/s、OUT {eso_out['wind_zero_rmse_m_s']:.3f} m/s。波形ごとにBiasを除いた変動RMSはIN {eso_in['wind_zero_centered_rms_m_s']:.3f} m/s、OUT {eso_out['wind_zero_centered_rms_m_s']:.3f} m/sで、INの振動成分が大きい。RTSの総RMSEはIN {rts_in['wind_zero_rmse_m_s']:.3f} m/s、OUT {rts_out['wind_zero_rmse_m_s']:.3f} m/sだが、Bias除去後はIN {rts_in['wind_zero_centered_rms_m_s']:.3f} m/s、OUT {rts_out['wind_zero_centered_rms_m_s']:.3f} m/s。OUT側の大きな定常Biasが総RMSEに含まれるため、RMSEだけでは振動成分の差が見えにくい。角度残差RMS（IN {eso_in['measured_angle_residual_rmse_deg']:.3f}°、OUT {eso_out['measured_angle_residual_rmse_deg']:.3f}°）とは別の量である。", f"![総RMSEとBias除去後の振動成分](ow05_free_decay_bias_removed_variability.png)",'']
+    rts_sweep = free_decay_validation['rts_smoothing_sensitivity']
+    report += ['### IN側RTSの変動を抑える設定感度','',
+      'RTSの外力過程雑音標準偏差qを小さくすると、外力推定が時間的に滑らかになる。ここでは自由振動検証波形で各波形のBiasを除いた変動RMSを調べ、別に合成Kaimal訓練データでの風速RMSEも併記した。自由振動値だけでqを決めず、風速変化への応答とのトレードオフを見るための診断である。','',
+      '| q | IN自由振動 変動RMS [m/s] | INゼロ風速総RMSE [m/s] | IN平均Bias [m/s] | Kaimal訓練RMSE [m/s] | 現行比 |','|---:|---:|---:|---:|---:|---:|']
+    baseline_training = next(x['training_wind_rmse_m_s'] for x in rts_sweep if x['axis']=='IN' and np.isclose(x['process_noise_std'],0.001))
+    for q in (0.001, 0.0003, 0.0001, 0.00003, 0.000001):
+      row = next(x for x in rts_sweep if x['axis']=='IN' and np.isclose(x['process_noise_std'],q))
+      report.append(f"| {q:g} | {row['bias_removed_variability_rms_m_s']:.3f} | {row['zero_wind_total_rmse_m_s']:.3f} | {row['mean_bias_m_s']:.3f} | {row['training_wind_rmse_m_s']:.5f} | {row['training_wind_rmse_m_s']/baseline_training:.2f}× |")
+    report += ['', 'q=0.00003ではINの変動RMSが約0.211 m/sとなり、現行q=0.001のOUT側0.222 m/sに近づく。一方、独立したKaimal訓練データのRMSEは0.095から0.137 m/sへ約44%増える。qを下げるほど振動は抑えられるが、実際の外力変化も追いにくくなるため、このqをそのまま採用する判断はできない。まずq=0.0003〜0.0001を候補域とし、ガスト・Kaimalの遅れとピーク誤差を確認するのが妥当である。q=0.000001のような過度な平滑化では訓練RMSEが現行の約2.14倍となる。総RMSEにはBiasも残るため、平滑化だけではゼロ風速総誤差を解消しない。','',
+      f"![RTS q感度と自由振動変動RMS](ow05_rts_smoothing_sensitivity.png)",'',
+      'q別波形値は `ow05_rts_smoothing_sensitivity.csv`、軸別集計とKaimal訓練RMSEは `ow05_rts_smoothing_sensitivity_summary.csv` に保存した。','']
+    report += ['q低下による風速追従への影響も、同じ公称センサーノイズ系列を使い、別のKaimal乱流・ガスト入力で確認した。下表はIN軸の真値風速に対するRMSEで、q=0.001からの比も示す。','',
+      '| q | 風条件 | 風速RMSE [m/s] | 現行q=0.001比 | 95%絶対誤差 [m/s] |','|---:|---|---:|---:|---:|']
+    for q in (0.001,0.0003,0.0001,0.00003,0.000001):
+      for cname in dict.fromkeys(x['case'] for x in rts_wind_sensitivity_rows):
+        rrow=next(x for x in rts_wind_sensitivity_rows if x['axis']=='IN' and x['case']==cname and np.isclose(x['process_noise_std'],q))
+        base=next(x for x in rts_wind_sensitivity_rows if x['axis']=='IN' and x['case']==cname and np.isclose(x['process_noise_std'],0.001))
+        case_label='Kaimal検証' if 'Kaimal' in cname else 'ガスト検証'
+        report.append(f"| {q:g} | {case_label} | {rrow['rmse_m_s']:.5f} | {rrow['rmse_m_s']/base['rmse_m_s']:.2f}× | {rrow['p95_abs_error_m_s']:.5f} |")
+    report += ['',f"![RTS q感度の風速シミュレーション評価]({rts_wind_sensitivity_png})",'',
+      '自由振動での変動RMSと風速変化を含む独立シミュレーションのRMSE・95%誤差を合わせて選ぶ。風速RMSEや遅れが許容できない水準に悪化するなら、IN側qを下げてOUTと同じ変動RMSに揃えるのは避ける。今回の比較はシミュレーションモデル上の結果で、独立した実測風速試験による最終確認は別途必要である。q感度の風波形別値は `ow05_rts_smoothing_wind_sensitivity.csv` に保存した。','']
     report += ['### IN/OUTで振動の減衰が違う理由','',
       '実測角度の振幅包絡から、採点区間（開始3秒後〜終了0.5秒前）の正負ピークに対して `log(|peak|)=intercept−λt` を当てはめた。λは減衰包絡の経験値で、単独の粘性減衰係数ではない。方向・繰返しごとに算出し、軸別に平均した。','',
       '| 軸 | 波形数 | 実測λ [/s] | 無風モデルλ [/s] | 実測周期 [s] | モデル周期 [s] | 採用τ/I [rad/s²] | 採用c/I [s⁻¹] |','|---|---:|---:|---:|---:|---:|---:|---:|']
@@ -358,7 +402,7 @@ def run():
     for name in figs: report += [f'![OW-05 拡大時系列]({name})','']
     report += ['## 解釈と選定','', 'RTS（Rauch–Tung–Striebel）スムーザーは、まず時系列を前向きに推定し、その後、将来の観測も使って過去の状態推定を後向きに修正する。時間的に独立なホワイトノイズによる一時的な観測の揺れが、運動モデルや前後の観測と整合しない場合、その揺れを実際の状態変化ではなく観測ノイズとして扱いやすくなり、推定への影響を弱められる。これは未来の観測が過去の観測ノイズを物理的に打ち消すという意味ではなく、全時系列に最も整合する状態系列を再推定する効果である。', '', 'この平滑化は、運動モデルが十分妥当で、観測ノイズとモデル誤差の大きさ（観測・プロセス雑音の共分散）が適切に設定されていることを前提とする。ノイズが時間相関を持つ場合、その影響は独立な白色ノイズほど平均化されない。また、実際の急な風速変化をモデルが説明できないときに平滑化が強すぎると、真の変化まで抑えたり、遅らせたりする可能性がある。したがって、オフラインRTSは必ずノイズに強いわけではなく、今回の低い誤差をホワイトノイズ単独の効果と断定することもできない。今回のセンサー条件には白色ノイズに加えて有色ノイズも含まれるため、成分ごとの寄与を分けるには追加の比較が必要である。', '', 'RTS 3状態は将来データを使うオフライン評価であるため、RMSEが小さくてもオンライン実装候補とは分ける。オンライン用途はESO 3状態を候補とし、公称ノイズ条件に対する帯域選定を反映した値を使用する。RTSはログ解析や遅延許容用途の基準として残す。ノイズ2倍感度を含む推定誤差は `ow05_metrics.csv`、増幅倍率は `ow05_noise_amplification.csv`、調整スキャンは `ow05_tuning_scan.csv` に保存した。', '', '## 再実行','', '```bash','python 06_Analysis/simulation/src/run_ow05_sensor_nonideality.py','```','']
     (OUT/'OW-05_REPORT.md').write_text('\n'.join(report),encoding='utf-8')
-    summary={'task_id':'OW-05','sensor_nominal':nominal,'free_decay_validation':free_decay_validation,'static_window_sigma_condition':{'white_noise_std_deg_by_axis':measured_sigma,'coloured_noise_std_deg':0.0,'interpretation':'White-noise equivalent of static-window mean-centered perturbation sigma; temporal correlation and possible mechanical micro-motion are not represented.','observer_tuning':'Fixed values selected under nominal sensor noise.'},'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','perturbations')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
+    summary={'task_id':'OW-05','sensor_nominal':nominal,'free_decay_validation':free_decay_validation,'rts_smoothing_wind_sensitivity':rts_wind_sensitivity_rows,'static_window_sigma_condition':{'white_noise_std_deg_by_axis':measured_sigma,'coloured_noise_std_deg':0.0,'interpretation':'White-noise equivalent of static-window mean-centered perturbation sigma; temporal correlation and possible mechanical micro-motion are not represented.','observer_tuning':'Fixed values selected under nominal sensor noise.'},'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','perturbations')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
     (OUT/'ow05_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2,allow_nan=False)+'\n',encoding='utf-8')
     print('rows',len(rows),'tunings',tunings)
 
