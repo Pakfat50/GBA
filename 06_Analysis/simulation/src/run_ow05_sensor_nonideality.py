@@ -616,6 +616,22 @@ def run():
       '球あり自由振動12波形（IN/OUT各6本）の角度時系列を直接使い、K/I・b/I・c/I・τ/Iを軸ごとに再フィットした。自由振動だけでは絶対慣性とトルク係数を一意に分離できないため、正規化係数を推定し、推定風の評価時だけ既存Iを基準に物理係数へ換算した。全波形への平均RMSEはIN 3.579°から2.717°、OUT 3.890°から2.839°に下がった。さらに各軸1波形を除外して残り5本でフィットした交差検証でも、平均RMSEはIN 3.579°から2.932°、OUT 3.890°から2.926°に下がった。係数誤差が角度残差の一部を説明する証拠はあるが、RTS風速変動は再フィットで下がらず、残留振動の唯一の原因が係数だったとは結論できない。詳細な係数・q別比較と再生成手順は専用レポートを参照。',
       '![BALL自由振動の係数再フィットとq別RTS出力](ow05_ball_free_decay_refit.png)',
       '[係数再フィットの詳細レポート](OW05_BALL_FREE_DECAY_REFIT_REPORT.md)','']
+    report += ['', '## 理論値による誤差要因の切り分け（追試）', '',
+      '実測値を使わず、採用プラントと同一係数のRTSで、最大角度60°を保持する風相当（IN 7.834 m/s、OUT 7.637 m/s）から0 m/sへのステップを計算した。さらにOW-04の係数ずれとOW-05公称センサーノイズを別々に加え、独立Kaimal乱流と滑らかな2→6 m/sガストも同条件で比較した。', '',
+      '| 理論入力 | 軸 | 完全一致 RMSE | OW-04係数ずれ RMSE | センサーノイズ RMSE |',
+      '|---|---|---:|---:|---:|',
+      '| 60°保持相当→0ステップ | IN | 0.2622 | 1.2019 | 0.2759 |',
+      '| 60°保持相当→0ステップ | OUT | 0.1669 | 0.9557 | 0.2743 |',
+      '| Kaimal 平均2 m/s | IN | 0.0829 | 0.1520 | 0.0830 |',
+      '| Kaimal 平均2 m/s | OUT | 0.0627 | 0.1229 | 0.0644 |',
+      '| 滑らかガスト 2→6 m/s | IN | 0.0006 | 0.1549 | 0.0028 |',
+      '| 滑らかガスト 2→6 m/s | OUT | 0.0001 | 0.1633 | 0.0127 |',
+      '',
+      '完全一致・無雑音でも急なゼロ風ステップでは誤差が残る一方、滑らかなガストではほぼゼロだった。これは係数誤差やセンサーノイズではなく、今回採用した小さなqが急変する外力に追随しにくいことを示す。qを上げるとステップRMSEはIN 0.262→0.110 m/s、OUT 0.167→0.101 m/sまで下がった。100→200 Hzの積分刻み比較によるRMSE変化はIN +0.0014、OUT +0.0032 m/sであり、刻み幅の寄与だけでは差を説明できない。', '',
+      '![理論入力別の誤差比較](../ow05_theoretical_error_separation/ow05_theoretical_error_summary.png)', '',
+      '![自由振動ステップ応答](../ow05_theoretical_error_separation/ow05_theoretical_step_comparison.png)', '',
+      '![風モデル応答](../ow05_theoretical_error_separation/ow05_theoretical_wind_model_responses.png)', '',
+      '[理論値による切り分けレポート](../ow05_theoretical_error_separation/OW05_THEORETICAL_ERROR_SEPARATION.md) と再生成スクリプト `python 06_Analysis/simulation/src/run_ow05_theoretical_error_separation.py` を参照。', '']
     (OUT/'OW-05_REPORT.md').write_text('\n'.join(report),encoding='utf-8')
     summary={'task_id':'OW-05','sensor_nominal':nominal,'free_decay_validation':free_decay_validation,'rts_smoothing_wind_sensitivity':rts_wind_sensitivity_rows,'selected_rts_q_by_axis_N_per_sample':RTS_SELECTED_Q_BY_AXIS,'selected_q_bode':bode_validation,'adopted_q_combined_figure':combined_png.name,'static_window_sigma_condition':{'white_noise_std_deg_by_axis':measured_sigma,'coloured_noise_std_deg':0.0,'interpretation':'White-noise equivalent of static-window mean-centered perturbation sigma; temporal correlation and possible mechanical micro-motion are not represented.','observer_tuning':'Fixed values selected under nominal sensor noise.'},'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','perturbations')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
     (OUT/'ow05_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2,allow_nan=False)+'\n',encoding='utf-8')
