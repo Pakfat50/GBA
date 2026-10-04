@@ -92,10 +92,141 @@
         "zero_wind_to_white_response_ratio": 6.127725187208506
       }
     ],
+    "gain_sensitivity": [
+      {
+        "axis": "IN",
+        "pole_hz": 0.5,
+        "wind_zero_rmse_m_s": 8.059782044740293,
+        "wind_zero_bias_m_s": -0.0008008075242523712,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "IN",
+        "pole_hz": 1.0,
+        "wind_zero_rmse_m_s": 12.386641138441906,
+        "wind_zero_bias_m_s": 0.008856738403167108,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "IN",
+        "pole_hz": 2.0,
+        "wind_zero_rmse_m_s": 6.717148827798069,
+        "wind_zero_bias_m_s": 0.12098073330447899,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "IN",
+        "pole_hz": 3.0,
+        "wind_zero_rmse_m_s": 1.2987591057591674,
+        "wind_zero_bias_m_s": 0.5896067982034561,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "IN",
+        "pole_hz": 4.0,
+        "wind_zero_rmse_m_s": 1.2312490014560715,
+        "wind_zero_bias_m_s": 0.5788215143397257,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "IN",
+        "pole_hz": 6.0,
+        "wind_zero_rmse_m_s": 1.358728104802001,
+        "wind_zero_bias_m_s": 0.5071034205609647,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "IN",
+        "pole_hz": 8.0,
+        "wind_zero_rmse_m_s": 1.446600329307205,
+        "wind_zero_bias_m_s": 0.5586914123317486,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "IN",
+        "pole_hz": 12.0,
+        "wind_zero_rmse_m_s": 1.6364131277713654,
+        "wind_zero_bias_m_s": 0.5290279002297041,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "OUT",
+        "pole_hz": 0.5,
+        "wind_zero_rmse_m_s": null,
+        "wind_zero_bias_m_s": null,
+        "segments": 0,
+        "total_segments": 6
+      },
+      {
+        "axis": "OUT",
+        "pole_hz": 1.0,
+        "wind_zero_rmse_m_s": 17.299734209333828,
+        "wind_zero_bias_m_s": 0.19054626058433569,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "OUT",
+        "pole_hz": 2.0,
+        "wind_zero_rmse_m_s": 59.21464256904179,
+        "wind_zero_bias_m_s": 0.6686059843787403,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "OUT",
+        "pole_hz": 3.0,
+        "wind_zero_rmse_m_s": 17.368799400754813,
+        "wind_zero_bias_m_s": -1.0563049135320701,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "OUT",
+        "pole_hz": 4.0,
+        "wind_zero_rmse_m_s": 19.52036898070078,
+        "wind_zero_bias_m_s": -0.20656062213207513,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "OUT",
+        "pole_hz": 6.0,
+        "wind_zero_rmse_m_s": 23.951299792030085,
+        "wind_zero_bias_m_s": -0.14349650668480407,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "OUT",
+        "pole_hz": 8.0,
+        "wind_zero_rmse_m_s": 8.659130686457198,
+        "wind_zero_bias_m_s": -0.3075716255041259,
+        "segments": 6,
+        "total_segments": 6
+      },
+      {
+        "axis": "OUT",
+        "pole_hz": 12.0,
+        "wind_zero_rmse_m_s": 1.210048590266409,
+        "wind_zero_bias_m_s": -0.7181309974304285,
+        "segments": 6,
+        "total_segments": 6
+      }
+    ],
     "figures": [
       "ow05_free_decay_zero_wind.png",
       "ow05_free_decay_gain_comparison.png",
-      "ow05_free_decay_zero_vs_white.png"
+      "ow05_free_decay_zero_vs_white.png",
+      "ow05_free_decay_gain_sensitivity.png"
     ]
   },
   "static_window_sigma_condition": {

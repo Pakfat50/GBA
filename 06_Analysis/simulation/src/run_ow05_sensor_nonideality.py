@@ -324,6 +324,15 @@ def run():
     residual_rmse=[fr['measured_angle_residual_rmse_deg'] for fr in free_decay_validation['summary']]
     report += ['', f"妥当性確認の結果、実測自由振動を0風速として処理した推定RMSEは{min(fr['wind_zero_rmse_m_s'] for fr in free_decay_validation['summary']):.2f}〜{max(fr['wind_zero_rmse_m_s'] for fr in free_decay_validation['summary']):.2f} m/sだった。白色ノイズモデルの応答RMSEとの比は{min(zero_ratios):.2f}〜{max(zero_ratios):.2f}倍、残差で正規化した応答倍率比は{min(gain_ratios):.3f}〜{max(gain_ratios):.3f}だった。値は大きく異なり、静止窓σを独立白色ノイズとする仮定は実測自由振動に対する応答を再現していない。", f"ただし角度残差RMSは{min(residual_rmse):.2f}〜{max(residual_rmse):.2f}°、ラグ1自己相関は{min(residual_acfs):.3f}〜{max(residual_acfs):.3f}で、静止窓σ（IN {measured_sigma['IN']:.3f}°、OUT {measured_sigma['OUT']:.3f}°）より大きく、強く時間相関したモデル残差である。これをセンサーノイズと同一視できないため、差の全てをノイズモデルの誤りとは断定できない。一方、ゼロ風速でも推定風速が残るので、OW-05のノイズ倍率だけでは実機誤差を説明できず、b=0を含む機械モデル差と実測ノイズの時間構造を分けて再評価する必要がある。",'']
     report += ['', '上段は実測角度と同初期条件の無風モデル、下段は観測器の推定風速と真値0 m/s。角度残差にはモデル誤差も含まれる。倍率図は実測残差に対する応答を白色近似の応答ゲインと、追加の棒グラフはゼロ風速RMSEを白色ノイズ時の応答RMSEと比較する。実測/白色の差はノイズ分布・時間相関とモデル残差の差を含むため、単独でモデル誤りの証明とはしない。','',
+      '### ESOゲイン感度（診断）','',
+      '選定済み12 Hzを含む0.5〜12 HzでESO極周波数を振り、同じ実測自由振動・初期化・採点区間でゼロ風速RMSEを比較した。これはゲイン過大の診断であり、自由振動検証波形を最終ゲイン選定に流用しない。低ゲインでゼロ風速誤差が改善すれば、現行ゲインが実測摂動に過敏な可能性が高まる。ただし、自由振動のモデル残差も入力に含むため、それだけで原因をセンサーノイズと断定はできない。','',
+      '| 軸 | ESO極 [Hz] | ゼロ風速RMSE [m/s] | 収束波形/対象波形 |','|---|---:|---:|---:|']
+    for sr in free_decay_validation['gain_sensitivity']:
+      rmse_text = f"{sr['wind_zero_rmse_m_s']:.5f}" if sr['wind_zero_rmse_m_s'] is not None else "発散（採点不可）"
+      count_text = f"{sr['segments']}/{sr['total_segments']}"
+      report.append(f"| {sr['axis']} | {sr['pole_hz']:.1f} | {rmse_text} | {count_text} |")
+    report += ['', f"![ESOゲイン感度の自由振動診断](ow05_free_decay_gain_sensitivity.png)",'',
+      '波形別感度値は `ow05_free_decay_gain_sensitivity.csv`、軸別集計は `ow05_free_decay_gain_sensitivity_summary.csv` に保存した。','',
       f"![実測自由振動の角度・ゼロ風速推定](ow05_free_decay_zero_wind.png)",'',
       f"![自由振動実測応答と白色ノイズ倍率](ow05_free_decay_gain_comparison.png)",'',
       f"![ゼロ風速RMSEと白色ノイズ応答RMSE](ow05_free_decay_zero_vs_white.png)",'',

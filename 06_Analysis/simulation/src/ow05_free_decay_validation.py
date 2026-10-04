@@ -62,6 +62,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
     noise_reference = noise_reference[noise_reference["sensor_case"] == "static_window_sigma"]
 
     records = []
+    sensitivity_records = []
     series = {}
     margin_start_s, margin_end_s = 3.0, 0.5
     rate_hz = float(cfg["sample_rate_hz"])
@@ -96,6 +97,27 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
 
         estimated = {}
         clean = {}
+        # Diagnostic-only bandwidth sweep on held-out measured free decay.
+        # Do not use its minimum to retune the OW-05 training result.
+        for pole_hz in (0.5, 1.0, 2.0, 3.0, 4.0, 6.0, 8.0, 12.0):
+            try:
+                sweep_force = nonlinear_luenberger_force(
+                    angle, coefficients, dt, cfg["force_lever_m"], pole_hz, 0,
+                    cfg["friction_epsilon_deg_s"], initial_state=initial_state,
+                )
+                sweep_speed = force_to_speed(cfg, sweep_force)
+                sweep_rmse = _rms(sweep_speed[score])
+                sweep_bias = float(np.mean(sweep_speed[score]))
+                converged = bool(np.all(np.isfinite(sweep_speed)))
+            except (ValueError, FloatingPointError, OverflowError, np.linalg.LinAlgError):
+                sweep_rmse, sweep_bias, converged = float("nan"), float("nan"), False
+            sensitivity_records.append({
+                "segment_id": str(row["segment_id"]), "axis": axis,
+                "pole_hz": pole_hz, "selected_ow05_pole_hz": float(tunings[(axis, METHODS[0])]),
+                "wind_zero_rmse_m_s": sweep_rmse,
+                "wind_zero_bias_m_s": sweep_bias, "converged": converged,
+                "samples_scored": int(score.sum()),
+            })
         for method in METHODS:
             parameter = tunings[(axis, method)]
             if method.startswith("ESO"):
@@ -157,6 +179,30 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         raise RuntimeError("No approved BALL free-decay records were evaluated.")
     detail = pd.DataFrame(records)
     detail.to_csv(out / "ow05_free_decay_metrics.csv", index=False, encoding="utf-8-sig", float_format="%.10g")
+
+    sensitivity = pd.DataFrame(sensitivity_records)
+    sensitivity.to_csv(out / "ow05_free_decay_gain_sensitivity.csv", index=False,
+                       encoding="utf-8-sig", float_format="%.10g")
+    sensitivity_summary = []
+    for axis in ("IN", "OUT"):
+        part = sensitivity[sensitivity["axis"] == axis]
+        for pole in sorted(part["pole_hz"].unique()):
+            all_at_pole = part[part["pole_hz"] == pole]
+            group = all_at_pole[np.isfinite(all_at_pole["wind_zero_rmse_m_s"])]
+            if group.empty:
+                sensitivity_summary.append({"axis": axis, "pole_hz": float(pole),
+                    "wind_zero_rmse_m_s": None, "wind_zero_bias_m_s": None,
+                    "segments": 0, "total_segments": int(all_at_pole["segment_id"].nunique())})
+                continue
+            weights = group["samples_scored"].to_numpy(float)
+            sensitivity_summary.append({
+                "axis": axis, "pole_hz": float(pole),
+                "wind_zero_rmse_m_s": float(np.sqrt(np.average(group["wind_zero_rmse_m_s"] ** 2, weights=weights))),
+                "wind_zero_bias_m_s": float(np.average(group["wind_zero_bias_m_s"], weights=weights)),
+                "segments": int(group["segment_id"].nunique()), "total_segments": int(all_at_pole["segment_id"].nunique()),
+            })
+    pd.DataFrame(sensitivity_summary).to_csv(out / "ow05_free_decay_gain_sensitivity_summary.csv",
+        index=False, encoding="utf-8-sig", float_format="%.10g")
 
     summary = []
     for axis in ("IN", "OUT"):
@@ -224,6 +270,26 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
     fig.savefig(out / waveform_png, dpi=170)
     plt.close(fig)
 
+    fig, ax = plt.subplots(figsize=(8.5, 5.0), layout="constrained")
+    for axis, color in (("IN", "#2673a8"), ("OUT", "#dd8452")):
+        group = pd.DataFrame(sensitivity_summary)
+        group = group[(group["axis"] == axis) & group["wind_zero_rmse_m_s"].notna()].sort_values("pole_hz")
+        ax.plot(group["pole_hz"], group["wind_zero_rmse_m_s"], marker="o", color=color, label=axis)
+        selected = float(tunings[(axis, METHODS[0])])
+        selected_value = group.loc[np.isclose(group["pole_hz"], selected), "wind_zero_rmse_m_s"]
+        if len(selected_value):
+            ax.scatter([selected], selected_value, marker="D", s=75, facecolor="white",
+                       edgecolor=color, linewidth=1.8, zorder=3)
+    ax.set_xscale("log")
+    ax.set_xlabel("ESO repeated pole frequency [Hz] (lower = lower observer gain)")
+    ax.set_ylabel("Zero-wind estimated speed RMSE [m/s]")
+    ax.set_title("Diagnostic ESO gain sensitivity on measured free decay")
+    ax.grid(alpha=.25, which="both")
+    ax.legend(title="Axis (diamonds: selected OW-05 pole)")
+    sensitivity_png = "ow05_free_decay_gain_sensitivity.png"
+    fig.savefig(out / sensitivity_png, dpi=170)
+    plt.close(fig)
+
     fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), sharey=True, layout="constrained")
     colors = {METHODS[0]: "#2673a8", METHODS[1]: "#dd8452"}
     for ax, axis in zip(axes, ("IN", "OUT")):
@@ -274,5 +340,6 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         "note": "Measured angle residual to a zero-force free-decay simulation includes sensor variation and plant/model mismatch; it is not pure sensor noise.",
         "representative_segments": representative,
         "summary": summary,
-        "figures": [waveform_png, gain_png, response_png],
+        "gain_sensitivity": sensitivity_summary,
+        "figures": [waveform_png, gain_png, response_png, sensitivity_png],
     }
