@@ -174,11 +174,13 @@ def run():
             tuning_rows.append({'axis':axis,'method':method,'parameter':p,'training_rmse_m_s':met['rmse_m_s']})
           except (ValueError,FloatingPointError,np.linalg.LinAlgError): pass
         tunings[(axis,method)]=best[1]
-    rows=[]; noise_rows=[]; wave={}
+    rows=[]; noise_rows=[]; wave={}; static_sigma_wave={}
+    measured_sigma={axis:measured_noise[axis]['static_perturbation_sigma_deg'] for axis in ('IN','OUT')}
     modes={'ideal':None,'nominal':pars,'noise_2x':AngleSensorParameters(sample_rate_hz=rate,resolution_bits=14,white_noise_std_deg=.03,coloured_noise_std_deg=.02,coloured_noise_time_constant_s=pars.coloured_noise_time_constant_s,fixed_delay_s=.01)}
+    static_sigma_modes={axis:AngleSensorParameters(sample_rate_hz=rate,resolution_bits=14,white_noise_std_deg=measured_sigma[axis],coloured_noise_std_deg=0.0,coloured_noise_time_constant_s=pars.coloured_noise_time_constant_s,fixed_delay_s=pars.fixed_delay_s) for axis in cfg['axis_names']}
     for cname,axis in plants:
       plant=plants[(cname,axis)]
-      for sens,sp in modes.items():
+      for sens,sp in list(modes.items())+[('static_window_sigma',static_sigma_modes[axis])]:
         sensor_seed=20261100+len(rows)
         angle=plant['ang'] if sp is None else apply_angle_sensor_model(plant['t'],plant['ang'],sp,sensor_seed)[0]
         if sp is not None:
@@ -209,6 +211,7 @@ def run():
           row={'case':cname,'axis':axis,'sensor_case':sens,'method':method,'tuning_parameter':p,**met,'maximum_abs_angle_deg':plant['maxang'],'within_plus_minus_60_deg':plant['maxang']<=60,'offline':method.startswith('RTS')}
           rows.append(row)
           if sens=='nominal': wave[(cname,axis,method)]=(plant,est,row)
+          if sens=='static_window_sigma': static_sigma_wave[(cname,axis,method)]=(plant,est,row)
     write_csv(OUT/'ow05_metrics.csv',rows); write_csv(OUT/'ow05_tuning_scan.csv',tuning_rows); write_csv(OUT/'ow05_noise_amplification.csv',noise_rows)
     # Plot sensor-impact comparison for both valid wind models, zoom around global max error for each.
     figs=[]
@@ -228,6 +231,30 @@ def run():
       a.plot(p['t'][view],p['v'][view],label='True wind speed',color='#222'); a.plot(p['t'][view],e[view],label='Estimated wind speed (nominal sensor)'); a.set_ylabel('Wind speed [m/s]'); a.set_ylim(0,shared_limits[(cname,axis)][0]); a.set_title(f"{'Independent Kaimal, mean 2 m/s' if 'Kaimal' in cname else 'Gust, 2 to 6 m/s'} / {axis} / {'RTS 3-state (offline)' if method.startswith('RTS') else 'ESO 3-state'}"); a.legend(); a.grid(alpha=.25)
       b.plot(p['t'][view],err[view]); b.axhline(0,color='#555'); b.axvline(center,color='#b34b35',ls='--'); b.set_xlabel('Time [s]'); b.set_ylabel('Estimate - true\n[m/s]'); b.set_ylim(-shared_limits[(cname,axis)][1],shared_limits[(cname,axis)][1]); b.grid(alpha=.25)
       name=f"ow05_{'kaimal' if 'Kaimal' in cname else 'gust'}_{axis}_{'rts' if method.startswith('RTS') else 'eso'}.png"; fig.savefig(OUT/name,dpi=160); plt.close(fig); figs.append(name)
+    # Static-window sigma evaluation: both observers on each case/axis, with a shared error scale.
+    static_figs=[]
+    for cname in dict.fromkeys(key[0] for key in static_sigma_wave):
+      for axis in cfg['axis_names']:
+        p=static_sigma_wave[(cname,axis,'ESO 3状態')][0]
+        eso=static_sigma_wave[(cname,axis,'ESO 3状態')][1]
+        rts=static_sigma_wave[(cname,axis,'RTS 3状態（オフライン）')][1]
+        m=p['mask']; errors=[eso[m]-p['v'][m],rts[m]-p['v'][m]]
+        peak_idx=int(np.argmax(np.maximum(np.abs(errors[0]),np.abs(errors[1]))))
+        ids=np.flatnonzero(m); center=p['t'][ids[peak_idx]]
+        view=(p['t']>=center-2)&(p['t']<=center+2)
+        lim=max(0.05,float(max(np.max(np.abs(x)) for x in errors))*1.1)
+        fig,(a,b)=plt.subplots(2,1,figsize=(9,5.8),sharex=True,layout='constrained')
+        a.plot(p['t'][view],p['v'][view],color='#222',label='True wind speed')
+        a.plot(p['t'][view],eso[view],label='ESO 3-state')
+        a.plot(p['t'][view],rts[view],label='RTS 3-state (offline)')
+        a.set_ylabel('Wind speed [m/s]'); a.set_title(f"Static-window σ noise / {'Independent Kaimal, mean 2 m/s' if 'Kaimal' in cname else 'Gust, 2 to 6 m/s'} / {axis}")
+        a.legend(); a.grid(alpha=.25)
+        b.plot(p['t'][view],eso[view]-p['v'][view],label='ESO error')
+        b.plot(p['t'][view],rts[view]-p['v'][view],label='RTS error')
+        b.axhline(0,color='#555',lw=.8); b.set_ylim(-lim,lim)
+        b.set_xlabel('Time [s]'); b.set_ylabel('Estimate - true [m/s]'); b.legend(); b.grid(alpha=.25)
+        name=f"ow05_static_sigma_{'kaimal' if 'Kaimal' in cname else 'gust'}_{axis.lower()}.png"
+        fig.savefig(OUT/name,dpi=160); plt.close(fig); static_figs.append(name)
     report=['# OW-05 センサー非理想性とオブザーバー選定','','## 目的・結論','',
       'OW-03で角度±60°内だった独立Kaimal乱流（平均2 m/s、TI 20%）と2→6 m/sガストを使い、採用BALLプラントにセンサーの量子化、ノイズ、遅延を含めて比較した。比較対象はオンラインの3状態ESOと未来データを使うオフライン3状態RTS。4状態ESOはOW-03で除外済みのため含めない。', '',
       f"公称センサー条件では、風条件・軸ごとのRMSE最小方式は下表の通り。帯域/プロセス雑音は別seedの平均3 m/s Kaimal訓練波形で方式ごと・軸ごとに一度だけ選定し、検証波形には再調整せず適用した。最大角度は全ケースで±60°内である。","",
@@ -270,7 +297,17 @@ def run():
       report += ['', '| ノイズ条件 | 推定器 | 基準最大値 [m/s] | 出力最大値 [m/s] | 最大値倍率 |','|---|---|---:|---:|---:|']
       for nr in subset:
         report.append(f"| {'公称' if nr['sensor_case']=='nominal' else '2倍'} | {nr['method']} | {nr['linear_reference_max_abs_m_s']:.6f} | {nr['observer_noise_max_abs_m_s']:.6f} | {nr['max_amplification_ratio']:.3f} |")
-    report += ['', '増幅倍率は全点RMSE比を主指標、絶対値95パーセンタイル比を外れ値に頑健な補助指標、最大絶対値比をピーク影響の補助指標として併記した。最大値倍率は単一点に強く左右されるため慎重に読む。線形基準は準静的な写像であり、動的な真値風速誤差の代用ではない。観測器の履歴依存性はノイズあり/なし出力差側に反映される。全値は `ow05_noise_amplification.csv` に保存した。', '', '## 公称センサー条件の拡大時系列','', '各図は最大誤差時刻を中心に±2秒を表示する。上段は真値と推定風速、下段は誤差。同じ風条件・軸のESO図とRTS図では、上段と下段それぞれの縦軸範囲を共通にして比較できるようにした。描画環境に日本語フォントがないため、図中ラベルは英語表記とし、本文と図題は日本語で記載する。', '']
+    report += ['', '増幅倍率は全点RMSE比を主指標、絶対値95パーセンタイル比を外れ値に頑健な補助指標、最大絶対値比をピーク影響の補助指標として併記した。最大値倍率は単一点に強く左右されるため慎重に読む。線形基準は準静的な写像であり、動的な真値風速誤差の代用ではない。観測器の履歴依存性はノイズあり/なし出力差側に反映される。全値は `ow05_noise_amplification.csv` に保存した。', '', '## 静止窓摂動σを使った追加オブザーバー評価','',
+      '静止窓の平均からの摂動標準偏差を、OW-05センサーモデルの白色ノイズσとして置いた追加条件である（IN σ={:.5f}°、OUT σ={:.5f}°、±3σ幅はそれぞれ±{:.5f}°、±{:.5f}°）。モデルのσ欄には標準偏差を入力し、±3σを標準偏差として入力していない。有色ノイズは0にし、静止窓σを総ノイズ標準偏差の白色近似として評価した。'.format(measured_sigma['IN'],measured_sigma['OUT'],3*measured_sigma['IN'],3*measured_sigma['OUT']),
+      '静止窓で観測した変動にはセンサー以外の微小運動も含まれ得る。実測摂動は時間相関（ラグ1自己相関約0.92）を持つ一方、今回の追加評価では同じ標準偏差の白色ノイズに近似しており、相関構造までは再現しない。ESO/RTSの調整値は公称条件で決めたものを固定し、追加条件に再調整せず適用した。','',
+      '| 風条件 | 軸 | ノイズσ [°] | 推定器 | RMSE [m/s] | MAE [m/s] | 95%絶対誤差 [m/s] | 最大絶対誤差 [m/s] |','|---|---|---:|---|---:|---:|---:|---:|']
+    for cname,axis in plants:
+      for method in ('ESO 3状態','RTS 3状態（オフライン）'):
+        rr=next(r for r in rows if r['case']==cname and r['axis']==axis and r['sensor_case']=='static_window_sigma' and r['method']==method)
+        report.append(f"| {cname} | {axis} | {measured_sigma[axis]:.5f} | {method} | {rr['rmse_m_s']:.5f} | {rr['mae_m_s']:.5f} | {rr['p95_abs_error_m_s']:.5f} | {rr['max_abs_error_m_s']:.5f} |")
+    report += ['', '追加条件の風速推定と誤差。各図は両推定器のピーク誤差を含む時刻を中心に±2秒表示し、誤差軸は共通。', '']
+    for name in static_figs: report += [f'![静止窓摂動σによるオブザーバー比較]({name})','']
+    report += ['', '## 公称センサー条件の拡大時系列','', '各図は最大誤差時刻を中心に±2秒を表示する。上段は真値と推定風速、下段は誤差。同じ風条件・軸のESO図とRTS図では、上段と下段それぞれの縦軸範囲を共通にして比較できるようにした。描画環境に日本語フォントがないため、図中ラベルは英語表記とし、本文と図題は日本語で記載する。', '']
     for name in figs: report += [f'![OW-05 拡大時系列]({name})','']
     report += ['## 解釈と選定','', 'RTS（Rauch–Tung–Striebel）スムーザーは、まず時系列を前向きに推定し、その後、将来の観測も使って過去の状態推定を後向きに修正する。時間的に独立なホワイトノイズによる一時的な観測の揺れが、運動モデルや前後の観測と整合しない場合、その揺れを実際の状態変化ではなく観測ノイズとして扱いやすくなり、推定への影響を弱められる。これは未来の観測が過去の観測ノイズを物理的に打ち消すという意味ではなく、全時系列に最も整合する状態系列を再推定する効果である。', '', 'この平滑化は、運動モデルが十分妥当で、観測ノイズとモデル誤差の大きさ（観測・プロセス雑音の共分散）が適切に設定されていることを前提とする。ノイズが時間相関を持つ場合、その影響は独立な白色ノイズほど平均化されない。また、実際の急な風速変化をモデルが説明できないときに平滑化が強すぎると、真の変化まで抑えたり、遅らせたりする可能性がある。したがって、オフラインRTSは必ずノイズに強いわけではなく、今回の低い誤差をホワイトノイズ単独の効果と断定することもできない。今回のセンサー条件には白色ノイズに加えて有色ノイズも含まれるため、成分ごとの寄与を分けるには追加の比較が必要である。', '', 'RTS 3状態は将来データを使うオフライン評価であるため、RMSEが小さくてもオンライン実装候補とは分ける。オンライン用途はESO 3状態を候補とし、公称ノイズ条件に対する帯域選定を反映した値を使用する。RTSはログ解析や遅延許容用途の基準として残す。ノイズ2倍感度を含む推定誤差は `ow05_metrics.csv`、増幅倍率は `ow05_noise_amplification.csv`、調整スキャンは `ow05_tuning_scan.csv` に保存した。', '', '## 再実行','', '```bash','python 06_Analysis/simulation/src/run_ow05_sensor_nonideality.py','```','']
     (OUT/'OW-05_REPORT.md').write_text('\n'.join(report),encoding='utf-8')
