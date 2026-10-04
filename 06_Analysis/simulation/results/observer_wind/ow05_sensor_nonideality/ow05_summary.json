@@ -222,11 +222,190 @@
         "total_segments": 6
       }
     ],
+    "axis_diagnostics": [
+      {
+        "axis": "IN",
+        "segments": 6,
+        "measured_envelope_decay_per_s": 0.13402183459668596,
+        "model_envelope_decay_per_s": 0.10817609649361781,
+        "measured_period_s": 0.9900000000000002,
+        "model_period_s": 0.990000000000002,
+        "measured_peak_rms_deg": 21.965370369475924,
+        "model_peak_rms_deg": 25.10197175624228,
+        "tau_over_I_rad_s2": 0.21579233426307726,
+        "quadratic_drag_over_I_s": 0.03810841558199855,
+        "natural_frequency_hz": 1.0145746975220602
+      },
+      {
+        "axis": "OUT",
+        "segments": 6,
+        "measured_envelope_decay_per_s": 0.21463975625670495,
+        "model_envelope_decay_per_s": 0.2360168437213391,
+        "measured_period_s": 1.018333333333333,
+        "model_period_s": 1.0200000000000011,
+        "measured_peak_rms_deg": 18.744097132839503,
+        "model_peak_rms_deg": 22.698882878023284,
+        "tau_over_I_rad_s2": 0.4770335683692091,
+        "quadratic_drag_over_I_s": 0.0378283962693658,
+        "natural_frequency_hz": 0.9854531393038195
+      }
+    ],
+    "axis_diagnostic_segments": [
+      {
+        "segment_id": "IN_BALL_P_R01",
+        "axis": "IN",
+        "direction": "P",
+        "repetition": 1,
+        "measured_envelope_decay_per_s": 0.13169525322830788,
+        "model_envelope_decay_per_s": 0.106446830827329,
+        "measured_period_s": 0.9900000000000002,
+        "model_period_s": 0.990000000000002,
+        "measured_peak_rms_deg": 22.153166442724423,
+        "model_peak_rms_deg": 25.960493659392878
+      },
+      {
+        "segment_id": "IN_BALL_N_R01",
+        "axis": "IN",
+        "direction": "N",
+        "repetition": 1,
+        "measured_envelope_decay_per_s": 0.14049661537083374,
+        "model_envelope_decay_per_s": 0.10791914101937729,
+        "measured_period_s": 0.9900000000000002,
+        "model_period_s": 0.990000000000002,
+        "measured_peak_rms_deg": 21.59084259585839,
+        "model_peak_rms_deg": 24.754067337058256
+      },
+      {
+        "segment_id": "IN_BALL_P_R02",
+        "axis": "IN",
+        "direction": "P",
+        "repetition": 2,
+        "measured_envelope_decay_per_s": 0.13422668431565488,
+        "model_envelope_decay_per_s": 0.10717814501409965,
+        "measured_period_s": 0.9900000000000002,
+        "model_period_s": 0.990000000000002,
+        "measured_peak_rms_deg": 22.16450587559221,
+        "model_peak_rms_deg": 25.346200302526547
+      },
+      {
+        "segment_id": "IN_BALL_N_R02",
+        "axis": "IN",
+        "direction": "N",
+        "repetition": 2,
+        "measured_envelope_decay_per_s": 0.1342104902355693,
+        "model_envelope_decay_per_s": 0.10834767201635757,
+        "measured_period_s": 0.9900000000000002,
+        "model_period_s": 0.990000000000002,
+        "measured_peak_rms_deg": 21.977197211673353,
+        "model_peak_rms_deg": 25.01646462291726
+      },
+      {
+        "segment_id": "IN_BALL_P_R03",
+        "axis": "IN",
+        "direction": "P",
+        "repetition": 3,
+        "measured_envelope_decay_per_s": 0.13595414365543176,
+        "model_envelope_decay_per_s": 0.1106369332861023,
+        "measured_period_s": 0.9900000000000002,
+        "model_period_s": 0.990000000000002,
+        "measured_peak_rms_deg": 21.843988169210544,
+        "model_peak_rms_deg": 24.62611832597167
+      },
+      {
+        "segment_id": "IN_BALL_N_R03",
+        "axis": "IN",
+        "direction": "N",
+        "repetition": 3,
+        "measured_envelope_decay_per_s": 0.12754782077431825,
+        "model_envelope_decay_per_s": 0.10852785679844101,
+        "measured_period_s": 0.9900000000000002,
+        "model_period_s": 0.990000000000002,
+        "measured_peak_rms_deg": 22.062521921796616,
+        "model_peak_rms_deg": 24.908486289587053
+      },
+      {
+        "segment_id": "OUT_BALL_N_R01",
+        "axis": "OUT",
+        "direction": "N",
+        "repetition": 1,
+        "measured_envelope_decay_per_s": 0.22532288410441778,
+        "model_envelope_decay_per_s": 0.22971929377702474,
+        "measured_period_s": 1.0199999999999996,
+        "model_period_s": 1.0200000000000005,
+        "measured_peak_rms_deg": 18.423739369288523,
+        "model_peak_rms_deg": 23.169275370911016
+      },
+      {
+        "segment_id": "OUT_BALL_P_R02",
+        "axis": "OUT",
+        "direction": "P",
+        "repetition": 2,
+        "measured_envelope_decay_per_s": 0.21039551134273657,
+        "model_envelope_decay_per_s": 0.23774668651687494,
+        "measured_period_s": 1.0199999999999996,
+        "model_period_s": 1.020000000000001,
+        "measured_peak_rms_deg": 19.38517189076886,
+        "model_peak_rms_deg": 22.670028712551357
+      },
+      {
+        "segment_id": "OUT_BALL_N_R02",
+        "axis": "OUT",
+        "direction": "N",
+        "repetition": 2,
+        "measured_envelope_decay_per_s": 0.22497665870992656,
+        "model_envelope_decay_per_s": 0.229238798611554,
+        "measured_period_s": 1.0199999999999996,
+        "model_period_s": 1.020000000000001,
+        "measured_peak_rms_deg": 18.084936275633567,
+        "model_peak_rms_deg": 22.656250129775646
+      },
+      {
+        "segment_id": "OUT_BALL_P_R03",
+        "axis": "OUT",
+        "direction": "P",
+        "repetition": 3,
+        "measured_envelope_decay_per_s": 0.21234776432535177,
+        "model_envelope_decay_per_s": 0.24427005818682934,
+        "measured_period_s": 1.0199999999999996,
+        "model_period_s": 1.020000000000001,
+        "measured_peak_rms_deg": 19.0549182173572,
+        "model_peak_rms_deg": 22.31475316073683
+      },
+      {
+        "segment_id": "OUT_BALL_N_R03",
+        "axis": "OUT",
+        "direction": "N",
+        "repetition": 3,
+        "measured_envelope_decay_per_s": 0.20484668849707421,
+        "model_envelope_decay_per_s": 0.24055525235140926,
+        "measured_period_s": 1.0100000000000007,
+        "model_period_s": 1.020000000000001,
+        "measured_peak_rms_deg": 18.48895020865218,
+        "model_peak_rms_deg": 22.51737388060687
+      },
+      {
+        "segment_id": "OUT_BALL_P_R04",
+        "axis": "OUT",
+        "direction": "P",
+        "repetition": 4,
+        "measured_envelope_decay_per_s": 0.209949030560723,
+        "model_envelope_decay_per_s": 0.23457097288434234,
+        "measured_period_s": 1.0199999999999996,
+        "model_period_s": 1.020000000000001,
+        "measured_peak_rms_deg": 19.026866835336687,
+        "model_peak_rms_deg": 22.865616013557993
+      }
+    ],
+    "representative_envelopes": {
+      "IN": "IN_BALL_P_R02",
+      "OUT": "OUT_BALL_P_R02"
+    },
     "figures": [
       "ow05_free_decay_zero_wind.png",
       "ow05_free_decay_gain_comparison.png",
       "ow05_free_decay_zero_vs_white.png",
-      "ow05_free_decay_gain_sensitivity.png"
+      "ow05_free_decay_gain_sensitivity.png",
+      "ow05_free_decay_axis_envelopes.png"
     ]
   },
   "static_window_sigma_condition": {

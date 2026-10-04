@@ -1,0 +1,3 @@
+﻿axis,segments,measured_envelope_decay_per_s,model_envelope_decay_per_s,measured_period_s,model_period_s,measured_peak_rms_deg,model_peak_rms_deg,tau_over_I_rad_s2,quadratic_drag_over_I_s,natural_frequency_hz
+IN,6,0.1340218346,0.1081760965,0.99,0.99,21.96537037,25.10197176,0.2157923343,0.03810841558,1.014574698
+OUT,6,0.2146397563,0.2360168437,1.018333333,1.02,18.74409713,22.69888288,0.4770335684,0.03782839627,0.9854531393

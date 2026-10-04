@@ -14,6 +14,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
+from scipy.signal import find_peaks
 
 from hbk_model_coefficients import select_coefficients
 from hbk_nonlinear_estimators import (
@@ -63,7 +64,9 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
 
     records = []
     sensitivity_records = []
+    axis_diagnostic_records = []
     series = {}
+    envelope_series = {}
     margin_start_s, margin_end_s = 3.0, 0.5
     rate_hz = float(cfg["sample_rate_hz"])
     angle_noise_rad = np.deg2rad(float(cfg["assumed_angle_noise_deg"]))
@@ -94,6 +97,43 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         score = (t >= margin_start_s) & (t <= t[-1] - margin_end_s)
         residual_rad = angle - reference
         residual_deg = np.rad2deg(residual_rad)
+
+        # Compare the observed free-decay envelope with the same-IC model.
+        # Center both on their scored-window mean, then fit log(|peak|) after
+        # the 3 s startup margin. The fitted rate is an empirical envelope
+        # descriptor, not a direct estimate of viscous damping.
+        envelope_pair = {}
+        for label, trace in (("measured", np.rad2deg(angle)), ("model", np.rad2deg(reference))):
+            centered = trace - float(np.mean(trace[score]))
+            positive, _ = find_peaks(centered, distance=int(.65 * rate_hz), prominence=1.0)
+            negative, _ = find_peaks(-centered, distance=int(.65 * rate_hz), prominence=1.0)
+            peak_indices = np.sort(np.r_[positive, negative])
+            peak_indices = peak_indices[score[peak_indices]]
+            peak_amplitudes = np.abs(centered[peak_indices])
+            valid_peaks = peak_amplitudes > 2.0
+            peak_times = t[peak_indices][valid_peaks]
+            peak_amplitudes = peak_amplitudes[valid_peaks]
+            if len(peak_times) >= 5:
+                slope = float(np.polyfit(peak_times, np.log(peak_amplitudes), 1)[0])
+                decay_rate = -slope
+                period = float(np.median(np.diff(t[positive][(t[positive] >= margin_start_s) & (t[positive] <= t[-1] - margin_end_s)]))) if np.sum((t[positive] >= margin_start_s) & (t[positive] <= t[-1] - margin_end_s)) >= 3 else float("nan")
+            else:
+                decay_rate, period = float("nan"), float("nan")
+            envelope_pair[label] = (peak_times, peak_amplitudes, decay_rate, period)
+        axis_diagnostic_records.append({
+            "segment_id": str(row["segment_id"]), "axis": axis,
+            "direction": str(row["direction"]), "repetition": int(row["repetition"]),
+            "measured_envelope_decay_per_s": envelope_pair["measured"][2],
+            "model_envelope_decay_per_s": envelope_pair["model"][2],
+            "measured_period_s": envelope_pair["measured"][3],
+            "model_period_s": envelope_pair["model"][3],
+            "measured_peak_rms_deg": _rms(envelope_pair["measured"][1]),
+            "model_peak_rms_deg": _rms(envelope_pair["model"][1]),
+        })
+        envelope_series[str(row["segment_id"])] = {
+            "axis": axis, "time": t, "measured": envelope_pair["measured"],
+            "model": envelope_pair["model"],
+        }
 
         estimated = {}
         clean = {}
@@ -236,6 +276,54 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
             })
     pd.DataFrame(summary).to_csv(out / "ow05_free_decay_summary.csv", index=False, encoding="utf-8-sig", float_format="%.10g")
 
+    axis_diagnostics = pd.DataFrame(axis_diagnostic_records)
+    axis_diagnostics.to_csv(out / "ow05_free_decay_axis_diagnostics.csv", index=False,
+                            encoding="utf-8-sig", float_format="%.10g")
+    axis_summary = []
+    representative_envelopes = {}
+    for axis in ("IN", "OUT"):
+        group = axis_diagnostics[axis_diagnostics["axis"] == axis]
+        coeff = select_coefficients(axis, "BALL")
+        axis_summary.append({
+            "axis": axis, "segments": int(len(group)),
+            "measured_envelope_decay_per_s": float(group["measured_envelope_decay_per_s"].mean()),
+            "model_envelope_decay_per_s": float(group["model_envelope_decay_per_s"].mean()),
+            "measured_period_s": float(group["measured_period_s"].mean()),
+            "model_period_s": float(group["model_period_s"].mean()),
+            "measured_peak_rms_deg": float(group["measured_peak_rms_deg"].mean()),
+            "model_peak_rms_deg": float(group["model_peak_rms_deg"].mean()),
+            "tau_over_I_rad_s2": float(coeff["tau_n_m"] / coeff["inertia_kg_m2"]),
+            "quadratic_drag_over_I_s": float(coeff["total_quadratic_drag_n_m_s2_per_rad2"] / coeff["inertia_kg_m2"]),
+            "natural_frequency_hz": float(np.sqrt(coeff["restoring_n_m_per_rad"] / coeff["inertia_kg_m2"]) / (2.0 * np.pi)),
+        })
+        median_rate = float(group["measured_envelope_decay_per_s"].median())
+        candidate = group.iloc[(group["measured_envelope_decay_per_s"] - median_rate).abs().argmin()]
+        representative_envelopes[axis] = str(candidate["segment_id"])
+    pd.DataFrame(axis_summary).to_csv(out / "ow05_free_decay_axis_summary.csv", index=False,
+                                      encoding="utf-8-sig", float_format="%.10g")
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), sharey=True, layout="constrained")
+    for ax, axis in zip(axes, ("IN", "OUT")):
+        sid = representative_envelopes[axis]
+        item = envelope_series[sid]
+        for key, color, label in (("measured", "#2673a8", "Measured peaks"), ("model", "#dd8452", "Zero-wind model peaks")):
+            pt, pa, decay, _ = item[key]
+            ax.scatter(pt, pa, s=22, color=color, alpha=.8, label=label)
+            if len(pt) >= 5:
+                line = np.polyfit(pt, np.log(pa), 1)
+                fit_time = np.linspace(float(pt.min()), float(pt.max()), 100)
+                ax.plot(fit_time, np.exp(np.polyval(line, fit_time)), color=color, ls="--",
+                        label=f"Envelope fit λ={decay:.3f}/s")
+        ax.set_title(f"{axis}: representative {sid}")
+        ax.set_xlabel("Time from selected waveform start [s]")
+        ax.grid(alpha=.25, which="both")
+        ax.legend(fontsize=8)
+    axes[0].set_ylabel("Absolute angle peak [deg]")
+    fig.suptitle("IN/OUT free-decay envelope | measured data and adopted model")
+    envelope_png = "ow05_free_decay_axis_envelopes.png"
+    fig.savefig(out / envelope_png, dpi=170)
+    plt.close(fig)
+
     plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 10})
     fig, axes = plt.subplots(2, 2, figsize=(14, 8.5), layout="constrained")
     representative = {}
@@ -341,5 +429,8 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         "representative_segments": representative,
         "summary": summary,
         "gain_sensitivity": sensitivity_summary,
-        "figures": [waveform_png, gain_png, response_png, sensitivity_png],
+        "axis_diagnostics": axis_summary,
+        "axis_diagnostic_segments": axis_diagnostic_records,
+        "representative_envelopes": representative_envelopes,
+        "figures": [waveform_png, gain_png, response_png, sensitivity_png, envelope_png],
     }
