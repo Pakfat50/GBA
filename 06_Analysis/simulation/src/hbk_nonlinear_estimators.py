@@ -26,7 +26,8 @@ def _model_derivative(state: np.ndarray, coefficients: dict, force_lever_m: floa
     force_rate = state[3] if len(state) == 4 else 0.0
     inertia = coefficients["inertia_kg_m2"]
     loss_torque = (
-        coefficients["total_quadratic_drag_n_m_s2_per_rad2"] * abs(rate) * rate
+        coefficients["viscous_damping_n_m_s_per_rad"] * rate
+        + coefficients["total_quadratic_drag_n_m_s2_per_rad2"] * abs(rate) * rate
         + coefficients["tau_n_m"] * math.tanh(rate / epsilon_rad_s)
     )
     acceleration = (
@@ -62,6 +63,7 @@ def _continuous_jacobian(state: np.ndarray, coefficients: dict,
         - coefficients["restoring_n_m_per_rad"] * math.cos(angle)
     ) / inertia
     jacobian[1, 1] = (
+        -coefficients["viscous_damping_n_m_s_per_rad"]
         -2.0 * coefficients["total_quadratic_drag_n_m_s2_per_rad2"] * abs(rate)
         - coefficients["tau_n_m"] / epsilon_rad_s
           * (1.0 - math.tanh(rate / epsilon_rad_s) ** 2)
@@ -110,9 +112,6 @@ def nonlinear_luenberger_force(angle_rad: np.ndarray, coefficients: dict,
         raise ValueError("sample period, force lever, and observer pole must be positive")
     if disturbance_order not in (0, 1):
         raise ValueError("disturbance_order must be 0 or 1")
-    if coefficients["viscous_damping_n_m_s_per_rad"] != 0:
-        raise ValueError("The adopted nonlinear estimator requires b=0")
-
     epsilon = math.radians(friction_epsilon_deg_s)
     gain = calculate_luenberger_gain(
         coefficients, force_lever_m, sample_period_s,
@@ -155,9 +154,6 @@ def nonlinear_ekf_rts_force(angle_rad: np.ndarray, coefficients: dict,
         raise ValueError("All periods, scales, and noise assumptions must be positive")
     if disturbance_order not in (0, 1):
         raise ValueError("disturbance_order must be 0 or 1")
-    if coefficients["viscous_damping_n_m_s_per_rad"] != 0:
-        raise ValueError("The adopted nonlinear estimator requires b=0")
-
     epsilon = math.radians(friction_epsilon_deg_s)
     n = 3 + disturbance_order
     measurement = np.zeros((1, n))

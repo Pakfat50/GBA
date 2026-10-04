@@ -49,8 +49,8 @@ def simulate_hbk_plant(
     """Integrate the adopted nonlinear one-axis plant with RK4.
 
     ``force_n`` is the applied force at each sample. The equation uses the
-    adopted zero-viscous-damping model, quadratic rod/ball drag, and smooth
-    Coulomb friction. This is the plant-side input path for wind simulations;
+    adopted linear and quadratic damping, and smooth Coulomb friction. This
+    is the plant-side input path for wind simulations;
     linear observers can still use their existing linearized state model.
     """
     import numpy as np
@@ -62,9 +62,6 @@ def simulate_hbk_plant(
         raise ValueError("sample period and friction smoothing speed must be positive")
     if force_lever_m is None or not math.isfinite(force_lever_m) or force_lever_m <= 0:
         raise ValueError("Supply the measured/defined positive force_lever_m explicitly")
-    if coefficients["viscous_damping_n_m_s_per_rad"] != 0:
-        raise ValueError("Adopted HBK plant requires b=0")
-
     inertia = coefficients["inertia_kg_m2"]
     stiffness = coefficients["restoring_n_m_per_rad"]
     drag = coefficients["total_quadratic_drag_n_m_s2_per_rad2"]
@@ -79,6 +76,7 @@ def simulate_hbk_plant(
         acceleration = (
             lever * applied_force * math.cos(angle)
             - stiffness * math.sin(angle)
+            - coefficients["viscous_damping_n_m_s_per_rad"] * rate
             - drag * abs(rate) * rate
             - tau * math.tanh(rate / epsilon)
         ) / inertia
