@@ -237,6 +237,18 @@ def evaluate() -> tuple[list[dict], dict, dict]:
                                   friction_epsilon_deg_s=config["friction_epsilon_deg_s"])[::2]
         d_angle = np.rad2deg(low[:, 0] - high[:, 0])
         d_rate = np.rad2deg(low[:, 1] - high[:, 1])
+        observer_args = (
+            nominal[axis], dt, config["force_lever_m"],
+            np.deg2rad(float(config["assumed_angle_noise_deg"])), Q_BY_AXIS[axis], 0,
+            config["friction_epsilon_deg_s"],
+        )
+        initial_state = np.array([angle0, 0.0, float(data[4])])
+        _, force_low = nonlinear_ekf_rts_force(low[:, 0], *observer_args, initial_state=initial_state)
+        _, force_high = nonlinear_ekf_rts_force(high[:, 0], *observer_args, initial_state=initial_state)
+        wind_low = force_to_speed(config, force_low)
+        wind_high = force_to_speed(config, force_high)
+        wind_delta = wind_low - wind_high
+        eval_mask = t >= 2.0
         integration_refinement.append({
             "axis": axis, "input": "自由振動ステップ", "reference_rate_hz": 200,
             "compared_rate_hz": 100,
@@ -244,6 +256,10 @@ def evaluate() -> tuple[list[dict], dict, dict]:
             "angle_difference_max_abs_deg": float(np.max(np.abs(d_angle))),
             "rate_difference_rms_deg_s": float(np.sqrt(np.mean(d_rate**2))),
             "rate_difference_max_abs_deg_s": float(np.max(np.abs(d_rate))),
+            "rts_wind_difference_rms_m_s": float(np.sqrt(np.mean(wind_delta[eval_mask]**2))),
+            "rts_wind_difference_max_abs_m_s": float(np.max(np.abs(wind_delta[eval_mask]))),
+            "rts_wind_100hz_rmse_m_s": float(np.sqrt(np.mean((wind_low[eval_mask] - data[1][eval_mask])**2))),
+            "rts_wind_200hz_rmse_m_s": float(np.sqrt(np.mean((wind_high[eval_mask] - data[1][eval_mask])**2))),
         })
 
     # Summarize the repeatable five-seed sensor-noise run separately from exact cases.
@@ -406,10 +422,10 @@ def write_report(summary: list[dict], info: dict) -> None:
     for item in info["q_sensitivity"]:
         lines.append(f"| {item['axis']} | {item['q_N_per_sample']:.0e} | {item['rmse_m_s']:.4f} | {item['bias_removed_rms_m_s']:.4f} | {item['max_abs_error_m_s']:.4f} |")
     lines += ["", "### 数値積分の刻み幅確認", "",
-              "プラントの100 Hz RK4と200 Hz RK4を比較し、200 Hz結果を100 Hz時刻へ戻した角度差を算出した。これは観測器の推定誤差とは独立のプラント積分収束チェックである。",
-              "", "| 軸 | 角度差 RMS [deg] | 最大角度差 [deg] | 角速度差 RMS [deg/s] | 最大角速度差 [deg/s] |", "|---|---:|---:|---:|---:|"]
+              "プラントの100 Hz RK4と200 Hz RK4を比較し、200 Hz結果を100 Hz時刻へ戻した角度を同じRTSへ通した。従って、2列の推定風差はプラント積分刻みが推定出力へ与える影響の評価である。",
+              "", "| 軸 | 角度差 RMS [deg] | 最大角度差 [deg] | 角速度差 RMS [deg/s] | 最大角速度差 [deg/s] | RTS風推定差 RMS [m/s] | 最大差 [m/s] | RMSE 100→200 Hz [m/s] |", "|---|---:|---:|---:|---:|---:|---:|---:|"]
     for item in info["integration_refinement"]:
-        lines.append(f"| {item['axis']} | {item['angle_difference_rms_deg']:.6g} | {item['angle_difference_max_abs_deg']:.6g} | {item['rate_difference_rms_deg_s']:.6g} | {item['rate_difference_max_abs_deg_s']:.6g} |")
+        lines.append(f"| {item['axis']} | {item['angle_difference_rms_deg']:.6g} | {item['angle_difference_max_abs_deg']:.6g} | {item['rate_difference_rms_deg_s']:.6g} | {item['rate_difference_max_abs_deg_s']:.6g} | {item['rts_wind_difference_rms_m_s']:.6g} | {item['rts_wind_difference_max_abs_m_s']:.6g} | {item['rts_wind_100hz_rmse_m_s']:.4f} → {item['rts_wind_200hz_rmse_m_s']:.4f} |")
     lines += [
         "",
         "![自由振動ステップの理論風速と推定値](ow05_theoretical_step_comparison.png)",
@@ -420,7 +436,7 @@ def write_report(summary: list[dict], info: dict) -> None:
         "",
         "## 読み取り",
         "",
-        "①の誤差をそのまま演算誤差と呼ぶことはできない。RTSは角度観測の誤差共分散と外力状態のランダムウォークqを使う推定器であり、係数一致は推定器が急な力変化を必ず正確に再現することを意味しない。q感度で誤差が動く分は、急変力に対する推定器の時間変化仮定・調整の影響である。下の刻み幅比較はプラント積分誤差を直接見ており、ここで小さい一方、RTSの偏差が大きければ、主因は浮動小数演算やRK4刻み幅より推定器の時間変化仮定と考えられる。",
+        "①の誤差をそのまま演算誤差と呼ぶことはできない。RTSは角度観測の誤差共分散と外力状態のランダムウォークqを使う推定器であり、係数一致は推定器が急な力変化を必ず正確に再現することを意味しない。100→200 Hzにすると推定風の差はRMSでIN 0.0271、OUT 0.0323 m/sだが、総RMSEはIN 0.2622→0.2636、OUT 0.1669→0.1701 m/sとほぼ変わらない。したがって積分刻みの影響はあるものの、自由振動ステップの大きな誤差全体を数値積分だけでは説明できない。qを変えるとRMSEがIN 0.262→0.110、OUT 0.167→0.101 m/sへ変わるため、急変力に対するRTSの時間変化仮定・調整が主要因の一つである。",
         "",
         "②−①の増分はOW-04の係数ずれによる影響、③−①の増分は設定したセンサーノイズ・量子化による影響として読める。差は誤差RMSの単純差だけでなく、RMSE・Bias除去後RMS・P95・最大値を並べて見る。特にBias除去後RMSは振動成分に対応する。",
         "",
