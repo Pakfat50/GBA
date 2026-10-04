@@ -182,6 +182,8 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
             clean[method] = force_to_speed(cfg, clean_force)
 
             wind_zero_rmse = _rms(estimated[method][score])
+            segment_bias = float(np.mean(estimated[method][score]))
+            centered_error = estimated[method][score] - segment_bias
             response = estimated[method] - clean[method]
             response_rmse = _rms(response[score])
             angle_resid_rmse = _rms(residual_deg[score])
@@ -199,7 +201,9 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
                 "duration_s": float(t[-1]),
                 "method": method,
                 "wind_zero_rmse_m_s": wind_zero_rmse,
-                "wind_zero_bias_m_s": float(np.mean(estimated[method][score])),
+                "wind_zero_bias_m_s": segment_bias,
+                "wind_zero_centered_rms_m_s": _rms(centered_error),
+                "wind_zero_centered_p95_abs_m_s": float(np.quantile(np.abs(centered_error), 0.95)),
                 "wind_zero_mae_m_s": float(np.mean(np.abs(estimated[method][score]))),
                 "wind_zero_p95_abs_m_s": float(np.quantile(np.abs(estimated[method][score]), 0.95)),
                 "wind_zero_max_abs_m_s": float(np.max(np.abs(estimated[method][score]))),
@@ -254,6 +258,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
             response_rms = float(np.sqrt(np.average(group["measured_response_rmse_m_s"] ** 2, weights=nscore)))
             zero_rms = float(np.sqrt(np.average(group["wind_zero_rmse_m_s"] ** 2, weights=nscore)))
             zero_bias = float(np.average(group["wind_zero_bias_m_s"], weights=nscore))
+            centered_rms = float(np.sqrt(np.average(group["wind_zero_centered_rms_m_s"] ** 2, weights=nscore)))
             residual_ss = float(group["measured_angle_residual_ss_deg2"].sum())
             residual_acf = float(np.sum(group["measured_angle_residual_acf_lag1"] * group["measured_angle_residual_ss_deg2"]) / residual_ss) if residual_ss > 0 else 0.0
             synthetic_angle = float(np.sqrt(np.mean(ref_group["angle_noise_rmse_deg"].to_numpy(float) ** 2)))
@@ -265,6 +270,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
                 "scored_samples": int(group["samples_scored"].sum()),
                 "wind_zero_rmse_m_s": zero_rms,
                 "wind_zero_bias_m_s": zero_bias,
+                "wind_zero_centered_rms_m_s": centered_rms,
                 "measured_angle_residual_rmse_deg": angle_rms,
                 "measured_angle_residual_acf_lag1": residual_acf,
                 "measured_response_rmse_m_s": response_rms,
@@ -422,6 +428,26 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
     fig.savefig(out / response_png, dpi=170)
     plt.close(fig)
 
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.8), sharey=True, layout="constrained")
+    colors = {"総RMSE（Bias込み）": "#2673a8", "波形平均を除いた変動RMS": "#dd8452"}
+    x = np.arange(len(METHODS), dtype=float)
+    width = .34
+    for ax, axis in zip(axes, ("IN", "OUT")):
+        rows_axis = [next(r for r in summary if r["axis"] == axis and r["method"] == method) for method in METHODS]
+        total = [r["wind_zero_rmse_m_s"] for r in rows_axis]
+        centered = [r["wind_zero_centered_rms_m_s"] for r in rows_axis]
+        ax.bar(x - width / 2, total, width, color=colors["総RMSE（Bias込み）"], label="Total RMSE (includes bias)")
+        ax.bar(x + width / 2, centered, width, color=colors["波形平均を除いた変動RMS"], label="Variability RMS after removing each segment mean")
+        ax.set_xticks(x, ["ESO 3-state", "RTS 3-state\n(offline)"])
+        ax.set_title(axis)
+        ax.set_ylabel("Zero-wind estimated speed [m/s]")
+        ax.grid(axis="y", alpha=.2)
+        ax.legend(fontsize=8)
+    fig.suptitle("Separate observer bias from oscillatory variation")
+    centered_png = "ow05_free_decay_bias_removed_variability.png"
+    fig.savefig(out / centered_png, dpi=170)
+    plt.close(fig)
+
     return {
         "segments": int(detail["segment_id"].nunique()),
         "source": "04_Data/05_Fitting/20260921/Raw/球/LOG00012_ANGLE.csv",
@@ -436,5 +462,5 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         "axis_diagnostics": axis_summary,
         "axis_diagnostic_segments": axis_diagnostic_records,
         "representative_envelopes": representative_envelopes,
-        "figures": [waveform_png, gain_png, response_png, sensitivity_png, envelope_png],
+        "figures": [waveform_png, gain_png, response_png, centered_png, sensitivity_png, envelope_png],
     }
