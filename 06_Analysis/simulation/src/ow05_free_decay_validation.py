@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from PIL import Image
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
@@ -67,6 +68,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
     sensitivity_records = []
     axis_diagnostic_records = []
     rts_sensitivity_records = []
+    rts_q_waveforms: dict[str, dict[float, np.ndarray]] = {}
     series = {}
     envelope_series = {}
     margin_start_s, margin_end_s = 3.0, 0.5
@@ -143,7 +145,9 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
                     angle, coefficients, dt, cfg["force_lever_m"], angle_noise_rad,
                     q_std, 0, cfg["friction_epsilon_deg_s"], initial_state=initial_state,
                 )
-                wind_rts = force_to_speed(cfg, force_rts)[score]
+                wind_rts_full = force_to_speed(cfg, force_rts)
+                rts_q_waveforms.setdefault(str(row["segment_id"]), {})[q_std] = wind_rts_full.copy()
+                wind_rts = wind_rts_full[score]
                 q_bias = float(np.mean(wind_rts))
                 centered_rms = _rms(wind_rts - q_bias)
                 total_rmse = _rms(wind_rts)
@@ -410,6 +414,65 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
     fig.savefig(out / waveform_png, dpi=170)
     plt.close(fig)
 
+    # Keep full time series for one representative measured free-decay trace
+    # per axis so every q can be compared as a waveform, not only a scalar RMS.
+    q_waveform_rows = []
+    q_names = {q: f"wind_estimate_q_{q:.0e}_m_s" for q in RTS_PROCESS_NOISE_GRID}
+    for axis in ("IN", "OUT"):
+        sid = representative_envelopes[axis]
+        item = series[sid]
+        q_estimates = rts_q_waveforms.get(sid, {})
+        for i, time_s in enumerate(item["time"]):
+            record = {"segment_id": sid, "axis": axis, "time_s": float(time_s),
+                      "measured_angle_deg": float(item["angle_deg"][i]),
+                      "model_angle_deg": float(item["reference_deg"][i]),
+                      "score_window": bool(item["score"][i]), "true_wind_m_s": 0.0}
+            for q, col in q_names.items():
+                values = q_estimates.get(q)
+                record[col] = float(values[i]) if values is not None and np.isfinite(values[i]) else float("nan")
+            q_waveform_rows.append(record)
+    q_waveform_csv = "ow05_free_decay_q_waveforms.csv"
+    # Store a compact 20 Hz export for review; the plotted estimates above use
+    # the original full-rate traces. The producing script remains authoritative.
+    pd.DataFrame(q_waveform_rows).iloc[::5].to_csv(
+        out / q_waveform_csv, index=False, encoding="utf-8-sig", float_format="%.6g"
+    )
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.2), sharey=True, layout="constrained")
+    palette = plt.get_cmap("plasma")
+    for ax, axis in zip(axes, ("IN", "OUT")):
+        sid = representative_envelopes[axis]
+        item = series[sid]
+        scored = item["score"]
+        for q_index, q in enumerate(RTS_PROCESS_NOISE_GRID):
+            trace = rts_q_waveforms.get(sid, {}).get(q)
+            if trace is None or not np.all(np.isfinite(trace[scored])):
+                continue
+            centered = trace - float(np.mean(trace[scored]))
+            selected = np.isclose(q, float(tunings[(axis, METHODS[1])]))
+            ax.plot(item["time"], centered, lw=2.0 if selected else 0.85,
+                    alpha=1.0 if selected else 0.55,
+                    color=palette(q_index / max(len(RTS_PROCESS_NOISE_GRID) - 1, 1)),
+                    label=f"q={q:g}" + (" (adopted)" if selected else ""))
+        ax.axhline(0, color="#222222", lw=.8, label="Zero wind")
+        ax.axvspan(0, margin_start_s, color="#777777", alpha=.10)
+        ax.axvspan(float(item["time"][-1] - margin_end_s), float(item["time"][-1]), color="#777777", alpha=.10)
+        ax.set_title(f"{axis}: {sid} / adopted q={tunings[(axis, METHODS[1])]:g}")
+        ax.set_xlabel("Time from selected waveform start [s]")
+        ax.grid(alpha=.25); ax.legend(fontsize=7, ncol=2)
+    axes[0].set_ylabel("Bias-removed RTS wind estimate [m/s]")
+    fig.suptitle("Measured free-decay response for each RTS q | one representative waveform per axis")
+    q_waveform_png = "ow05_free_decay_q_waveforms.png"
+    fig.savefig(out / q_waveform_png, dpi=160)
+    plt.close(fig)
+    q_waveform_path = out / q_waveform_png
+    compact = Image.open(q_waveform_path).convert("RGB").quantize(
+        colors=64, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE
+    )
+    compact_path = q_waveform_path.with_name(q_waveform_path.stem + "_compressed.png")
+    compact.save(compact_path, optimize=True)
+    compact_path.replace(q_waveform_path)
+
     fig, ax = plt.subplots(figsize=(8.5, 5.0), layout="constrained")
     for axis, color in (("IN", "#2673a8"), ("OUT", "#dd8452")):
         group = pd.DataFrame(sensitivity_summary)
@@ -496,9 +559,9 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         group = rts_sens_summary_frame[rts_sens_summary_frame["axis"] == axis].sort_values("process_noise_std")
         ax.plot(group["process_noise_std"], group["bias_removed_variability_rms_m_s"],
                 marker="o", color=color, label=f"{axis} free-decay variation")
-    ax.axhline(next(x["wind_zero_centered_rms_m_s"] for x in summary if x["axis"] == "OUT" and x["method"] == METHODS[1]),
-               color="#555555", ls="--", label="OUT at selected q=0.001")
-    ax.axvline(float(tunings[("IN", METHODS[1])]), color="#2673a8", ls=":", label="Selected q=0.001")
+    for axis, color in (("IN", "#2673a8"), ("OUT", "#dd8452")):
+        ax.axvline(float(tunings[(axis, METHODS[1])]), color=color, ls=":",
+                   label=f"Adopted {axis} q={tunings[(axis, METHODS[1])]:g}")
     ax.set_xscale("log")
     ax.set_xlabel("RTS disturbance process-noise standard deviation q")
     ax.set_ylabel("Bias-removed free-decay variation RMS [m/s]")
@@ -524,5 +587,6 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         "axis_diagnostic_segments": axis_diagnostic_records,
         "representative_envelopes": representative_envelopes,
         "rts_smoothing_sensitivity": rts_sensitivity_summary,
-        "figures": [waveform_png, gain_png, response_png, centered_png, rts_sensitivity_png, sensitivity_png, envelope_png],
+        "q_waveforms_csv": q_waveform_csv,
+        "figures": [waveform_png, gain_png, response_png, centered_png, rts_sensitivity_png, q_waveform_png, sensitivity_png, envelope_png],
     }

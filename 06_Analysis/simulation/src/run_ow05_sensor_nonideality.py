@@ -1,6 +1,6 @@
 """OW-05 sensor non-ideality evaluation for adopted HBK observers."""
 from __future__ import annotations
-import csv, json, sys, time
+import csv, json, math, sys, time
 from pathlib import Path
 import numpy as np
 import pandas as pd
@@ -24,11 +24,96 @@ SIM=Path(__file__).resolve().parents[1]
 OUT=SIM/'results/observer_wind/ow05_sensor_nonideality'
 REPO=SIM.parents[1]
 RTS_Q_SWEEP=(1e-9,1e-8,1e-7,1e-6,1e-5,3e-5,1e-4,3e-4,1e-3)
-RTS_Q_WAVEFORMS=(1e-9,1e-7,1e-5,1e-4,1e-3)
+RTS_Q_WAVEFORMS=(1e-9,1e-7,1e-5,3e-5,3e-4,1e-3)
+RTS_SELECTED_Q_BY_AXIS={'IN':3e-5,'OUT':3e-4}
 
 def write_csv(path, rows):
     with path.open('w',newline='',encoding='utf-8-sig') as f:
         w=csv.DictWriter(f,fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
+
+def tone_phasor(time_s, signal, frequency_hz, mask):
+    """Least-squares complex amplitude of one tone after removing its mean."""
+    phase=2.0*np.pi*frequency_hz*np.asarray(time_s)[mask]
+    matrix=np.column_stack((np.cos(phase),np.sin(phase),np.ones(np.count_nonzero(mask))))
+    coefficients=np.linalg.lstsq(matrix,np.asarray(signal)[mask],rcond=None)[0]
+    return complex(coefficients[0],-coefficients[1])
+
+def compute_selected_q_bode(cfg, tunings, output_dir):
+    """Empirical local wind-speed-to-RTS frequency response about 2 m/s."""
+    sample_rate=float(cfg['sample_rate_hz']); dt=1.0/sample_rate
+    mean_speed=2.0; tone_amplitude=0.2; cycles=10
+    frequencies=np.geomspace(.05,15.0,25)
+    measurement_sigma=np.deg2rad(float(cfg['assumed_angle_noise_deg']))
+    records=[]
+    for axis in cfg['axis_names']:
+      coefficients=select_coefficients(axis,'BALL')
+      q_std=float(tunings[(axis,'RTS 3状態（オフライン）')])
+      mean_force=float(applied_force(cfg,np.array([mean_speed]))[0])
+      equilibrium_angle=math.atan2(cfg['force_lever_m']*mean_force,coefficients['restoring_n_m_per_rad'])
+      for frequency in frequencies:
+        duration=cycles/frequency
+        n=int(round(duration*sample_rate))+1
+        t=np.arange(n,dtype=float)*dt
+        true_speed=mean_speed+tone_amplitude*np.sin(2*np.pi*frequency*t)
+        force=applied_force(cfg,true_speed)
+        plant=simulate_hbk_plant(force,coefficients,dt,
+            initial_angle_rad=equilibrium_angle,initial_rate_rad_s=0.0,
+            force_lever_m=cfg['force_lever_m'],friction_epsilon_deg_s=cfg['friction_epsilon_deg_s'])
+        initial=np.array([equilibrium_angle,0.0,mean_force])
+        _,estimated_force=nonlinear_ekf_rts_force(plant[:,0],coefficients,dt,
+            cfg['force_lever_m'],measurement_sigma,q_std,0,
+            cfg['friction_epsilon_deg_s'],initial_state=initial)
+        estimated_speed=force_to_speed(cfg,estimated_force)
+        score=(t>=2.0/frequency)&(t<=t[-1]-2.0/frequency)
+        input_phasor=tone_phasor(t,true_speed,frequency,score)
+        output_phasor=tone_phasor(t,estimated_speed,frequency,score)
+        transfer=output_phasor/input_phasor
+        gain=float(abs(transfer)); gain_db=float(20*np.log10(max(gain,1e-15)))
+        records.append({'axis':axis,'selected_q_N_per_sample':q_std,
+            'frequency_hz':float(frequency),'tone_amplitude_m_s':tone_amplitude,
+            'estimated_tone_amplitude_m_s':float(abs(output_phasor)),
+            'gain_ratio':gain,'gain_db':gain_db,'phase_deg':float(np.rad2deg(np.angle(transfer))),
+            'cycles_total':cycles,'cycles_scored':cycles-4,'assumed_angle_sigma_deg':float(cfg['assumed_angle_noise_deg']),
+            'sensor_noise_added':False})
+    frame=pd.DataFrame(records)
+    for axis in cfg['axis_names']:
+      group=frame[frame['axis']==axis].sort_values('frequency_hz')
+      phase_rad=np.unwrap(np.deg2rad(group['phase_deg'].to_numpy(float)))
+      frame.loc[group.index,'phase_unwrapped_deg']=np.rad2deg(phase_rad)
+    cutoff_summary={}
+    for axis in cfg['axis_names']:
+      group=frame[frame['axis']==axis].sort_values('frequency_hz').reset_index(drop=True)
+      low_db=float(group.loc[:2,'gain_db'].mean()); target=low_db-3.0; crossing=None
+      for i in range(1,len(group)):
+        if group.loc[i,'gain_db']<=target and group.loc[i-1,'gain_db']>target:
+          x0,x1=np.log10(group.loc[i-1:i,'frequency_hz'].to_numpy(float))
+          y0,y1=group.loc[i-1:i,'gain_db'].to_numpy(float)
+          crossing=float(10**(x0+(target-y0)*(x1-x0)/(y1-y0)))
+          break
+      cutoff_summary[axis]={'low_frequency_gain_db':low_db,'minus_3db_relative_hz':crossing}
+    csv_path=output_dir/'ow05_selected_q_bode.csv'
+    frame.to_csv(csv_path,index=False,encoding='utf-8-sig',float_format='%.10g')
+    fig,(mag_ax,phase_ax)=plt.subplots(2,1,figsize=(10,7),sharex=True,layout='constrained')
+    colors={'IN':'#2673a8','OUT':'#dd8452'}
+    for axis in cfg['axis_names']:
+      group=frame[frame['axis']==axis].sort_values('frequency_hz')
+      q_std=float(group['selected_q_N_per_sample'].iloc[0]); color=colors[axis]
+      mag_ax.semilogx(group['frequency_hz'],group['gain_db'],'o-',color=color,
+          label=f"{axis}, q={q_std:g} N/sample")
+      phase_ax.semilogx(group['frequency_hz'],group['phase_unwrapped_deg'],'o-',color=color,
+          label=f"{axis}, q={q_std:g} N/sample")
+      target=cutoff_summary[axis]['low_frequency_gain_db']-3.0
+      mag_ax.axhline(target,color=color,ls=':',alpha=.65)
+      crossing=cutoff_summary[axis]['minus_3db_relative_hz']
+      if crossing is not None: mag_ax.axvline(crossing,color=color,ls='--',alpha=.5)
+    mag_ax.set_ylabel('Magnitude [dB]'); mag_ax.set_title('Local empirical Bode response: true wind-speed tone → estimated wind')
+    mag_ax.grid(True,which='both',alpha=.25); mag_ax.legend()
+    mag_ax.axhline(0,color='#555',lw=.7)
+    phase_ax.set_ylabel('Phase [deg]'); phase_ax.set_xlabel('Frequency [Hz]')
+    phase_ax.grid(True,which='both',alpha=.25); phase_ax.legend()
+    bode_png='ow05_selected_q_bode.png'; fig.savefig(output_dir/bode_png,dpi=160); plt.close(fig)
+    return {'csv':csv_path.name,'figure':bode_png,'cutoff_summary':cutoff_summary,
+        'description':{'input':'2.0 m/s mean wind plus/minus 0.2 m/s sinusoid; nonlinear adopted plant; nominal assumed angle sigma; no random sensor noise added; first/last two cycles excluded from tone fit.'}}
 
 def analyze_measured_sensor_noise():
     """Measure each static-window angle perturbation from its own mean."""
@@ -178,6 +263,9 @@ def run():
             tuning_rows.append({'axis':axis,'method':method,'parameter':p,'training_rmse_m_s':met['rmse_m_s']})
           except (ValueError,FloatingPointError,np.linalg.LinAlgError): pass
         tunings[(axis,method)]=best[1]
+    # Adopt the noise/response compromise from the expanded q sensitivity study.
+    for axis,q_selected in RTS_SELECTED_Q_BY_AXIS.items():
+      tunings[(axis,'RTS 3状態（オフライン）')]=q_selected
     rows=[]; noise_rows=[]; rts_wind_sensitivity_rows=[]; rts_wind_sensitivity_wave={}; wave={}; static_sigma_wave={}
     measured_sigma={axis:measured_noise[axis]['static_perturbation_sigma_deg'] for axis in ('IN','OUT')}
     modes={'ideal':None,'nominal':pars,'noise_2x':AngleSensorParameters(sample_rate_hz=rate,resolution_bits=14,white_noise_std_deg=.03,coloured_noise_std_deg=.02,coloured_noise_time_constant_s=pars.coloured_noise_time_constant_s,fixed_delay_s=.01)}
@@ -236,7 +324,8 @@ def run():
         group=pd.DataFrame(rts_wind_sensitivity_rows)
         group=group[(group['axis']==axis)&(group['case']==cname)].sort_values('process_noise_std')
         ax.plot(group['process_noise_std'],group['rmse_m_s'],marker='o',color=color,label=case_labels[cname])
-      ax.axvline(.001,color='#555',ls=':',label='Selected q=0.001')
+      q_selected=RTS_SELECTED_Q_BY_AXIS[axis]
+      ax.axvline(q_selected,color='#555',ls=':',label=f'Adopted q={q_selected:g}')
       ax.set_xscale('log'); ax.set_title(axis); ax.set_xlabel('RTS process-noise standard deviation q')
       ax.set_ylabel('Wind-speed RMSE [m/s]'); ax.grid(alpha=.25,which='both'); ax.legend(fontsize=8)
     fig.suptitle('RTS smoothing sensitivity on separate wind simulations')
@@ -284,6 +373,42 @@ def run():
     compressed_wave_png.save(compressed_path,optimize=True)
     compressed_path.replace(wave_png_path)
     free_decay_validation=evaluate_free_decay(cfg,tunings,OUT,REPO)
+    bode_validation=compute_selected_q_bode(cfg,tunings,OUT)
+    # One-page overview: wind tracking under both validation winds, plus the
+    # bias-removed wind estimates from the representative measured free decays.
+    free_q_frame=pd.read_csv(OUT/free_decay_validation['q_waveforms_csv'],encoding='utf-8-sig')
+    fig,axes=plt.subplots(3,2,figsize=(15,10),layout='constrained')
+    rts_method='RTS 3状態（オフライン）'
+    for row,(cname,case_title) in enumerate(zip([c['name'] for c in cases],('Kaimal validation wind','2→6 m/s gust'))):
+      for col,axis in enumerate(cfg['axis_names']):
+        plant,estimate,result=wave[(cname,axis,rts_method)]
+        stride=max(1,int(round(rate/20)))
+        axes[row,col].plot(plant['t'][::stride],plant['v'][::stride],color='#222222',lw=1.0,label='True wind')
+        axes[row,col].plot(plant['t'][::stride],estimate[::stride],color='#2673a8',lw=.9,
+                           label=f"RTS estimate (RMSE {result['rmse_m_s']:.3f} m/s)")
+        axes[row,col].set_title(f"{case_title} / {axis} / q={tunings[(axis,rts_method)]:g}")
+        axes[row,col].set_ylabel('Wind speed [m/s]'); axes[row,col].grid(alpha=.25); axes[row,col].legend(fontsize=8)
+    for col,axis in enumerate(cfg['axis_names']):
+      subset=free_q_frame[free_q_frame['axis']==axis]
+      sid=free_decay_validation['representative_envelopes'][axis]
+      subset=subset[subset['segment_id']==sid]
+      q_col=f"wind_estimate_q_{RTS_SELECTED_Q_BY_AXIS[axis]:.0e}_m_s"
+      trace=subset[q_col].to_numpy(float); score=subset['score_window'].to_numpy(bool)
+      if len(trace):
+        centered=trace-float(np.nanmean(trace[score]))
+        axes[2,col].plot(subset['time_s'],centered,color='#2673a8',lw=.9,label='RTS wind estimate, zero-point removed')
+        axes[2,col].axvspan(0,3.0,color='#777777',alpha=.10)
+        axes[2,col].axvspan(float(subset['time_s'].iloc[-1]-.5),float(subset['time_s'].iloc[-1]),color='#777777',alpha=.10)
+      axes[2,col].axhline(0,color='#222',lw=.8,label='True wind = 0')
+      axes[2,col].set_title(f"Measured free decay / {axis} / q={RTS_SELECTED_Q_BY_AXIS[axis]:g}")
+      axes[2,col].set_xlabel('Time [s]'); axes[2,col].set_ylabel('Bias-removed wind estimate [m/s]')
+      axes[2,col].grid(alpha=.25); axes[2,col].legend(fontsize=8)
+    fig.suptitle('Adopted-q response: wind-model tracking and measured free decay')
+    combined_png=OUT/'ow05_adopted_q_combined_responses.png'
+    fig.savefig(combined_png,dpi=160); plt.close(fig)
+    combined_compact=Image.open(combined_png).convert('RGB').quantize(colors=64,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE)
+    combined_tmp=combined_png.with_name(combined_png.stem+'_compressed.png')
+    combined_compact.save(combined_tmp,optimize=True); combined_tmp.replace(combined_png)
     # Plot sensor-impact comparison for both valid wind models, zoom around global max error for each.
     figs=[]
     # Give ESO and RTS identical wind and error scales for each case and axis.
@@ -328,7 +453,7 @@ def run():
         fig.savefig(OUT/name,dpi=160); plt.close(fig); static_figs.append(name)
     report=['# OW-05 センサー非理想性とオブザーバー選定','','## 目的・結論','',
       'OW-03で角度±60°内だった独立Kaimal乱流（平均2 m/s、TI 20%）と2→6 m/sガストを使い、採用BALLプラントにセンサーの量子化、ノイズ、遅延を含めて比較した。比較対象はオンラインの3状態ESOと未来データを使うオフライン3状態RTS。4状態ESOはOW-03で除外済みのため含めない。', '',
-      f"公称センサー条件では、風条件・軸ごとのRMSE最小方式は下表の通り。帯域/プロセス雑音は別seedの平均3 m/s Kaimal訓練波形で方式ごと・軸ごとに一度だけ選定し、検証波形には再調整せず適用した。最大角度は全ケースで±60°内である。","",
+      f"公称センサー条件では、風条件・軸ごとのRMSE最小方式は下表の通り。ESO帯域は別seedの平均3 m/s Kaimal訓練波形で選定した。RTSの訓練最小qは初期比較として記録し、今回の広域感度評価を踏まえた最終採用値はIN {RTS_SELECTED_Q_BY_AXIS['IN']:g}、OUT {RTS_SELECTED_Q_BY_AXIS['OUT']:g} とした。最大角度は全ケースで±60°内である。","",
       '| 風条件 | 軸 | ESO RMSE | RTS RMSE |','|---|---|---:|---:|']
     for cname,axis in plants:
       vals={r['method']:r for r in rows if r['case']==cname and r['axis']==axis and r['sensor_case']=='nominal'}
@@ -419,9 +544,32 @@ def run():
     extreme_in=wind_value('IN','ガスト',1e-7)['rmse_m_s']
     extreme_out=wind_value('OUT','ガスト',1e-7)['rmse_m_s']
     report += ['',
-      f"q=3e-5ではBias除去後変動RMSがIN {q30_in['bias_removed_variability_rms_m_s']:.3f} m/s（現行比{q30_in['bias_removed_variability_rms_m_s']/baseline_rms['IN']:.2f}）、OUT {q30_out['bias_removed_variability_rms_m_s']:.3f} m/s（現行比{q30_out['bias_removed_variability_rms_m_s']/baseline_rms['OUT']:.2f}）まで低下する。Kaimal RMSEはIN {ka_in_ratio:.2f}倍、OUT {ka_out_ratio:.2f}倍、ガストRMSEはIN {gu_in_ratio:.2f}倍、OUT {gu_out_ratio:.2f}倍となった。ノイズ低減優先の次候補として両軸q=3e-5を試す価値がある。q=1e-5まで下げると変動はさらに小さくなる（IN {q10_in['bias_removed_variability_rms_m_s']:.3f}、OUT {q10_out['bias_removed_variability_rms_m_s']:.3f} m/s）が、Kaimal誤差との交換条件が強くなる。",
-      f"極端なq低下では推定風速がほぼ一定値に張り付き、ガスト追従が崩れる。q=1e-7でガストRMSEはIN {extreme_in:.3f}、OUT {extreme_out:.3f} m/sとなり、q=1e-8〜1e-9ではさらに悪化して推定波形はほぼ水平になった。したがって極小qへの単純な低減は採用せず、3e-5を次の候補、1e-5をより攻めた比較候補として実測風波形で検証する。",'']
-    report += ['', '各軸の現行q=0.001比を併記した（小さいほど変動が少ない）。ゼロ点保証後は定常Biasを事後解析で除去するため、Biasを含む総RMSEはq選定に使わない。今回の追試ではqを1e-9まで下げ、IN/OUT双方について自由振動の変動量とKaimal・ガスト波形への影響を確認する。風モデルで推定値が真値からずれる量と、自由振動時の変動抑制を分けて判断する。','',
+      f"参考として、q=3e-5をOUTにも適用すると自由振動変動RMSは{q30_out['bias_removed_variability_rms_m_s']:.3f} m/s（現行比{q30_out['bias_removed_variability_rms_m_s']/baseline_rms['OUT']:.2f}）となるが、OUTはq=3e-4を採用した。IN/OUTともq=1e-5ではさらに平滑化する一方、Kaimal誤差はIN {ka_in_ratio:.2f}倍、OUT {ka_out_ratio:.2f}倍に増える。極端なq低下では推定風速がほぼ一定値に張り付き、風追従が崩れる。q=1e-7でガストRMSEはIN {extreme_in:.3f}、OUT {extreme_out:.3f} m/s、q=1e-8〜1e-9では波形がほぼ水平になる。",'']
+    q30_out_adopted=next(x for x in rts_sweep if x['axis']=='OUT' and np.isclose(x['process_noise_std'],3e-4))
+    ka_adopt_in=wind_value('IN','Kaimal',3e-5)['rmse_m_s']/wind_value('IN','Kaimal',1e-3)['rmse_m_s']
+    ka_adopt_out=wind_value('OUT','Kaimal',3e-4)['rmse_m_s']/wind_value('OUT','Kaimal',1e-3)['rmse_m_s']
+    gust_adopt_in=wind_value('IN','ガスト',3e-5)['rmse_m_s']/wind_value('IN','ガスト',1e-3)['rmse_m_s']
+    gust_adopt_out=wind_value('OUT','ガスト',3e-4)['rmse_m_s']/wind_value('OUT','ガスト',1e-3)['rmse_m_s']
+    bode_cutoffs=bode_validation['cutoff_summary']
+    bode_text='、'.join(f"{axis}の相対-3 dB点={entry['minus_3db_relative_hz']:.2f} Hz" if entry['minus_3db_relative_hz'] is not None else f"{axis}は測定周波数範囲で-3 dB未到達" for axis,entry in bode_cutoffs.items())
+    report += ['',
+      f"今回採用する値はIN q=3e-5、OUT q=3e-4 N/sampleとする。INは自由振動変動RMS {q30_in['bias_removed_variability_rms_m_s']:.3f} m/s（q=0.001比{q30_in['bias_removed_variability_rms_m_s']/baseline_rms['IN']:.2f}）、OUTは{q30_out_adopted['bias_removed_variability_rms_m_s']:.3f} m/s（比{q30_out_adopted['bias_removed_variability_rms_m_s']/baseline_rms['OUT']:.2f}）。Kaimal RMSE比はIN {ka_adopt_in:.2f}、OUT {ka_adopt_out:.2f}、ガストRMSE比はIN {gust_adopt_in:.2f}、OUT {gust_adopt_out:.2f}。q=1e-5なら変動RMSはさらに下がる（IN {q10_in['bias_removed_variability_rms_m_s']:.3f}、OUT {q10_out['bias_removed_variability_rms_m_s']:.3f} m/s）が、Kaimal追従誤差がIN {ka_in_ratio:.2f}倍、OUT {ka_out_ratio:.2f}倍に増えるため、今回は採用しない。",
+      f"極端にqを下げると推定風速がほぼ一定値に張り付き、風変化を追えなくなる。q=1e-7でガストRMSEはIN {extreme_in:.3f}、OUT {extreme_out:.3f} m/sまで悪化し、q=1e-8〜1e-9では推定波形がほぼ水平になった。したがってqは小さいほど良いわけではなく、今回の採用値は自由振動の変動抑制と風応答保持の折衷である。",'',
+      '#### qの意味（状態推定モデル）','',
+      '推定状態を角度θ、角速度ω、外力Fとして、状態ベクトルを $x_k=[\\theta_k,\\omega_k,F_k]^T$ と置く。単純化した連続時間の運動式は次の形である。','',
+      '$$\\dot{\\theta}=\\omega,\\qquad I\\dot{\\omega}=L F\\cos\\theta-K\\sin\\theta-c|\\omega|\\omega-\\tau_f\\tanh(\\omega/\\epsilon).$$','',
+      '角度センサーの観測は $y_k=\\theta_k+v_k$、ここで $v_k$ は角度計測誤差である。外力はサンプル間でランダムウォークすると仮定する。','',
+      '$$F_{k+1}=F_k+w_k,\\qquad w_k\\sim\\mathcal{N}(0,q^2),\\qquad Q=\\mathrm{diag}(0,0,q^2),\\quad R=\\sigma_\\theta^2.$$','',
+      'したがってqは「1サンプル進む間に外力状態がどれくらい変わってよいか」を表す標準偏差で、角度ノイズσやカットオフ周波数そのものではない。単位はN/sample（コード上の離散更新あたり）である。qを大きくすると外力変化を許して風変化に敏感になる一方、角度誤差やモデル残差まで風として拾いやすい。qを小さくすると推定外力は滑らかになるが、真の風変化も抑えて遅らせる。','',
+      '各qの自由振動推定波形（真値0 m/s、採点対象区間の平均を除去）を示す。開始3秒と末尾0.5秒は初期過渡を避けるための除外区間である。','',
+      '![自由振動の推定風速をq別に比較](ow05_free_decay_q_waveforms.png)','',
+      '採用qでの風モデル応答と自由振動応答を一枚にまとめた。上2段はKaimal風および2→6 m/sガストの真値・推定値、下段は実測自由振動のBias除去後推定値（真値0 m/s）である。','',
+      '![採用qの風モデル応答と自由振動](ow05_adopted_q_combined_responses.png)','',
+      '推定器を含む局所周波数応答（実効Bode）も計算した。'+bode_text+'。',
+      '入力は平均2 m/sに振幅0.2 m/sの正弦波風速を重ね、非線形プラントと採用qのオフラインRTSを通した推定風速の基本波振幅比をゲインとした。RTSは非線形・時変のオフライン処理なので、これは古典的な線形伝達関数ではなく、指定した動作点近傍での実効応答である。-3 dB点は低周波3点の平均ゲインに対する相対値。減衰後の位相は出力振幅が小さく位相推定が不安定になるため、主にゲイン曲線で帯域を見る。','',
+      '![採用qの実効Bode線図](ow05_selected_q_bode.png)','',
+      'qごとの自由振動時系列はレビュー用に20 Hzへ間引いた `ow05_free_decay_q_waveforms.csv` に保存した（図は元の100 Hz系列で作成）。周波数応答の数値は `ow05_selected_q_bode.csv` に保存した。','']
+    report += ['', '各軸の現行q=0.001比を併記した（小さいほど変動が少ない）。ゼロ点保証後は定常Biasを事後解析で除去するため、Biasを含む総RMSEはq選定に使わない。今回の追試ではqを1e-9まで下げ、IN/OUT双方について自由振動の変動量とKaimal・ガスト波形への影響を確認した。風モデルで推定値が真値からずれる量と、自由振動時の変動抑制を分けて判断する。','',
       f"![RTS q感度と自由振動変動RMS](ow05_rts_smoothing_sensitivity.png)",'',
       'q別波形値は `ow05_rts_smoothing_sensitivity.csv`、軸別集計とKaimal訓練RMSEは `ow05_rts_smoothing_sensitivity_summary.csv` に保存した。','']
     report += ['q低下による風速追従への影響も、同じ公称センサーノイズ系列を使い、別のKaimal乱流・ガスト入力で両軸を確認した。表は各軸・条件での真値風速に対するRMSEと、q=0.001からの比を示す。','',
@@ -465,7 +613,7 @@ def run():
     for name in figs: report += [f'![OW-05 拡大時系列]({name})','']
     report += ['## 解釈と選定','', 'RTS（Rauch–Tung–Striebel）スムーザーは、まず時系列を前向きに推定し、その後、将来の観測も使って過去の状態推定を後向きに修正する。時間的に独立なホワイトノイズによる一時的な観測の揺れが、運動モデルや前後の観測と整合しない場合、その揺れを実際の状態変化ではなく観測ノイズとして扱いやすくなり、推定への影響を弱められる。これは未来の観測が過去の観測ノイズを物理的に打ち消すという意味ではなく、全時系列に最も整合する状態系列を再推定する効果である。', '', 'この平滑化は、運動モデルが十分妥当で、観測ノイズとモデル誤差の大きさ（観測・プロセス雑音の共分散）が適切に設定されていることを前提とする。ノイズが時間相関を持つ場合、その影響は独立な白色ノイズほど平均化されない。また、実際の急な風速変化をモデルが説明できないときに平滑化が強すぎると、真の変化まで抑えたり、遅らせたりする可能性がある。したがって、オフラインRTSは必ずノイズに強いわけではなく、今回の低い誤差をホワイトノイズ単独の効果と断定することもできない。今回のセンサー条件には白色ノイズに加えて有色ノイズも含まれるため、成分ごとの寄与を分けるには追加の比較が必要である。', '', 'RTS 3状態は将来データを使うオフライン評価であるため、RMSEが小さくてもオンライン実装候補とは分ける。オンライン用途はESO 3状態を候補とし、公称ノイズ条件に対する帯域選定を反映した値を使用する。RTSはログ解析や遅延許容用途の基準として残す。ノイズ2倍感度を含む推定誤差は `ow05_metrics.csv`、増幅倍率は `ow05_noise_amplification.csv`、調整スキャンは `ow05_tuning_scan.csv` に保存した。', '', '## 再実行','', '```bash','python 06_Analysis/simulation/src/run_ow05_sensor_nonideality.py','```','']
     (OUT/'OW-05_REPORT.md').write_text('\n'.join(report),encoding='utf-8')
-    summary={'task_id':'OW-05','sensor_nominal':nominal,'free_decay_validation':free_decay_validation,'rts_smoothing_wind_sensitivity':rts_wind_sensitivity_rows,'static_window_sigma_condition':{'white_noise_std_deg_by_axis':measured_sigma,'coloured_noise_std_deg':0.0,'interpretation':'White-noise equivalent of static-window mean-centered perturbation sigma; temporal correlation and possible mechanical micro-motion are not represented.','observer_tuning':'Fixed values selected under nominal sensor noise.'},'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','perturbations')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
+    summary={'task_id':'OW-05','sensor_nominal':nominal,'free_decay_validation':free_decay_validation,'rts_smoothing_wind_sensitivity':rts_wind_sensitivity_rows,'selected_rts_q_by_axis_N_per_sample':RTS_SELECTED_Q_BY_AXIS,'selected_q_bode':bode_validation,'adopted_q_combined_figure':combined_png.name,'static_window_sigma_condition':{'white_noise_std_deg_by_axis':measured_sigma,'coloured_noise_std_deg':0.0,'interpretation':'White-noise equivalent of static-window mean-centered perturbation sigma; temporal correlation and possible mechanical micro-motion are not represented.','observer_tuning':'Fixed values selected under nominal sensor noise.'},'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','perturbations')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
     (OUT/'ow05_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2,allow_nan=False)+'\n',encoding='utf-8')
     print('rows',len(rows),'tunings',tunings)
 
