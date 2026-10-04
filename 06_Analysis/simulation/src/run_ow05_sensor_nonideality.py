@@ -175,7 +175,7 @@ def run():
             tuning_rows.append({'axis':axis,'method':method,'parameter':p,'training_rmse_m_s':met['rmse_m_s']})
           except (ValueError,FloatingPointError,np.linalg.LinAlgError): pass
         tunings[(axis,method)]=best[1]
-    rows=[]; noise_rows=[]; rts_wind_sensitivity_rows=[]; wave={}; static_sigma_wave={}
+    rows=[]; noise_rows=[]; rts_wind_sensitivity_rows=[]; rts_wind_sensitivity_wave={}; wave={}; static_sigma_wave={}
     measured_sigma={axis:measured_noise[axis]['static_perturbation_sigma_deg'] for axis in ('IN','OUT')}
     modes={'ideal':None,'nominal':pars,'noise_2x':AngleSensorParameters(sample_rate_hz=rate,resolution_bits=14,white_noise_std_deg=.03,coloured_noise_std_deg=.02,coloured_noise_time_constant_s=pars.coloured_noise_time_constant_s,fixed_delay_s=.01)}
     static_sigma_modes={axis:AngleSensorParameters(sample_rate_hz=rate,resolution_bits=14,white_noise_std_deg=measured_sigma[axis],coloured_noise_std_deg=0.0,coloured_noise_time_constant_s=pars.coloured_noise_time_constant_s,fixed_delay_s=pars.fixed_delay_s) for axis in cfg['axis_names']}
@@ -201,6 +201,7 @@ def run():
                   _,force_q=nonlinear_ekf_rts_force(angle,co,dt,cfg['force_lever_m'],np.deg2rad(.02),q_std,0,cfg['friction_epsilon_deg_s'])
                   est_q=force_to_speed(cfg,force_q); met_q=metrics(plant['v'],est_q,plant['mask'])
                   rts_wind_sensitivity_rows.append({'case':cname,'axis':axis,'process_noise_std':q_std,**met_q})
+                  rts_wind_sensitivity_wave[(cname,axis,q_std)]={'t':plant['t'],'true':plant['v'],'estimated':est_q,'mask':plant['mask']}
                 except (ValueError,FloatingPointError,np.linalg.LinAlgError):
                   rts_wind_sensitivity_rows.append({'case':cname,'axis':axis,'process_noise_std':q_std,'rmse_m_s':float('nan'),'bias_m_s':float('nan'),'mae_m_s':float('nan'),'p95_abs_error_m_s':float('nan'),'max_abs_error_m_s':float('nan')})
             if sp is not None:
@@ -237,6 +238,31 @@ def run():
     fig.suptitle('RTS smoothing sensitivity on separate wind simulations')
     rts_wind_sensitivity_png='ow05_rts_smoothing_wind_sensitivity.png'
     fig.savefig(OUT/rts_wind_sensitivity_png,dpi=170); plt.close(fig)
+    # Plot IN estimates while varying only q, using identical sensor noise.
+    q_wave_values=(3e-5,1e-4,3e-4,1e-3)
+    q_colors={3e-5:'#8172b2',1e-4:'#55a868',3e-4:'#dd8452',1e-3:'#2673a8'}
+    fig,axes=plt.subplots(2,2,figsize=(15,8),sharex='col',layout='constrained')
+    for row,(cname,case_title) in enumerate(zip([c['name'] for c in cases],('Independent Kaimal, mean 2 m/s, TI 20%','Gust, 2 to 6 m/s'))):
+      base=rts_wind_sensitivity_wave[(cname,'IN',1e-3)]
+      ax=axes[row,0]; err_ax=axes[row,1]
+      ax.plot(base['t'],base['true'],color='#222222',lw=1.5,label='True wind')
+      for q_std in q_wave_values:
+        item=rts_wind_sensitivity_wave[(cname,'IN',q_std)]
+        ax.plot(item['t'],item['estimated'],color=q_colors[q_std],lw=1.0,
+                label=f"RTS estimate q={q_std:g}")
+        err_ax.plot(item['t'],item['estimated']-item['true'],color=q_colors[q_std],lw=1.0,label=f"q={q_std:g}")
+      ax.set_ylabel('Wind speed [m/s]'); ax.set_title(f'{case_title}: estimate')
+      err_ax.axhline(0,color='#222222',lw=.8); err_ax.set_ylabel('Estimate − truth [m/s]')
+      err_ax.set_title(f'{case_title}: estimation error')
+      lo=min(float(np.nanmin(rts_wind_sensitivity_wave[(cname,'IN',q)]['estimated']-base['true'])) for q in q_wave_values)
+      hi=max(float(np.nanmax(rts_wind_sensitivity_wave[(cname,'IN',q)]['estimated']-base['true'])) for q in q_wave_values)
+      pad=max((hi-lo)*.08,0.005); err_ax.set_ylim(lo-pad,hi+pad)
+      for plot_ax in (ax,err_ax): plot_ax.grid(alpha=.25)
+      ax.legend(ncol=3,fontsize=8,loc='upper right'); err_ax.legend(ncol=2,fontsize=8,loc='upper right')
+    axes[-1,0].set_xlabel('Time [s]'); axes[-1,1].set_xlabel('Time [s]')
+    fig.suptitle('IN RTS wind estimates and errors while varying q (same sensor-noise realization)')
+    rts_wind_wave_png='ow05_rts_smoothing_IN_wind_waveforms.png'
+    fig.savefig(OUT/rts_wind_wave_png,dpi=170); plt.close(fig)
     free_decay_validation=evaluate_free_decay(cfg,tunings,OUT,REPO)
     # Plot sensor-impact comparison for both valid wind models, zoom around global max error for each.
     figs=[]
@@ -354,13 +380,13 @@ def run():
     report += [f"図の下段のESO総RMSEはIN {eso_in['wind_zero_rmse_m_s']:.3f} m/s、OUT {eso_out['wind_zero_rmse_m_s']:.3f} m/s。波形ごとにBiasを除いた変動RMSはIN {eso_in['wind_zero_centered_rms_m_s']:.3f} m/s、OUT {eso_out['wind_zero_centered_rms_m_s']:.3f} m/sで、INの振動成分が大きい。RTSの総RMSEはIN {rts_in['wind_zero_rmse_m_s']:.3f} m/s、OUT {rts_out['wind_zero_rmse_m_s']:.3f} m/sだが、Bias除去後はIN {rts_in['wind_zero_centered_rms_m_s']:.3f} m/s、OUT {rts_out['wind_zero_centered_rms_m_s']:.3f} m/s。OUT側の大きな定常Biasが総RMSEに含まれるため、RMSEだけでは振動成分の差が見えにくい。角度残差RMS（IN {eso_in['measured_angle_residual_rmse_deg']:.3f}°、OUT {eso_out['measured_angle_residual_rmse_deg']:.3f}°）とは別の量である。", f"![総RMSEとBias除去後の振動成分](ow05_free_decay_bias_removed_variability.png)",'']
     rts_sweep = free_decay_validation['rts_smoothing_sensitivity']
     report += ['### IN側RTSの変動を抑える設定感度','',
-      'RTSの外力過程雑音標準偏差qを小さくすると、外力推定が時間的に滑らかになる。ここでは自由振動検証波形で各波形のBiasを除いた変動RMSを調べ、別に合成Kaimal訓練データでの風速RMSEも併記した。自由振動値だけでqを決めず、風速変化への応答とのトレードオフを見るための診断である。','',
-      '| q | IN自由振動 変動RMS [m/s] | INゼロ風速総RMSE [m/s] | IN平均Bias [m/s] | Kaimal訓練RMSE [m/s] | 現行比 |','|---:|---:|---:|---:|---:|---:|']
+      '今回の選定基準はゼロ点補正後に残る高周波の変動成分とする。RTSの外力過程雑音標準偏差qを小さくすると外力推定が滑らかになるため、自由振動のBias除去後変動RMSでノイズ低減を評価し、別のKaimal乱流・ガスト波形で風速変化をどの程度保持できるかを波形と誤差で確認した。自由振動変動RMSは自由振動条件における推定出力の変動量であり、センサー単独の白色高周波成分を分離した値ではない。','',
+      '| q | IN自由振動 Bias除去後変動RMS [m/s] | 現行比 | Kaimal訓練RMSE [m/s] |','|---:|---:|---:|---:|']
     baseline_training = next(x['training_wind_rmse_m_s'] for x in rts_sweep if x['axis']=='IN' and np.isclose(x['process_noise_std'],0.001))
     for q in (0.001, 0.0003, 0.0001, 0.00003, 0.000001):
       row = next(x for x in rts_sweep if x['axis']=='IN' and np.isclose(x['process_noise_std'],q))
-      report.append(f"| {q:g} | {row['bias_removed_variability_rms_m_s']:.3f} | {row['zero_wind_total_rmse_m_s']:.3f} | {row['mean_bias_m_s']:.3f} | {row['training_wind_rmse_m_s']:.5f} | {row['training_wind_rmse_m_s']/baseline_training:.2f}× |")
-    report += ['', 'q=0.00003ではINの変動RMSが約0.211 m/sとなり、現行q=0.001のOUT側0.222 m/sに近づく。一方、独立したKaimal訓練データのRMSEは0.095から0.137 m/sへ約44%増える。qを下げるほど振動は抑えられるが、実際の外力変化も追いにくくなるため、このqをそのまま採用する判断はできない。まずq=0.0003〜0.0001を候補域とし、ガスト・Kaimalの遅れとピーク誤差を確認するのが妥当である。q=0.000001のような過度な平滑化では訓練RMSEが現行の約2.14倍となる。総RMSEにはBiasも残るため、平滑化だけではゼロ風速総誤差を解消しない。','',
+      report.append(f"| {q:g} | {row['bias_removed_variability_rms_m_s']:.3f} | {row['bias_removed_variability_rms_m_s']/next(x['bias_removed_variability_rms_m_s'] for x in rts_sweep if x['axis']=='IN' and np.isclose(x['process_noise_std'],0.001)):.2f}× | {row['training_wind_rmse_m_s']:.5f} |")
+    report += ['', '比はBias除去後の変動RMSを現行q=0.001のIN値で割った値（小さいほど変動が少ない）。ゼロ点保証後は定常Biasを事後解析で除去するため、Biasを含む総RMSEはq選定に使わない。現時点の第一候補はIN側q=0.0001（変動RMSを約63%低減、独立Kaimal検証RMSEは約13%増）とし、さらに保守的に風波形保持を優先する場合はq=0.0003（約28%低減、Kaimal RMSEほぼ不変）を候補とする。q=0.00003では変動RMSが現行OUT値に近づく一方、Kaimal検証RMSEは約31%増えるため、現段階では候補から外す。これは設定変更の最終確定ではなく、独立実測の確認前の候補選定である。','',
       f"![RTS q感度と自由振動変動RMS](ow05_rts_smoothing_sensitivity.png)",'',
       'q別波形値は `ow05_rts_smoothing_sensitivity.csv`、軸別集計とKaimal訓練RMSEは `ow05_rts_smoothing_sensitivity_summary.csv` に保存した。','']
     report += ['q低下による風速追従への影響も、同じ公称センサーノイズ系列を使い、別のKaimal乱流・ガスト入力で確認した。下表はIN軸の真値風速に対するRMSEで、q=0.001からの比も示す。','',
@@ -372,7 +398,8 @@ def run():
         case_label='Kaimal検証' if 'Kaimal' in cname else 'ガスト検証'
         report.append(f"| {q:g} | {case_label} | {rrow['rmse_m_s']:.5f} | {rrow['rmse_m_s']/base['rmse_m_s']:.2f}× | {rrow['p95_abs_error_m_s']:.5f} |")
     report += ['',f"![RTS q感度の風速シミュレーション評価]({rts_wind_sensitivity_png})",'',
-      '自由振動での変動RMSと風速変化を含む独立シミュレーションのRMSE・95%誤差を合わせて選ぶ。風速RMSEや遅れが許容できない水準に悪化するなら、IN側qを下げてOUTと同じ変動RMSに揃えるのは避ける。今回の比較はシミュレーションモデル上の結果で、独立した実測風速試験による最終確認は別途必要である。q感度の風波形別値は `ow05_rts_smoothing_wind_sensitivity.csv` に保存した。','']
+      f"![IN側RTS推定波形のq比較]({rts_wind_wave_png})",'',
+      '自由振動のBias除去後変動RMS、風速RMSE・95%誤差、推定波形を合わせて選ぶ。風推定が強く平滑化される場合は、qを下げて変動RMSをOUTと揃える設定を避ける。今回の比較はシミュレーションモデル上の結果で、独立した実測風速試験による最終確認は別途必要である。q感度の風波形別値は `ow05_rts_smoothing_wind_sensitivity.csv` に保存した。','']
     report += ['### IN/OUTで振動の減衰が違う理由','',
       '実測角度の振幅包絡から、採点区間（開始3秒後〜終了0.5秒前）の正負ピークに対して `log(|peak|)=intercept−λt` を当てはめた。λは減衰包絡の経験値で、単独の粘性減衰係数ではない。方向・繰返しごとに算出し、軸別に平均した。','',
       '| 軸 | 波形数 | 実測λ [/s] | 無風モデルλ [/s] | 実測周期 [s] | モデル周期 [s] | 採用τ/I [rad/s²] | 採用c/I [s⁻¹] |','|---|---:|---:|---:|---:|---:|---:|---:|']
