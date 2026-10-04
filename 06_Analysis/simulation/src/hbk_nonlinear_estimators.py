@@ -94,7 +94,8 @@ def calculate_luenberger_gain(coefficients: dict, force_lever_m: float, dt: floa
 def nonlinear_luenberger_force(angle_rad: np.ndarray, coefficients: dict,
                                sample_period_s: float, force_lever_m: float,
                                repeated_pole_hz: float, disturbance_order: int = 0,
-                               friction_epsilon_deg_s: float = 0.5) -> np.ndarray:
+                               friction_epsilon_deg_s: float = 0.5,
+                               initial_state: np.ndarray | None = None) -> np.ndarray:
     """Estimate wind force with an angle-only nonlinear Luenberger observer.
 
     ``disturbance_order=0`` treats force as constant between updates; order 1
@@ -118,6 +119,11 @@ def nonlinear_luenberger_force(angle_rad: np.ndarray, coefficients: dict,
         repeated_pole_hz, disturbance_order, epsilon,
     )
     state = np.zeros(3 + disturbance_order)
+    if initial_state is not None:
+        initial = np.asarray(initial_state, dtype=float)
+        if initial.shape != state.shape or not np.all(np.isfinite(initial)):
+            raise ValueError(f"initial_state must be a finite vector with shape {state.shape}")
+        state = initial.copy()
     force = np.zeros(len(angle))
     for index, measurement in enumerate(angle):
         # Preserve existing convention: output before consuming this sample.
@@ -134,7 +140,8 @@ def nonlinear_ekf_rts_force(angle_rad: np.ndarray, coefficients: dict,
                             sample_period_s: float, force_lever_m: float,
                             assumed_angle_noise_rad: float,
                             disturbance_noise_std: float, disturbance_order: int = 0,
-                            friction_epsilon_deg_s: float = 0.5) -> tuple[np.ndarray, np.ndarray]:
+                            friction_epsilon_deg_s: float = 0.5,
+                            initial_state: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Return causal EKF and offline extended RTS force estimates.
 
     Process noise is applied to force (order 0) or force rate (order 1).  The
@@ -169,6 +176,11 @@ def nonlinear_ekf_rts_force(angle_rad: np.ndarray, coefficients: dict,
     filtered_cov = np.zeros((len(angle), n, n))
     predicted_cov = np.zeros_like(filtered_cov)
     state = np.zeros(n)
+    if initial_state is not None:
+        initial = np.asarray(initial_state, dtype=float)
+        if initial.shape != state.shape or not np.all(np.isfinite(initial)):
+            raise ValueError(f"initial_state must be a finite vector with shape {state.shape}")
+        state = initial.copy()
     covariance = initial_covariance
 
     for index, value in enumerate(angle):

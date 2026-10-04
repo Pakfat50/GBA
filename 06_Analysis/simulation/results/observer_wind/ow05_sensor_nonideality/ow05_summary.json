@@ -11,6 +11,93 @@
     "gain_error_fraction": 0.0,
     "offset_deg": 0.0
   },
+  "free_decay_validation": {
+    "segments": 12,
+    "source": "04_Data/05_Fitting/20260921/Raw/球/LOG00012_ANGLE.csv",
+    "configuration": "BALL",
+    "zero_wind_assumption": true,
+    "initialization": "Measured first angle and 0.2 s linear-fit angular rate; external force initialized to zero.",
+    "score_margins_s": {
+      "start": 3.0,
+      "end": 0.5
+    },
+    "note": "Measured angle residual to a zero-force free-decay simulation includes sensor variation and plant/model mismatch; it is not pure sensor noise.",
+    "representative_segments": {
+      "IN": "IN_BALL_P_R01",
+      "OUT": "OUT_BALL_P_R03"
+    },
+    "summary": [
+      {
+        "axis": "IN",
+        "method": "ESO 3状態",
+        "segments": 6,
+        "scored_samples": 10647,
+        "wind_zero_rmse_m_s": 1.6364131277713654,
+        "wind_zero_bias_m_s": 0.5290279002297041,
+        "measured_angle_residual_rmse_deg": 3.6232552470892574,
+        "measured_angle_residual_acf_lag1": 0.9950443255722421,
+        "measured_response_rmse_m_s": 1.6364131277713654,
+        "measured_amplification_m_s_per_deg": 0.45164169129016735,
+        "white_sigma_observer_response_rmse_m_s": 1.0092347152915204,
+        "white_sigma_amplification_m_s_per_deg": 10.728000794408555,
+        "measured_to_white_gain_ratio": 0.042099334251127524,
+        "zero_wind_to_white_response_ratio": 1.6214395947514375
+      },
+      {
+        "axis": "IN",
+        "method": "RTS 3状態（オフライン）",
+        "segments": 6,
+        "scored_samples": 10647,
+        "wind_zero_rmse_m_s": 1.249117314695354,
+        "wind_zero_bias_m_s": 0.6505520190525186,
+        "measured_angle_residual_rmse_deg": 3.6232552470892574,
+        "measured_angle_residual_acf_lag1": 0.9950443255722421,
+        "measured_response_rmse_m_s": 1.249117314695354,
+        "measured_amplification_m_s_per_deg": 0.34475001883978024,
+        "white_sigma_observer_response_rmse_m_s": 0.15937825210818643,
+        "white_sigma_amplification_m_s_per_deg": 1.694164884859502,
+        "measured_to_white_gain_ratio": 0.2034926009391173,
+        "zero_wind_to_white_response_ratio": 7.83743891134814
+      },
+      {
+        "axis": "OUT",
+        "method": "ESO 3状態",
+        "segments": 6,
+        "scored_samples": 7674,
+        "wind_zero_rmse_m_s": 1.210048590266409,
+        "wind_zero_bias_m_s": -0.7181309974304285,
+        "measured_angle_residual_rmse_deg": 3.9105167585037672,
+        "measured_angle_residual_acf_lag1": 0.9935721390122155,
+        "measured_response_rmse_m_s": 1.210048590266409,
+        "measured_amplification_m_s_per_deg": 0.3094344469014359,
+        "white_sigma_observer_response_rmse_m_s": 1.5741514229798956,
+        "white_sigma_amplification_m_s_per_deg": 15.585686683731161,
+        "measured_to_white_gain_ratio": 0.019853757693232308,
+        "zero_wind_to_white_response_ratio": 0.7686989781299225
+      },
+      {
+        "axis": "OUT",
+        "method": "RTS 3状態（オフライン）",
+        "segments": 6,
+        "scored_samples": 7674,
+        "wind_zero_rmse_m_s": 1.0389557903487223,
+        "wind_zero_bias_m_s": -1.014909180426249,
+        "measured_angle_residual_rmse_deg": 3.9105167585037672,
+        "measured_angle_residual_acf_lag1": 0.9935721390122155,
+        "measured_response_rmse_m_s": 1.0389557903487223,
+        "measured_amplification_m_s_per_deg": 0.26568247996621425,
+        "white_sigma_observer_response_rmse_m_s": 0.16954999752885785,
+        "white_sigma_amplification_m_s_per_deg": 1.6787159736575867,
+        "measured_to_white_gain_ratio": 0.1582652956993941,
+        "zero_wind_to_white_response_ratio": 6.127725187208506
+      }
+    ],
+    "figures": [
+      "ow05_free_decay_zero_wind.png",
+      "ow05_free_decay_gain_comparison.png",
+      "ow05_free_decay_zero_vs_white.png"
+    ]
+  },
   "static_window_sigma_condition": {
     "white_noise_std_deg_by_axis": {
       "IN": 0.0933369578687435,
