@@ -26,7 +26,7 @@ from run_ow03_hbk_observer_tuning import force_to_speed
 
 
 METHODS = ("ESO 3状態", "RTS 3状態（オフライン）")
-RTS_PROCESS_NOISE_GRID = (1e-6, 3e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2)
+RTS_PROCESS_NOISE_GRID = (1e-9, 1e-8, 1e-7, 1e-6, 1e-5, 3e-5, 1e-4, 3e-4, 1e-3)
 
 
 def _free_decay_reference(angle0: float, rate0: float, n: int, dt: float,
