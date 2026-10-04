@@ -323,6 +323,11 @@ def run():
     residual_acfs=[fr['measured_angle_residual_acf_lag1'] for fr in free_decay_validation['summary']]
     residual_rmse=[fr['measured_angle_residual_rmse_deg'] for fr in free_decay_validation['summary']]
     report += ['', f"妥当性確認の結果、実測自由振動を0風速として処理した推定RMSEは{min(fr['wind_zero_rmse_m_s'] for fr in free_decay_validation['summary']):.2f}〜{max(fr['wind_zero_rmse_m_s'] for fr in free_decay_validation['summary']):.2f} m/sだった。白色ノイズモデルの応答RMSEとの比は{min(zero_ratios):.2f}〜{max(zero_ratios):.2f}倍、残差で正規化した応答倍率比は{min(gain_ratios):.3f}〜{max(gain_ratios):.3f}だった。値は大きく異なり、静止窓σを独立白色ノイズとする仮定は実測自由振動に対する応答を再現していない。", f"ただし角度残差RMSは{min(residual_rmse):.2f}〜{max(residual_rmse):.2f}°、ラグ1自己相関は{min(residual_acfs):.3f}〜{max(residual_acfs):.3f}で、静止窓σ（IN {measured_sigma['IN']:.3f}°、OUT {measured_sigma['OUT']:.3f}°）より大きく、強く時間相関したモデル残差である。これをセンサーノイズと同一視できないため、差の全てをノイズモデルの誤りとは断定できない。一方、ゼロ風速でも推定風速が残るので、OW-05のノイズ倍率だけでは実機誤差を説明できず、b=0を含む機械モデル差と実測ノイズの時間構造を分けて再評価する必要がある。",'']
+    eso_in = next(fr for fr in free_decay_validation['summary'] if fr['axis']=='IN' and fr['method']=='ESO 3状態')
+    eso_out = next(fr for fr in free_decay_validation['summary'] if fr['axis']=='OUT' and fr['method']=='ESO 3状態')
+    in_centered_std = np.sqrt(max(0.0, eso_in['wind_zero_rmse_m_s']**2 - eso_in['wind_zero_bias_m_s']**2))
+    out_centered_std = np.sqrt(max(0.0, eso_out['wind_zero_rmse_m_s']**2 - eso_out['wind_zero_bias_m_s']**2))
+    report += [f"なお、図の下段に描いた推定風速誤差そのもののESO RMSEはIN {eso_in['wind_zero_rmse_m_s']:.3f} m/s、OUT {eso_out['wind_zero_rmse_m_s']:.3f} m/sで、INが{100*(eso_in['wind_zero_rmse_m_s']/eso_out['wind_zero_rmse_m_s']-1):.0f}%大きい。Biasを除いた変動RMSもIN {in_centered_std:.3f} m/s、OUT {out_centered_std:.3f} m/sである。角度残差RMS（IN {eso_in['measured_angle_residual_rmse_deg']:.3f}°、OUT {eso_out['measured_angle_residual_rmse_deg']:.3f}°）とは別の量であり、角度残差が同程度でもESOを通した推定風速の誤差は同じとは限らない。",'']
     report += ['### IN/OUTで振動の減衰が違う理由','',
       '実測角度の振幅包絡から、採点区間（開始3秒後〜終了0.5秒前）の正負ピークに対して `log(|peak|)=intercept−λt` を当てはめた。λは減衰包絡の経験値で、単独の粘性減衰係数ではない。方向・繰返しごとに算出し、軸別に平均した。','',
       '| 軸 | 波形数 | 実測λ [/s] | 無風モデルλ [/s] | 実測周期 [s] | モデル周期 [s] | 採用τ/I [rad/s²] | 採用c/I [s⁻¹] |','|---|---:|---:|---:|---:|---:|---:|---:|']
@@ -335,7 +340,7 @@ def run():
       f"無風モデルとの差角度RMSはIN {din['segments'] and np.mean([x['measured_angle_residual_rmse_deg'] for x in free_decay_validation['summary'] if x['axis']=='IN']):.2f}°、OUT {np.mean([x['measured_angle_residual_rmse_deg'] for x in free_decay_validation['summary'] if x['axis']=='OUT']):.2f}°で、INの方が残差波形自体が大きいという結果でもない。両軸とも残差の大部分は約1 Hzの振動帯にあり、静止窓の角度σ（約0.1°）より数十倍大きい。ESOはこの低周波のモデル残差も外力として拾うため、ゲインを下げるだけでは軸差を直せない可能性が高い。", '',
       f"![IN/OUT自由振動の実測・モデル振幅包絡](ow05_free_decay_axis_envelopes.png)",'',
       '波形別の減衰・周期値は `ow05_free_decay_axis_diagnostics.csv`、軸別集計と採用係数比は `ow05_free_decay_axis_summary.csv` に保存した。','']
-    report += ['', '上段は実測角度と同初期条件の無風モデル、下段は観測器の推定風速と真値0 m/s。角度残差にはモデル誤差も含まれる。倍率図は実測残差に対する応答を白色近似の応答ゲインと、追加の棒グラフはゼロ風速RMSEを白色ノイズ時の応答RMSEと比較する。実測/白色の差はノイズ分布・時間相関とモデル残差の差を含むため、単独でモデル誤りの証明とはしない。','',
+    report += ['', '上段は実測角度と同初期条件の無風モデル、下段は観測器の推定風速と真値0 m/s。下段はIN/OUTで同じ縦軸範囲を使い、振動幅を直接比較できる。角度残差にはモデル誤差も含まれる。倍率図は実測残差に対する応答を白色近似の応答ゲインと、追加の棒グラフはゼロ風速RMSEを白色ノイズ時の応答RMSEと比較する。実測/白色の差はノイズ分布・時間相関とモデル残差の差を含むため、単独でモデル誤りの証明とはしない。','',
       '### ESOゲイン感度（診断）','',
       '選定済み12 Hzを含む0.5〜12 HzでESO極周波数を振り、同じ実測自由振動・初期化・採点区間でゼロ風速RMSEを比較した。これはゲイン過大の診断であり、自由振動検証波形を最終ゲイン選定に流用しない。低ゲインでゼロ風速誤差が改善すれば、現行ゲインが実測摂動に過敏な可能性が高まる。ただし、自由振動のモデル残差も入力に含むため、それだけで原因をセンサーノイズと断定はできない。','',
       '| 軸 | ESO極 [Hz] | ゼロ風速RMSE [m/s] | 収束波形/対象波形 |','|---|---:|---:|---:|']

@@ -353,6 +353,10 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         ax.set_ylabel("Inferred wind speed [m/s]")
         ax.grid(alpha=.2)
         ax.legend(fontsize=8)
+    wind_limit = max(float(np.nanmax(np.abs(line.get_ydata())))
+                     for ax in axes[1] for line in ax.lines if len(line.get_ydata())) * 1.05
+    for ax in axes[1]:
+        ax.set_ylim(-wind_limit, wind_limit)
     fig.suptitle("OW-05 observer on measured free-decay angles | zero external wind", fontsize=14)
     waveform_png = "ow05_free_decay_zero_wind.png"
     fig.savefig(out / waveform_png, dpi=170)
