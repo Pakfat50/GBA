@@ -4,6 +4,7 @@ import csv, json, sys, time
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from PIL import Image
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
@@ -263,6 +264,12 @@ def run():
     fig.suptitle('IN RTS wind estimates and errors while varying q (same sensor-noise realization)')
     rts_wind_wave_png='ow05_rts_smoothing_IN_wind_waveforms.png'
     fig.savefig(OUT/rts_wind_wave_png,dpi=170); plt.close(fig)
+    # Keep the repository PNG well below the inline-upload size limit while
+    # preserving chart readability; 256-color quantization is adequate here.
+    wave_png_path=OUT/rts_wind_wave_png
+    Image.open(wave_png_path).convert('RGB').quantize(
+        colors=256,method=Image.Quantize.MEDIANCUT,dither=Image.Dither.NONE
+    ).save(wave_png_path,optimize=True)
     free_decay_validation=evaluate_free_decay(cfg,tunings,OUT,REPO)
     # Plot sensor-impact comparison for both valid wind models, zoom around global max error for each.
     figs=[]
