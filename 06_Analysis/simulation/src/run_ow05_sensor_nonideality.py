@@ -122,12 +122,12 @@ def analyze_measured_sensor_noise():
       gaussian=np.exp(-0.5*(xx/sigma)**2)/(sigma*np.sqrt(2*np.pi))
       model_sigma=.015
       model_gaussian=np.exp(-0.5*(xx/model_sigma)**2)/(model_sigma*np.sqrt(2*np.pi))
-      axes[1].plot(xx,gaussian,color='#193d5a',lw=2,label=f'Gaussian fit, σ={sigma:.4f}°')
+      axes[1].plot(xx,gaussian,color='#193d5a',lw=2,label=f'Gaussian reference, σ={sigma:.4f}°')
       axes[1].plot(xx,model_gaussian,color='#c44e52',ls='--',lw=1.6,label='OW-05 assumed white σ=0.015°')
       axes[1].axvline(-3*sigma,color='#238b45',ls=':',lw=1.4); axes[1].axvline(3*sigma,color='#238b45',ls=':',lw=1.4)
       axes[1].axvline(-3*model_sigma,color='#c44e52',ls='--',lw=1); axes[1].axvline(3*model_sigma,color='#c44e52',ls='--',lw=1)
       axes[1].set_xlim(-.06,.06); axes[1].set_ylabel('Probability density'); axes[1].set_xlabel('High-frequency innovation [deg]')
-      axes[1].set_title(f"Histogram; {100*v['fraction_within_three_sigma']:.1f}% within measured ±3σ (Gaussian: 99.73%)")
+      axes[1].set_title(f"High-frequency innovations; {100*v['fraction_within_three_sigma']:.1f}% within measured ±3σ (Gaussian: 99.73%)")
       axes[1].legend(loc='upper right',fontsize=8); axes[1].grid(alpha=.2)
       lags=np.arange(1,len(v['acf'])+1); bound=v['acf_95_bound']
       axes[2].bar(lags,v['acf'],color='#8172b2',width=.8); axes[2].axhline(0,color='#444',lw=.7)
