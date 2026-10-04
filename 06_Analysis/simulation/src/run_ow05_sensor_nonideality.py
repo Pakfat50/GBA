@@ -27,7 +27,7 @@ def write_csv(path, rows):
         w=csv.DictWriter(f,fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
 
 def analyze_measured_sensor_noise():
-    """Estimate high-frequency angle noise from stationary pre-release intervals."""
+    """Measure each static-window angle perturbation from its own mean."""
     OUT.mkdir(parents=True,exist_ok=True)
     data_root=REPO/'04_Data/05_Fitting/20260921'
     selection_path=REPO/'06_Analysis/fitting_pipeline/results/20260921/waveform_review/waveform_selection.csv'
@@ -35,7 +35,7 @@ def analyze_measured_sensor_noise():
     selection=selection[(selection['use_for_fitting']==1)&(selection['review_status'].astype(str).str.upper()=='APPROVED')]
     tables={}
     estimates={}
-    window_n=50  # 0.5 s at 100 Hz
+    window_n=50
     for axis in ('IN','OUT'):
       angle_col='angle0[deg]' if axis=='IN' else 'angle1[deg]'
       windows=[]
@@ -50,8 +50,6 @@ def analyze_measured_sensor_noise():
         expected_sign=1.0 if str(record['direction']).upper().startswith('P') else -1.0
         selected=None
         selected_start=None
-        # Search backward for the closest 0.5 s window with a fixed high-angle
-        # hold, low spread and low linear drift, using the original split criteria.
         for end in range(event-10,max(window_n,event-1000),-10):
           start=end-window_n
           x=y[start:end]
@@ -64,40 +62,34 @@ def analyze_measured_sensor_noise():
             break
         if selected is None:
           continue
-        # Remove only each static window's mean: the plotted trace represents
-        # measured high-frequency fluctuation, without removing its waveform.
-        residual=selected-float(np.mean(selected))
-        # For independent sample noise, second difference has variance 1.5*sigma^2.
-        innovations=(residual[1:-1]-0.5*(residual[:-2]+residual[2:]))/np.sqrt(1.5)
+        perturbation=selected-float(np.mean(selected))
         windows.append({'segment_id':str(record['segment_id']),'data_file':relative_path,
                         'direction':str(record['direction']),'start_index':selected_start,
-                        'samples':window_n,'residual':residual,'innovations':innovations})
+                        'samples':window_n,'perturbation':perturbation})
       if not windows:
         raise RuntimeError('No stationary pre-release windows found for '+axis)
-      innovations=np.concatenate([w['innovations'] for w in windows])
-      residuals=[w['residual'] for w in windows]
-      sigma=float(np.std(innovations,ddof=1))
+      perturbations=np.concatenate([w['perturbation'] for w in windows])
+      sigma=float(np.std(perturbations,ddof=1))
       acf=[]
-      denominator=sum(float(np.dot(r,r)) for r in residuals)
+      denominator=sum(float(np.dot(w['perturbation'],w['perturbation'])) for w in windows)
       for lag in range(1,21):
-        numerator=sum(float(np.dot(r[:-lag],r[lag:])) for r in residuals)
+        numerator=sum(float(np.dot(w['perturbation'][:-lag],w['perturbation'][lag:])) for w in windows)
         acf.append(numerator/denominator if denominator>0 else 0.0)
-      normal=normaltest(innovations)
+      normal=normaltest(perturbations)
       estimates[axis]={
-        'n_windows':len(windows),'n_samples':int(sum(len(r) for r in residuals)),
-        'n_innovations':len(innovations),'white_equivalent_sigma_deg':sigma,
-        'three_sigma_deg':3*sigma,'assumed_white_sigma_deg':0.015,
-        'assumed_white_three_sigma_deg':0.045,
-        'innovation_skewness':float(skew(innovations)),
-        'innovation_excess_kurtosis':float(kurtosis(innovations)),
+        'n_windows':len(windows),'n_samples':int(len(perturbations)),
+        'static_perturbation_sigma_deg':sigma,'three_sigma_deg':3*sigma,
+        'assumed_white_sigma_deg':0.015,'assumed_white_three_sigma_deg':0.045,
+        'skewness':float(skew(perturbations)),
+        'excess_kurtosis':float(kurtosis(perturbations)),
         'normality_k2':float(normal.statistic),'normality_p_value':float(normal.pvalue),
-        'fraction_within_three_sigma':float(np.mean(np.abs(innovations)<=3*sigma)),
-        'residual_acf_lag1':float(acf[0]),'acf_95_bound':float(1.96/np.sqrt(sum(len(r) for r in residuals))),
-        'acf':acf,'windows':windows,'innovations':innovations,'residuals':residuals}
-    # Compact machine-readable summary and per-window audit trail.
+        'fraction_within_three_sigma':float(np.mean(np.abs(perturbations)<=3*sigma)),
+        'residual_acf_lag1':float(acf[0]),
+        'acf_95_bound':float(1.96/np.sqrt(len(perturbations))),
+        'acf':acf,'windows':windows,'perturbations':perturbations}
     summary_rows=[]
     for axis,v in estimates.items():
-      summary_rows.append({k:value for k,value in v.items() if k not in ('acf','windows','innovations','residuals')})
+      summary_rows.append({k:value for k,value in v.items() if k not in ('acf','windows','perturbations')})
     write_csv(OUT/'ow05_measured_noise_summary.csv',summary_rows)
     window_rows=[]
     for axis,v in estimates.items():
@@ -105,38 +97,50 @@ def analyze_measured_sensor_noise():
         window_rows.append({'axis':axis,'segment_id':w['segment_id'],'data_file':w['data_file'],
                             'direction':w['direction'],'start_index':w['start_index'],
                             'samples':w['samples'],'duration_s':w['samples']/100.0,
-                            'innovation_sigma_deg':float(np.std(w['innovations'],ddof=1))})
+                            'perturbation_sigma_deg':float(np.std(w['perturbation'],ddof=1))})
     write_csv(OUT/'ow05_measured_noise_windows.csv',window_rows)
     for axis,v in estimates.items():
       fig,axes=plt.subplots(3,1,figsize=(9,8),layout='constrained')
-      residuals=v['residuals']; sigma=v['white_equivalent_sigma_deg']
-      joined=np.concatenate(residuals)
-      axes[0].plot(np.arange(len(joined))*0.01,joined,lw=.8,color='#2673a8')
-      axes[0].text(.01,.96,'±3σ band omitted: σ is estimated from high-frequency innovations, not this trace.',transform=axes[0].transAxes,va='top',fontsize=8,color='#444')
-      axes[0].axhline(0,color='#444',lw=.7); axes[0].set_ylabel('Window-mean-subtracted angle [deg]')
-      axes[0].set_xlabel('Concatenated stationary-window time [s]'); axes[0].set_title(f'{axis} axis: measured static-window readings (window mean removed)')
-      axes[0].legend(loc='upper right'); axes[0].grid(alpha=.2)
-      e=v['innovations']; bins=np.linspace(-0.06,0.06,81)
-      axes[1].hist(e,bins=bins,density=True,color='#79a9c9',alpha=.65,label='Measured high-frequency innovations')
-      xx=np.linspace(-.06,.06,600)
+      perturbations=v['perturbations']; sigma=v['static_perturbation_sigma_deg']
+      axes[0].plot(np.arange(len(perturbations))*0.01,perturbations,lw=.8,color='#2673a8',
+                   label='Measured static-window perturbation')
+      axes[0].axhspan(-3*sigma,3*sigma,color='#4c9f70',alpha=.16,
+                      label=f'Measured perturbation ±3σ = ±{3*sigma:.4f}°')
+      axes[0].axhline(0,color='#444',lw=.7)
+      axes[0].set_ylabel('Window-mean-subtracted angle [deg]')
+      axes[0].set_xlabel('Concatenated stationary-window time [s]')
+      axes[0].set_title(f'{axis} axis: measured readings minus each window mean')
+      axes[0].legend(loc='upper right',fontsize=8); axes[0].grid(alpha=.2)
+      limit=max(float(np.max(np.abs(perturbations))*1.05),3*sigma*1.15)
+      bins=np.linspace(-limit,limit,81)
+      axes[1].hist(perturbations,bins=bins,density=True,color='#79a9c9',alpha=.65,
+                   label='Measured static-window perturbations')
+      xx=np.linspace(-limit,limit,800)
       gaussian=np.exp(-0.5*(xx/sigma)**2)/(sigma*np.sqrt(2*np.pi))
-      model_sigma=.015
+      model_sigma=0.015
       model_gaussian=np.exp(-0.5*(xx/model_sigma)**2)/(model_sigma*np.sqrt(2*np.pi))
-      axes[1].plot(xx,gaussian,color='#193d5a',lw=2,label=f'Gaussian reference, σ={sigma:.4f}°')
-      axes[1].plot(xx,model_gaussian,color='#c44e52',ls='--',lw=1.6,label='OW-05 assumed white σ=0.015°')
-      axes[1].axvline(-3*sigma,color='#238b45',ls=':',lw=1.4); axes[1].axvline(3*sigma,color='#238b45',ls=':',lw=1.4)
-      axes[1].axvline(-3*model_sigma,color='#c44e52',ls='--',lw=1); axes[1].axvline(3*model_sigma,color='#c44e52',ls='--',lw=1)
-      axes[1].set_xlim(-.06,.06); axes[1].set_ylabel('Probability density'); axes[1].set_xlabel('High-frequency innovation [deg]')
-      axes[1].set_title(f"High-frequency innovations; {100*v['fraction_within_three_sigma']:.1f}% within measured ±3σ (Gaussian: 99.73%)")
+      axes[1].plot(xx,gaussian,color='#193d5a',lw=2,
+                   label=f'Gaussian reference, σ={sigma:.4f}°')
+      axes[1].plot(xx,model_gaussian,color='#c44e52',ls='--',lw=1.4,
+                   label='OW-05 assumed white σ=0.015°')
+      axes[1].axvline(-3*sigma,color='#238b45',ls=':',lw=1.4)
+      axes[1].axvline(3*sigma,color='#238b45',ls=':',lw=1.4)
+      axes[1].axvline(-3*model_sigma,color='#c44e52',ls='--',lw=1)
+      axes[1].axvline(3*model_sigma,color='#c44e52',ls='--',lw=1)
+      axes[1].set_xlim(-limit,limit); axes[1].set_ylabel('Probability density')
+      axes[1].set_xlabel('Window-mean-subtracted angle [deg]')
+      axes[1].set_title(f"Static-window perturbations; {100*v['fraction_within_three_sigma']:.1f}% within ±3σ (Gaussian: 99.73%)")
       axes[1].legend(loc='upper right',fontsize=8); axes[1].grid(alpha=.2)
       lags=np.arange(1,len(v['acf'])+1); bound=v['acf_95_bound']
-      axes[2].bar(lags,v['acf'],color='#8172b2',width=.8); axes[2].axhline(0,color='#444',lw=.7)
-      axes[2].axhspan(-bound,bound,color='#777',alpha=.16,label=f'Approx. 95% white-noise bound ±{bound:.3f}')
-      axes[2].set_xlabel('Lag [samples]'); axes[2].set_ylabel('ACF'); axes[2].set_title(f"Static-window demeaned residual autocorrelation; lag 1 = {v['residual_acf_lag1']:.3f}")
+      axes[2].bar(lags,v['acf'],color='#8172b2',width=.8)
+      axes[2].axhline(0,color='#444',lw=.7)
+      axes[2].axhspan(-bound,bound,color='#777',alpha=.16,
+                      label=f'Approx. 95% white-noise bound ±{bound:.3f}')
+      axes[2].set_xlabel('Lag [samples]'); axes[2].set_ylabel('ACF')
+      axes[2].set_title(f"Static-window perturbation autocorrelation; lag 1 = {v['residual_acf_lag1']:.3f}")
       axes[2].legend(loc='upper right',fontsize=8); axes[2].grid(alpha=.2)
       fig.savefig(OUT/f'ow05_measured_noise_{axis.lower()}.png',dpi=170); plt.close(fig)
     return estimates
-
 def run():
     cfg=json.loads((SIM/'config/ow03_hbk_observer_tuning.json').read_text())
     scfg=json.loads((SIM/'config/sensor_model_stage3.json').read_text())
@@ -232,16 +236,19 @@ def run():
       vals={r['method']:r for r in rows if r['case']==cname and r['axis']==axis and r['sensor_case']=='nominal'}
       report.append(f"| {cname} | {axis} | {vals['ESO 3状態']['rmse_m_s']:.5f} m/s | {vals['RTS 3状態（オフライン）']['rmse_m_s']:.5f} m/s |")
     report += ['', '## センサー条件', '',f"角度サンプルは{rate:.0f} Hz、MT6701の14 bit（量子化幅{360/2**14:.8f}°）、白色ノイズσ={pars.white_noise_std_deg:.3f}°、有色ノイズσ={pars.coloured_noise_std_deg:.3f}°・時定数{pars.coloured_noise_time_constant_s:.3f} s、固定遅延{pars.fixed_delay_s*1000:.0f} msを公称条件とした。センサー段階評価に従った設定であり、量子化/サンプリング仕様以外のノイズと遅延は実測前の暫定仮定である。感度としてノイズσを2倍にした条件も計算した。", '',
-      '## MT6701の計測角出力誤差と静止区間の変動','',
-      '本レポートでは、MT6701を含む計測系を真の角度 $\\theta_{\\mathrm{true}}$ から計測角 $\\theta_{\\mathrm{meas}}$ への変換と定義し、センサー出力誤差 $e_s=\\theta_{\\mathrm{meas}}-\\theta_{\\mathrm{true}}$ には量子化や内部信号処理の誤差も含める。今回のログには同時刻の真角度基準がないため、この誤差を直接計算できない。自由振動開始前のリリース直前から、符号付き角度35°超、0.5秒間の標準偏差0.20°未満、線形ドリフト1°/s未満となる静止窓を抽出し、計測角の変動を評価した。一次傾向を除いた残差 r_i に二階差分 $e_i=(r_i-(r_{i-1}+r_{i+1})/2)/\\sqrt{1.5}$ を適用した。独立な白色成分なら変換後のσはその成分の標準偏差に対応するが、実角度の微小変化も混在し得る。以下のσはセンサー出力誤差ではなく、記録された計測角の高周波変動相当値である。', '',
-      '| 軸 | 静止窓数 | 高周波点数 | 計測角変動相当σ [°] | 変動相当±3σ [°] | OW-05仮定白色σ [°] | 仮定/変動相当 |','|---|---:|---:|---:|---:|---:|---:|']
+     ]
+    report += ['', '## MT6701の計測角出力誤差と静止窓内の摂動','',
+      '今回の目的は、センサー単体の誤差を同定することではなく、静止と判定した窓で記録角が窓平均からどれだけ変動したかを把握することである。各窓の平均だけを差し引き、摂動 r_i=y_i-mean(y_window) をそのまま評価した。二階差分は使わない。静止判定条件は、符号付き角度35°超、0.5秒窓の標準偏差0.20°未満、線形ドリフト1°/s未満である。', '',
+      '静止窓内の摂動標準偏差は、全選定窓の r_i を結合して算出した。これは記録角に現れた窓内変動であり、真角度基準がないため、実際の微小運動とセンサー出力変動を分離できない。センサー出力誤差 e_s=θ_meas-θ_true やセンサー単体ノイズとは区別する。', '',
+      '| 軸 | 静止窓数 | 摂動点数 | 摂動σ [°] | ±3σ [°] | ±3σ内 [%] | 正規性検定 p値 | ラグ1自己相関 |','|---:|---:|---:|---:|---:|---:|---:|---:|']
     for axis,v in measured_noise.items():
-      report.append(f"| {axis} | {v['n_windows']} | {v['n_innovations']} | {v['white_equivalent_sigma_deg']:.5f} | ±{v['three_sigma_deg']:.5f} | 0.01500 | {0.015/v['white_equivalent_sigma_deg']:.2f}× |")
-    report += ['', '図の上段の青線は静止窓で実際に記録した計測角から一次傾向を除いた残差である。中央の棒はその残差から計算した高周波変動の実測分布である。濃い青線は実測波形ではなく、表の計測角変動相当σを用いて重ねた正規分布の参考曲線（Gaussian fit）である。正規性検定では両軸とも正規分布を棄却し（p<0.001）、ラグ1自己相関も白色雑音の95%目安範囲を大きく超えたため、この曲線は実データに適合する分布を示すものではない。下段は残差の自己相関である。したがって、観測された計測角変動を正規白色雑音とみなす仮定は支持されない。機械の微小振動や計測系の影響も含まれ得る。', '',
-      '変動相当±3σ内の比率はIN {:.1f}%、OUT {:.1f}%（理想正規分布の99.73%）だった。図の赤破線はOW-05仮定白色σ=0.015°の±3σ、緑点線は計測角変動相当値から求めた±3σである。いずれも計測角変動に対する表示で、センサー出力誤差の包含率を示さない。'.format(100*measured_noise['IN']['fraction_within_three_sigma'],100*measured_noise['OUT']['fraction_within_three_sigma']), '',
-      '14 bit角度量子化幅は{:.5f}°で、計測角変動相当σより大きい。これは分解能と記録変動の比較であり、センサー出力誤差がこの幅以下または以上という意味ではない。真角度の独立基準なしでは、量子化を含むセンサー出力誤差の大きさや3σ幅は決められない。誤差幅を求めるには、MT6701と同時に十分な精度の独立角度基準を記録する必要がある。'.format(360/2**14), '']
+      report.append(f"| {axis} | {v['n_windows']} | {v['n_samples']} | {v['static_perturbation_sigma_deg']:.5f} | ±{v['three_sigma_deg']:.5f} | {100*v['fraction_within_three_sigma']:.1f} | {v['normality_p_value']:.2e} | {v['residual_acf_lag1']:.3f} |")
+    report += ['', '上段の青線は各静止窓の平均値からの実測摂動、緑帯は同じ摂動列から計算した±3σである。中央のヒストグラムと緑の破線も同じ摂動列に対する表示である。図の時系列・分布・包含率の対象は一致している。', '',
+      '±3σは絶対的な上下限ではない。正規分布なら約99.73%が範囲内に入るが、今回の摂動は正規性検定で棄却された（両軸 p<0.001）。観測包含率はIN {:.1f}%、OUT {:.1f}%である。ラグ1自己相関も高く、独立白色ノイズとはみなせない。'.format(100*measured_noise['IN']['fraction_within_three_sigma'],100*measured_noise['OUT']['fraction_within_three_sigma']), '',
+      '参考として、従来の二階差分方式で得た高周波変動相当σはIN 0.00484°、OUT 0.00554°だった。今回の静止窓摂動σはそれぞれ約{:.1f}倍、{:.1f}倍であり、二階差分が窓内変動全体を表していなかったことが分かる。この倍率はセンサー誤差の過小評価率ではない。今回の摂動σにも治具などの微小運動が含まれ得る。'.format(measured_noise['IN']['static_perturbation_sigma_deg']/0.00484014296,measured_noise['OUT']['static_perturbation_sigma_deg']/0.00554022955), '',
+      'MT6701の14 bit角度量子化幅は{:.5f}°である。今回の摂動σとの比較は記録変動の大きさを示すだけで、量子化誤差やセンサー出力誤差を分離するものではない。センサー誤差の幅やリニアリティを求めるには、十分な精度の独立した角度基準との同時測定が必要である。'.format(360/2**14), '']
     for axis in ('IN','OUT'):
-      report += [f"![{axis} axis measured noise histogram and 3 sigma](ow05_measured_noise_{axis.lower()}.png)",'']
+      report += [f"![{axis} axis: static-window perturbation, histogram and autocorrelation](ow05_measured_noise_{axis.lower()}.png)",'']
     report += ['詳細値は `ow05_measured_noise_summary.csv`、使用した静止区間は `ow05_measured_noise_windows.csv` に保存した。', '',
       '## 今回特定できた誤差範囲と今後の課題','',
       'センサーを真角度 $\\\\theta_{\\\\mathrm{true}}$ から計測角 $\\\\theta_{\\\\mathrm{meas}}$ への変換系と定義すると、評価対象は $e_s(\\\\theta,t)=\\\\theta_{\\\\mathrm{meas}}(\\\\theta,t)-\\\\theta_{\\\\mathrm{true}}(t)$ である。誤差要因は次のように整理できる。','',
@@ -249,10 +256,10 @@ def run():
       '| 分解能・量子化 | 有限の角度コード幅とコード化誤差 | OW-05モデルで14 bit、1 LSB=0.02197266°として設定。これは刻み幅であり、真角度との誤差や全体精度の上限ではない |',
       '| オフセット・ゼロ点 | 計測角の基準ずれ | 真角度基準がなく未特定 |',
       '| ゲイン・リニアリティ | 角度に応じた傾き誤差、非直線性 | 未特定。今回のσや±3σからは評価できない |',
-      '| 繰返し性・時間変動 | 同じ真角度での出力ばらつき、電子的な揺れ | 真角度を固定した基準測定がなく、センサー分は分離できていない。今回算出したIN σ=0.00484°、OUT σ=0.00554°は、静止区間の記録角から求めた高周波変動相当値 |',
+      f"| 繰返し性・時間変動 | 同じ真角度での出力ばらつき、電子的な揺れ | 真角度を固定した基準測定がなく、センサー分は分離できていない。今回算出したIN σ={measured_noise['IN']['static_perturbation_sigma_deg']:.5f}°、OUT σ={measured_noise['OUT']['static_perturbation_sigma_deg']:.5f}°は、静止窓の平均からの摂動標準偏差 |",
       '| 動的応答・タイミング | 内部フィルタ、遅れ、サンプリング時刻の揺れ | OW-05では100 Hz、固定遅延10 ms等をモデル仮定として設定。実機の遅延・帯域・ジッタは未測定 |',
       '| 取付け・磁気条件 | 芯ずれ、傾き、磁石配置や磁場状態による角度依存誤差 | 実機条件での角度基準比較がなく未特定 |','',
-      'したがって、今回数値として特定したのは、モデルに設定した14 bitのコード刻み幅と、自由振動開始前の静止窓に現れた計測角の高周波変動相当幅です。センサー出力誤差 $e_s$ の最大幅、リニアリティ誤差、センサー単体のノイズ幅は今回特定できていません。図に示した±3σも高周波変動相当値の範囲であり、センサー出力誤差の範囲ではありません。','',
+      f'今回数値としてまとめたのは、モデルに設定した14 bitのコード刻み幅と、静止窓で計測角が各窓平均から変動した標準偏差（IN {measured_noise["IN"]["static_perturbation_sigma_deg"]:.5f}°、OUT {measured_noise["OUT"]["static_perturbation_sigma_deg"]:.5f}°）です。センサー出力誤差 $e_s$ の最大幅、リニアリティ誤差、センサー単体ノイズは特定できていません。図の±3σは静止窓摂動の範囲を要約し、センサー出力誤差の範囲を示すものではありません。','',
       '### 今後の試験メニュー','','1. **独立角度基準との同時測定**  ','   MT6701の使用時と同じ磁石・取付け・配線・読み出し処理を用い、精度が既知の角度基準と同期して記録する。基準器の誤差は、評価したいセンサー誤差より十分小さくする。生の読み値、変換後の角度、時刻も保存する。','','2. **使用角度範囲の静的な往復掃引**  ','   角度を複数点で止めて安定後に記録し、正方向・逆方向に複数回掃引する。基準との差から、ゼロ点オフセット、ゲイン誤差、リニアリティを求める。リニアリティは採用した基準直線を明示し、直線からの最大偏差と偏差幅で示す。往復差も角度ごとに評価する。','','3. **固定角度での繰返し測定**  ','   使用範囲内の複数角度で真角度を固定し、同じ条件で繰り返し記録する。センサー出力の繰返し性、時間変動、高周波ノイズを評価する。量子化の影響を見落とさないよう、一つの角度だけでなく複数角度で測る。','','4. **既知の角度運動による動的応答試験**  ','   基準角を同時記録しながら、複数の速度・周波数で角度を動かす。固定遅延、帯域、振幅誤差、サンプリング時刻の揺れを、静的な角度誤差と分けて確認する。','','5. **使用環境の影響確認**  ','   必要に応じて温度、電源、磁石の位置・取付け状態を変えて、角度誤差と再現性への影響を測る。まず実使用条件を優先する。','','6. **誤差幅の集計**  ','   真角度との差の角度依存曲線、最大絶対誤差、リニアリティ、往復差、繰返し性、時間変動、動的遅れを分けて報告する。ヒストグラム・自己相関も確認し、正規性と白色性が妥当な場合に限って±3σをノイズ幅の目安とする。','','まずは **1の基準器との同時測定**と **2の静的往復掃引**を優先する。今回の記録角変動相当σおよび±3σは、これらの試験で真角度基準との差を測定するまで、センサー出力誤差の幅として扱わない。','',
       '## 角度ノイズから風速への増幅倍率','', r'線形基準は、ノイズなしセンサー角度θ₀の近傍における静的な角度→風速写像の傾きで求めた。各時点の角度摂動Δθを、局所傾き g(θ₀)=dV/dθ（θ=θ₀で評価）に掛け、線形基準風速摂動 $v_{\mathrm{lin}}(t)=g(\theta_0(t))\Delta\theta(t)$ とした。角度摂動は、遅延・ゲイン・オフセット・量子化・ジッタを保って乱数ノイズだけを0にしたセンサー出力との差である。局所線形近似の妥当性確認として $\lvert\Delta\theta\rvert \leq 0.1\lvert\theta_0\rvert$ を満たす評価点の割合も記載した。これを満たさない時点では、線形基準倍率を慎重に解釈する。観測器側は、同一条件におけるノイズあり/なし推定出力差 $\Delta\hat{V}$ を全評価時点（15秒以降）で比較した。RMSE倍率は $\mathrm{RMS}(\Delta\hat{V})/\mathrm{RMS}(v_{\mathrm{lin}})$、最大値倍率は $\max_t \lvert\Delta\hat{V}(t)\rvert/\max_t \lvert v_{\mathrm{lin}}(t)\rvert$ である。', '']
     for cname,axis in plants:
@@ -267,7 +274,7 @@ def run():
     for name in figs: report += [f'![OW-05 拡大時系列]({name})','']
     report += ['## 解釈と選定','', 'RTS（Rauch–Tung–Striebel）スムーザーは、まず時系列を前向きに推定し、その後、将来の観測も使って過去の状態推定を後向きに修正する。時間的に独立なホワイトノイズによる一時的な観測の揺れが、運動モデルや前後の観測と整合しない場合、その揺れを実際の状態変化ではなく観測ノイズとして扱いやすくなり、推定への影響を弱められる。これは未来の観測が過去の観測ノイズを物理的に打ち消すという意味ではなく、全時系列に最も整合する状態系列を再推定する効果である。', '', 'この平滑化は、運動モデルが十分妥当で、観測ノイズとモデル誤差の大きさ（観測・プロセス雑音の共分散）が適切に設定されていることを前提とする。ノイズが時間相関を持つ場合、その影響は独立な白色ノイズほど平均化されない。また、実際の急な風速変化をモデルが説明できないときに平滑化が強すぎると、真の変化まで抑えたり、遅らせたりする可能性がある。したがって、オフラインRTSは必ずノイズに強いわけではなく、今回の低い誤差をホワイトノイズ単独の効果と断定することもできない。今回のセンサー条件には白色ノイズに加えて有色ノイズも含まれるため、成分ごとの寄与を分けるには追加の比較が必要である。', '', 'RTS 3状態は将来データを使うオフライン評価であるため、RMSEが小さくてもオンライン実装候補とは分ける。オンライン用途はESO 3状態を候補とし、公称ノイズ条件に対する帯域選定を反映した値を使用する。RTSはログ解析や遅延許容用途の基準として残す。ノイズ2倍感度を含む推定誤差は `ow05_metrics.csv`、増幅倍率は `ow05_noise_amplification.csv`、調整スキャンは `ow05_tuning_scan.csv` に保存した。', '', '## 再実行','', '```bash','python 06_Analysis/simulation/src/run_ow05_sensor_nonideality.py','```','']
     (OUT/'OW-05_REPORT.md').write_text('\n'.join(report),encoding='utf-8')
-    summary={'task_id':'OW-05','sensor_nominal':nominal,'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','innovations','residuals')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
+    summary={'task_id':'OW-05','sensor_nominal':nominal,'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','perturbations')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}
     (OUT/'ow05_summary.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2,allow_nan=False)+'\n',encoding='utf-8')
     print('rows',len(rows),'tunings',tunings)
 
