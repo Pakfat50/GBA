@@ -425,7 +425,7 @@ I\,\delta\ddot{\theta}
 \simeq L\cos\theta_0\,\delta F
 \]
 
-となる。$L$ は風力の腕長、$k_{\mathrm{eff}}=K\cos\theta_0+LF_0\sin\theta_0$ は動作点での実効剛性、$F_0$ は平均風に相当する定常力である。線形化した減衰を $c_{\mathrm{eff}}$ と表す。
+となる。$L$ は風力の腕長、$k_{\mathrm{eff}}=K\cos\theta_0+LF_0\sin\theta_0$ は動作点での実効剛性、$F_0$ は平均風に相当する定常力である。線形化した減衰を $c_{\mathrm{eff}}$ と表す。静止点近傍では、粘性項による $b$ と平滑化クーロン摩擦の傾き $\tau/\epsilon$ が効き、二乗抵抗の一次微分はゼロとなるため、概ね $c_{\mathrm{eff}}=b+\tau/\epsilon$ である。現行採用値は $b=0$ だが、回転ダンパーを追加すれば $b$ が加わる。
 
 角周波数 $\omega$ の正弦外力に対する角度応答は、
 
