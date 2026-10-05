@@ -1,0 +1,3 @@
+axis,segment_id,q_N_per_sample,F_2mps_N,residual_force_mean_N,residual_force_centered_rms_N,wind_zero_mean_m_s,wind_zero_rmse_m_s,wind_zero_centered_rms_m_s,wind_2mps_mean_m_s,wind_2mps_bias_m_s,wind_2mps_rmse_from_2mps_m_s,wind_2mps_centered_rms_m_s,n_scored
+IN,IN_BALL_P_R01,3e-05,0.00935269148,0.000236138241,0.000630536365,0.146216443,0.475543689,0.452506964,2.02399942,0.0239994168,0.0706750914,0.0664755334,1747
+OUT,OUT_BALL_P_R03,0.0003,0.00935269148,-8.90408444e-05,0.000695818804,-0.0692732512,0.483927128,0.478943297,1.98905241,-0.0109475861,0.075557704,0.0747603972,1312
