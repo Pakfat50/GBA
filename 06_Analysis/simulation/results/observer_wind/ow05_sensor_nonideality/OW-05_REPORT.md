@@ -425,7 +425,7 @@ I\,\delta\ddot{\theta}
 \simeq L\cos\theta_0\,\delta F
 \]
 
-となる。$L$ は風力の腕長、$k_{\mathrm{eff}}=K\cos\theta_0+LF_0\sin\theta_0$ は動作点での実効剛性、$F_0$ は平均風に相当する定常力である。線形化した減衰を $c_{\mathrm{eff}}$ と表す。静止点近傍では、粘性項による $b$ と平滑化クーロン摩擦の傾き $\tau/\epsilon$ が効き、二乗抵抗の一次微分はゼロとなるため、概ね $c_{\mathrm{eff}}=b+\tau/\epsilon$ である。現行採用値は $b=0$ だが、回転ダンパーを追加すれば $b$ が加わる。
+となる。$L$ は風力の腕長、$k_{\mathrm{eff}}=K\cos\theta_0+LF_0\sin\theta_0$ は動作点での実効剛性、$F_0$ は平均風に相当する定常力である。摩擦・空気抵抗の線形化分を $c_{\mathrm{fric,eff}}$ と表す。よって分母の減衰項には、回転ダンパー分の $b$ とこれらの減衰分の和 $b+c_{\mathrm{fric,eff}}$ が入る。今回の滑らかな摩擦モデルを静止点近傍で線形化すると $c_{\mathrm{fric,eff}}=\tau/\epsilon$ となる（二乗抵抗の一次微分は静止点でゼロ）。
 
 角周波数 $\omega$ の正弦外力に対する角度応答は、
 
@@ -433,7 +433,7 @@ I\,\delta\ddot{\theta}
 \left|\frac{\delta\theta}{\delta F}\right|
 \simeq
 \frac{L\cos\theta_0}
-{\sqrt{(k_{\mathrm{eff}}-I\omega^2)^2+(c_{\mathrm{eff}}\omega)^2}}
+{\sqrt{(k_{\mathrm{eff}}-I\omega^2)^2+((b+c_{\mathrm{fric,eff}})\omega)^2}}
 \]
 
 で表せる。慣性項 $I\omega^2$ と復元項 $k_{\mathrm{eff}}$ が近づく周波数帯では、減衰が十分小さければ角度応答が大きくなる。一方、減衰が強ければ共振ピークは抑えられる。
