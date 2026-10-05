@@ -1,0 +1,32 @@
+{
+  "mean_speed_m_s": 2.0,
+  "amplitude_sweep_m_s": [
+    0.25,
+    0.5,
+    1.0
+  ],
+  "amplitude_sweep_frequency_hz": 0.5,
+  "frequency_sweep_hz": [
+    0.1,
+    0.25,
+    0.5,
+    1.0,
+    2.0
+  ],
+  "frequency_sweep_amplitude_m_s": 0.25,
+  "RTS_order": 0,
+  "RTS_q_n_per_sample": {
+    "IN": 3e-05,
+    "OUT": 0.0003
+  },
+  "assumed_angle_noise_deg": 0.02,
+  "LPF_cutoff_hz": {
+    "IN": 0.5,
+    "OUT": 0.75
+  },
+  "window_average": "centered moving average after static force-to-speed conversion",
+  "OW04_mismatch_corner": "joint_mass_high_arm_high_tau-high_c-high",
+  "sensor_noise": "none; deterministic model-isolation study",
+  "evaluation": "same-time RMSE, plus lag-optimized fluctuation shape metrics; lag search +/-min(2 s, half input period); initial interval excluded",
+  "validity": "maximum plant angle and +/-60 deg limit included per case"
+}
