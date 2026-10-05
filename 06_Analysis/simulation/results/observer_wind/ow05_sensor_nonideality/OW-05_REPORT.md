@@ -416,16 +416,31 @@ I\ddot{\theta}
 
 ### 角度応答の線形近似とその限界
 
-定常風に対する釣合角を $\theta_0$ とし、その周りの微小変動を考える。線形化した運動方程式は概略、
+定常風に対する釣合角を $\theta_0$、釣合い時の角速度を $\dot{\theta}_0$ とし、その周りの微小変動を考える。線形化した運動方程式は概略、
 
 \[
 I\,\delta\ddot{\theta}
-+c_{\mathrm{eff}}\,\delta\dot{\theta}
++c_{\mathrm{lin}}\,\delta\dot{\theta}
 +k_{\mathrm{eff}}\,\delta\theta
 \simeq L\cos\theta_0\,\delta F
 \]
 
-となる。$L$ は風力の腕長、$k_{\mathrm{eff}}=K\cos\theta_0+LF_0\sin\theta_0$ は動作点での実効剛性、$F_0$ は平均風に相当する定常力である。摩擦・空気抵抗の線形化分を $c_{\mathrm{fric,eff}}$ と表す。よって分母の減衰項には、回転ダンパー分の $b$ とこれらの減衰分の和 $b+c_{\mathrm{fric,eff}}$ が入る。今回の滑らかな摩擦モデルを静止点近傍で線形化すると $c_{\mathrm{fric,eff}}=\tau/\epsilon$ となる（二乗抵抗の一次微分は静止点でゼロ）。
+となる。$L$ は風力の腕長、$k_{\mathrm{eff}}=K\cos\theta_0+LF_0\sin\theta_0$ は動作点での実効剛性、$F_0$ は平均風に相当する定常力である。線形化した全減衰係数は、物理的な回転ダンパー $b$、二乗空気抵抗の局所傾き $c_{\mathrm{aero,lin}}$、平滑化クーロン摩擦の局所傾き $c_{\mathrm{Coulomb,lin}}$ に分けて、
+
+\[
+c_{\mathrm{lin}}=b+c_{\mathrm{aero,lin}}+c_{\mathrm{Coulomb,lin}}
+\]
+
+と書ける。運動方程式の $c|\dot{\theta}|\dot{\theta}$ はロッドと球による二乗空気抵抗で、ここでの $c$ はその合計係数である。動作点での局所傾きは $c_{\mathrm{aero,lin}}=2c|\dot{\theta}_0|$ となる。これはクーロン摩擦 $\tau_f$ とは別の物理項である。
+
+採用モデルの滑らかな摩擦は $\tau_f\tanh(\dot{\theta}/\epsilon)$ なので、その局所傾きは
+
+\[
+c_{\mathrm{Coulomb,lin}}
+=\frac{\tau_f}{\epsilon}\operatorname{sech}^2\left(\frac{\dot{\theta}_0}{\epsilon}\right)
+\]
+
+である。静止点 $\dot{\theta}_0=0$ では $c_{\mathrm{aero,lin}}=0$、$c_{\mathrm{Coulomb,lin}}=\tau_f/\epsilon$ となり、全減衰は $c_{\mathrm{lin}}=b+\tau_f/\epsilon$ となる。有限振幅の揺れでは空気抵抗も減衰に寄与するが、角速度に対して非線形なため、静止点の局所傾きだけではその効果を表せない。
 
 角周波数 $\omega$ の正弦外力に対する角度応答は、
 
@@ -433,14 +448,14 @@ I\,\delta\ddot{\theta}
 \left|\frac{\delta\theta}{\delta F}\right|
 \simeq
 \frac{L\cos\theta_0}
-{\sqrt{(k_{\mathrm{eff}}-I\omega^2)^2+((b+c_{\mathrm{fric,eff}})\omega)^2}}
+{\sqrt{(k_{\mathrm{eff}}-I\omega^2)^2+(c_{\mathrm{lin}}\omega)^2}}
 \]
 
 で表せる。慣性項 $I\omega^2$ と復元項 $k_{\mathrm{eff}}$ が近づく周波数帯では、減衰が十分小さければ角度応答が大きくなる。一方、減衰が強ければ共振ピークは抑えられる。
 
 無風・小振幅の**無減衰周波数尺度**は $f_0=\sqrt{K/I}/(2\pi)$ で、IN約1.015 Hz、OUT約0.985 Hzとなる。これは自由振動モデルの有限振幅周期（IN 0.990 s、OUT 1.020 s）の逆数とも近く、今回の1 Hz入力が自由振動の周期に近いことを示している。ただし、この $f_0$ を採用モデルの正確な減衰固有振動数とみなすことはできない。
 
-採用モデルではクーロン摩擦を $\tau\tanh(\dot\theta/\epsilon)$ と平滑化している。静止点近傍だけを線形化すると、この項は減衰係数 $\tau/\epsilon$ に相当する。今回の値では $\epsilon=0.5$ deg/s とした局所減衰が強く、原点近傍の線形化は両軸とも過減衰となる。したがって、静止点まわりの線形式だけから「1 Hzで鋭い共振が起きる」と結論するのは適切でない。有限振幅では $\tanh$ 摩擦が飽和し、二乗抵抗も速度に応じて変わるため、実効減衰は運動振幅・速度に依存する。
+静止点近傍では滑らかなクーロン摩擦の局所減衰が強く、現行値では原点近傍の線形化は両軸とも過減衰となる。したがって、静止点まわりの線形式だけから「1 Hzで鋭い共振が起きる」と結論するのは適切でない。有限振幅では $\tanh$ 摩擦が飽和し、二乗空気抵抗も速度に応じて変わるため、実効減衰は運動振幅・速度に依存する。
 
 実際の周波数追試では、1 Hz入力時のプラント最大角度がIN 45.6°、OUT 32.0°となり、他の周波数点より大きかった。今回の非線形シミュレーションでは、無減衰周波数尺度に近い入力で大きな角度応答が実際に生じている。一方、周波数点は粗いため、ピーク位置・幅を特定した結果ではない。
 
