@@ -1,8 +1,8 @@
 """Validate OW-05 observer output with measured BALL free-decay records.
 
-The measured angle trace is used directly. A zero-external-wind free-decay
-trajectory is integrated from the observed initial angle/rate; the angle
-residual to that trajectory captures sensor variation and plant mismatch.
+The measured angle trace is corrected by its approved static baseline offset.
+Release onset is detected from the held extremum; measured angle and local
+angular rate at release initialize the zero-external-wind reference trajectory.
 """
 from __future__ import annotations
 
@@ -81,16 +81,39 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         table = tables[relative]
         angle_col = "angle0[deg]" if str(row["axis"]) == "IN" else "angle1[deg]"
         y_deg = pd.to_numeric(table[angle_col], errors="coerce").to_numpy(float)
+        finite = np.isfinite(y_deg)
+        missing_in_segment = int(np.sum(~finite[int(row["start_index"]):int(row["end_index"])]))
+        if not np.all(finite):
+            ids = np.arange(len(y_deg))
+            y_deg[~finite] = np.interp(ids[~finite], ids[finite], y_deg[finite])
         y_deg = (y_deg + 180.0) % 360.0 - 180.0
         start, end = int(row["start_index"]), int(row["end_index"])
-        angle_deg = y_deg[start:end]
-        if len(angle_deg) < int((margin_start_s + margin_end_s + 1.0) * rate_hz):
+        zero_offset_deg = float(row.get("baseline_deg", 0.0))
+        corrected_full_deg = y_deg - zero_offset_deg
+        segment_deg = corrected_full_deg[start:end]
+        if len(segment_deg) < int((margin_start_s + margin_end_s + 1.0) * rate_hz):
             continue
+        direction_sign = 1.0 if str(row["direction"]).upper() == "P" else -1.0
+        signed = direction_sign * segment_deg
+        peak_search = min(len(signed), max(10, int(round(.8 * rate_hz))))
+        peak_local = int(np.argmax(signed[:peak_search]))
+        held_peak = float(signed[peak_local])
+        onset_local = peak_local
+        for k in range(peak_local + 1, len(signed) - 2):
+            if np.all(signed[k:k+3] < held_peak - 0.15):
+                onset_local = max(peak_local, k - 1)
+                break
+        release_index = start + onset_local
+        angle_deg = segment_deg[onset_local:]
         angle = np.deg2rad(angle_deg)
         n = len(angle)
         t = np.arange(n, dtype=float) * dt
-        initial_count = min(n, max(5, int(round(0.20 * rate_hz))))
-        initial_rate = float(np.polyfit(t[:initial_count], angle[:initial_count], 1)[0])
+        lo_i = max(0, release_index - 5)
+        hi_i = min(len(corrected_full_deg), release_index + 6)
+        local_t = (np.arange(lo_i, hi_i, dtype=float) - release_index) * dt
+        local_angle = np.deg2rad(corrected_full_deg[lo_i:hi_i])
+        initial_rate = float(np.polyfit(local_t, local_angle, 2)[1]) if len(local_t) >= 3 else 0.0
+        initial_angle_deg = float(corrected_full_deg[release_index])
         initial_state = np.array([angle[0], initial_rate, 0.0], dtype=float)
         axis = str(row["axis"])
         coefficients = select_coefficients(axis, "BALL")
@@ -223,6 +246,9 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
                 "repetition": int(row["repetition"]),
                 "start_index": start,
                 "end_index_exclusive": end,
+                "release_index": int(release_index), "zero_offset_removed_deg": zero_offset_deg,
+                "release_angle_deg": initial_angle_deg, "release_rate_rad_s": float(initial_rate),
+                "linearly_interpolated_samples": missing_in_segment,
                 "samples_scored": int(score.sum()),
                 "duration_s": float(t[-1]),
                 "method": method,
@@ -242,6 +268,8 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
             })
         series[str(row["segment_id"])] = {
             "axis": axis, "time": t, "angle_deg": angle_deg, "reference_deg": np.rad2deg(reference),
+            "release_angle_deg": initial_angle_deg, "release_rate_rad_s": float(initial_rate),
+            "zero_offset_removed_deg": zero_offset_deg,
             "score": score, "estimated": estimated, "clean": clean, "residual_deg": residual_deg,
         }
 
@@ -328,9 +356,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
             "quadratic_drag_over_I_s": float(coeff["total_quadratic_drag_n_m_s2_per_rad2"] / coeff["inertia_kg_m2"]),
             "natural_frequency_hz": float(np.sqrt(coeff["restoring_n_m_per_rad"] / coeff["inertia_kg_m2"]) / (2.0 * np.pi)),
         })
-        median_rate = float(group["measured_envelope_decay_per_s"].median())
-        candidate = group.iloc[(group["measured_envelope_decay_per_s"] - median_rate).abs().argmin()]
-        representative_envelopes[axis] = str(candidate["segment_id"])
+        representative_envelopes[axis] = "IN_BALL_P_R01" if axis == "IN" else "OUT_BALL_P_R03"
     pd.DataFrame(axis_summary).to_csv(out / "ow05_free_decay_axis_summary.csv", index=False,
                                       encoding="utf-8-sig", float_format="%.10g")
 
@@ -367,7 +393,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
                 ax.plot(fit_time, np.exp(np.polyval(line, fit_time)), color=color, ls="--",
                         label=f"Envelope fit λ={decay:.3f}/s")
         ax.set_title(f"{axis}: representative {sid}")
-        ax.set_xlabel("Time from selected waveform start [s]")
+        ax.set_xlabel("Time after release [s]")
         ax.grid(alpha=.25, which="both")
         ax.legend(fontsize=8)
     axes[0].set_ylabel("Absolute angle peak [deg]")
@@ -382,7 +408,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
     for col, axis in enumerate(("IN", "OUT")):
         axis_group = detail[detail["axis"] == axis]
         eso = axis_group[axis_group["method"] == METHODS[0]].sort_values("wind_zero_rmse_m_s")
-        segment_id = str(eso.iloc[len(eso) // 2]["segment_id"])
+        segment_id = "IN_BALL_P_R01" if axis == "IN" else "OUT_BALL_P_R03"
         representative[axis] = segment_id
         item = series[segment_id]
         ax = axes[0, col]
@@ -401,7 +427,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         ax.axhline(0, color="#222222", ls="--", lw=.9, label="True wind: 0")
         ax.axvspan(0, margin_start_s, color="#999999", alpha=.15)
         ax.axvspan(item["time"][-1] - margin_end_s, item["time"][-1], color="#999999", alpha=.15)
-        ax.set_xlabel("Time from selected waveform start [s]")
+        ax.set_xlabel("Time after release [s]")
         ax.set_ylabel("Inferred wind speed [m/s]")
         ax.grid(alpha=.2)
         ax.legend(fontsize=8)
@@ -458,7 +484,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         ax.axvspan(0, margin_start_s, color="#777777", alpha=.10)
         ax.axvspan(float(item["time"][-1] - margin_end_s), float(item["time"][-1]), color="#777777", alpha=.10)
         ax.set_title(f"{axis}: {sid} / adopted q={tunings[(axis, METHODS[1])]:g}")
-        ax.set_xlabel("Time from selected waveform start [s]")
+        ax.set_xlabel("Time after release [s]")
         ax.grid(alpha=.25); ax.legend(fontsize=7, ncol=2)
     axes[0].set_ylabel("Bias-removed RTS wind estimate [m/s]")
     fig.suptitle("Measured free-decay response for each RTS q | one representative waveform per axis")
@@ -577,7 +603,7 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         "source": "04_Data/05_Fitting/20260921/Raw/球/LOG00012_ANGLE.csv",
         "configuration": "BALL",
         "zero_wind_assumption": True,
-        "initialization": "Measured first angle and 0.2 s linear-fit angular rate; external force initialized to zero.",
+        "initialization": "Axis baseline removed; release onset detected at sustained 0.15 deg departure from held extremum; measured release angle and local quadratic rate (±50 ms) initialize the model; external force initialized to zero.",
         "score_margins_s": {"start": margin_start_s, "end": margin_end_s},
         "note": "Measured angle residual to a zero-force free-decay simulation includes sensor variation and plant/model mismatch; it is not pure sensor noise.",
         "representative_segments": representative,
@@ -590,3 +616,4 @@ def evaluate_free_decay(cfg: dict, tunings: dict, out: Path, repo: Path) -> dict
         "q_waveforms_csv": q_waveform_csv,
         "figures": [waveform_png, gain_png, response_png, centered_png, rts_sensitivity_png, q_waveform_png, sensitivity_png, envelope_png],
     }
+
