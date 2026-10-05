@@ -631,6 +631,8 @@ def run():
       '![理論入力別の誤差比較](../ow05_theoretical_error_separation/ow05_theoretical_error_summary.png)', '',
       '![自由振動ステップ応答](../ow05_theoretical_error_separation/ow05_theoretical_step_comparison.png)', '',
       '![風モデル応答](../ow05_theoretical_error_separation/ow05_theoretical_wind_model_responses.png)', '',
+      '風モデル波形の拡大図では、Kaimal乱流の先頭10秒と、滑らかガスト第1パルスの25〜45秒を表示する。', '',
+      '![風モデル応答の時間軸拡大](../ow05_theoretical_error_separation/ow05_theoretical_wind_model_responses_zoom.png)', '',
       '[理論値による切り分けレポート](../ow05_theoretical_error_separation/OW05_THEORETICAL_ERROR_SEPARATION.md) と再生成スクリプト `python 06_Analysis/simulation/src/run_ow05_theoretical_error_separation.py` を参照。', '']
     (OUT/'OW-05_REPORT.md').write_text('\n'.join(report),encoding='utf-8')
     summary={'task_id':'OW-05','sensor_nominal':nominal,'free_decay_validation':free_decay_validation,'rts_smoothing_wind_sensitivity':rts_wind_sensitivity_rows,'selected_rts_q_by_axis_N_per_sample':RTS_SELECTED_Q_BY_AXIS,'selected_q_bode':bode_validation,'adopted_q_combined_figure':combined_png.name,'static_window_sigma_condition':{'white_noise_std_deg_by_axis':measured_sigma,'coloured_noise_std_deg':0.0,'interpretation':'White-noise equivalent of static-window mean-centered perturbation sigma; temporal correlation and possible mechanical micro-motion are not represented.','observer_tuning':'Fixed values selected under nominal sensor noise.'},'measured_sensor_noise':{a:{k:v for k,v in d.items() if k not in ('acf','windows','perturbations')} for a,d in measured_noise.items()},'noise_amplification':noise_rows,'tuning_by_axis_method':{f'{a}|{m}':v for (a,m),v in tunings.items()},'results':rows}

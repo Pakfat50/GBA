@@ -429,6 +429,10 @@ RTS 3状態は将来データを使うオフライン評価であるため、RMS
 
 ![風モデル応答](../ow05_theoretical_error_separation/ow05_theoretical_wind_model_responses.png)
 
+風モデル波形の拡大図では、Kaimal乱流の先頭10秒と、滑らかガスト第1パルスの25〜45秒を表示する。
+
+![風モデル応答の時間軸拡大](../ow05_theoretical_error_separation/ow05_theoretical_wind_model_responses_zoom.png)
+
 [理論値による切り分けレポート](../ow05_theoretical_error_separation/OW05_THEORETICAL_ERROR_SEPARATION.md)、係数・センサー条件ごとのCSV、および再生成スクリプト `python 06_Analysis/simulation/src/run_ow05_theoretical_error_separation.py` を参照。
 
 ## 再実行

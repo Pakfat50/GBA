@@ -379,6 +379,34 @@ def make_figures(summary: list[dict], waveforms: dict, config: dict) -> None:
     fig.savefig(OUT / "ow05_theoretical_wind_model_responses.png", dpi=170)
     plt.close(fig)
 
+    # Expanded time-axis companion: Kaimal detail and the first smooth gust pulse.
+    zoom_ranges = {selected_inputs[0]: (0.0, 10.0), selected_inputs[1]: (25.0, 45.0)}
+    fig, axes = plt.subplots(2, 2, figsize=(13, 8), sharex="col", layout="constrained")
+    for col, axis in enumerate(config["axis_names"]):
+        for row, inp in enumerate(selected_inputs):
+            ax = axes[row, col]
+            base = waveforms[(axis, inp, "matched_clean", None)]
+            ax.plot(base["t"], base["truth"], color="black", lw=1.5, label="True wind")
+            for scenario in ("matched_clean", "ow04_mismatch", "sensor_noise"):
+                if scenario == "sensor_noise":
+                    candidates = [v for (a, name, s, seed), v in waveforms.items()
+                                  if a == axis and name == inp and s == scenario]
+                    estimate = np.mean([v["estimate"] for v in candidates], axis=0)
+                else:
+                    estimate = waveforms[(axis, inp, scenario, None)]["estimate"]
+                ax.plot(base["t"], estimate, color=colors[scenario], lw=1.0, label=labels[scenario])
+            ax.set_xlim(*zoom_ranges[inp])
+            ax.set_ylabel("Wind [m/s]")
+            ax.grid(alpha=.3)
+            zoom_label = "Kaimal detail (0–10 s)" if "Kaimal" in inp else "First smooth-gust pulse (25–45 s)"
+            ax.set_title(f"{axis}: {zoom_label}")
+            if row == 1:
+                ax.set_xlabel("Time [s]")
+            if row == 0 and col == 0:
+                ax.legend(fontsize=7, ncol=2)
+    fig.savefig(OUT / "ow05_theoretical_wind_model_responses_zoom.png", dpi=170)
+    plt.close(fig)
+
 
 def write_report(summary: list[dict], info: dict) -> None:
     frame = pd.DataFrame(summary)
@@ -434,6 +462,10 @@ def write_report(summary: list[dict], info: dict) -> None:
         "",
         "![風モデル入力での真値・推定値](ow05_theoretical_wind_model_responses.png)",
         "",
+        "風モデル波形の時間軸を拡大した図では、Kaimal乱流の先頭10秒と、滑らかガスト第1パルスの25〜45秒を表示する。",
+        "",
+        "![風モデル応答の時間軸拡大](ow05_theoretical_wind_model_responses_zoom.png)",
+        "",
         "## 読み取り",
         "",
         "①は『角度信号に外乱を入れない係数一致ケース』であり、理想的な逆演算器を意味しない。観測器のRは0.02°のまま、外力の変化しやすさは選定qに固定される。100→200 Hzにすると推定風の差はRMSでIN 0.0271、OUT 0.0323 m/sだが、総RMSEはIN 0.2622→0.2636、OUT 0.1669→0.1701 m/sとほぼ変わらない。積分刻みの影響はあるものの、大きな誤差全体を数値積分だけでは説明できない。qを変えるとRMSEがIN 0.262→0.110、OUT 0.167→0.101 m/sへ変わるため、段差入力へのRTSの追従設定が大きく関わる。したがって①を純粋な演算誤差と解釈せず、Rとqを含む推定器の応答限界を含む値として読む。",
@@ -446,6 +478,7 @@ def write_report(summary: list[dict], info: dict) -> None:
         "",
         "リポジトリルートで実行: `python 06_Analysis/simulation/src/run_ow05_theoretical_error_separation.py`。",
         "集計CSV、seedごとのCSV、10 Hz波形CSV、完全一致条件でのq感度CSVおよび積分刻み確認CSVは同じフォルダーに出力される。ノイズseed、係数端点、q、評価開始時刻はスクリプトに記録される。",
+        "GitHubには波形CSVをgzip圧縮して保存した（[10 Hz波形CSV.gz](ow05_theoretical_error_separation_waveforms_10hz.csv.gz)）。ローカルで再生成した場合は、上記スクリプトが通常のCSVを出力する。",
         "",
     ]
     (OUT / "OW05_THEORETICAL_ERROR_SEPARATION.md").write_text("\n".join(lines), encoding="utf-8")
