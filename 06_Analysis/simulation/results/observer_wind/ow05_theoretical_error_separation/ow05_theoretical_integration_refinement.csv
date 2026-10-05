@@ -1,0 +1,3 @@
+﻿axis,input,reference_rate_hz,compared_rate_hz,angle_difference_rms_deg,angle_difference_max_abs_deg,rate_difference_rms_deg_s,rate_difference_max_abs_deg_s,rts_wind_difference_rms_m_s,rts_wind_difference_max_abs_m_s,rts_wind_100hz_rmse_m_s,rts_wind_200hz_rmse_m_s
+IN,自由振動ステップ,200,100,0.0110181309,0.03122856774,0.06943112158,0.198573567,0.02708821608,0.07909867405,0.2622006191,0.263645634
+OUT,自由振動ステップ,200,100,0.007082496822,0.03236723697,0.0432586645,0.1972732698,0.03226094212,0.161970767,0.1669418727,0.1701071019

@@ -408,6 +408,29 @@ RTS 3状態は将来データを使うオフライン評価であるため、RMS
 
 再フィット係数は診断用として別ファイルに保存し、採用係数レジストリには反映していません。自由振動のみでは絶対Iとトルク係数を一意に分けられず、bの非ゼロ値も粘性摩擦の実在を立証しません。係数、12波形別指標、交差検証、代表波形データは `ow05_ball_free_decay_refit_coefficients.csv/json`、`ow05_ball_free_decay_refit_summary.csv`、`ow05_ball_free_decay_refit_leave_one_out.csv`、`ow05_ball_free_decay_refit_waveforms.csv` に保存しました。再生成は `python 06_Analysis/simulation/src/fit_ow05_ball_free_decay_coefficients.py` で行えます。詳細は [係数再フィットレポート](OW05_BALL_FREE_DECAY_REFIT_REPORT.md) を参照してください。
 
+## 理論値による誤差要因の切り分け（追試）
+
+実測値を使わず、採用プラントと同一係数のRTSで、最大角度60°を保持する風相当（IN 7.834 m/s、OUT 7.637 m/s）から0 m/sへのステップを計算した。さらにOW-04の係数ずれとOW-05公称センサーノイズを別々に加え、独立Kaimal乱流と滑らかな2→6 m/sガストも同条件で比較した。
+
+| 理論入力 | 軸 | 完全一致 RMSE [m/s] | OW-04係数ずれ RMSE [m/s] | センサーノイズ RMSE [m/s] |
+|---|---|---:|---:|---:|
+| 60°保持相当→0ステップ | IN | 0.2622 | 1.2019 | 0.2759 |
+| 60°保持相当→0ステップ | OUT | 0.1669 | 0.9557 | 0.2743 |
+| Kaimal 平均2 m/s | IN | 0.0829 | 0.1520 | 0.0830 |
+| Kaimal 平均2 m/s | OUT | 0.0627 | 0.1229 | 0.0644 |
+| 滑らかガスト 2→6 m/s | IN | 0.0006 | 0.1549 | 0.0028 |
+| 滑らかガスト 2→6 m/s | OUT | 0.0001 | 0.1633 | 0.0127 |
+
+完全一致・無雑音でも急なゼロ風ステップでは誤差が残る一方、滑らかなガストではほぼゼロだった。①では信号に乱数を加えていないものの、RTSの角度観測標準偏差Rは公称0.02°に固定しており、理想逆演算器ではない。q感度では、qを上げるとステップRMSEがIN 0.262→0.110 m/s、OUT 0.167→0.101 m/sまで下がった。100→200 Hzの積分刻み比較によるRMSE変化はIN +0.0014、OUT +0.0032 m/sであり、刻み幅の寄与だけでは差を説明できない。したがって自由振動での大きな誤差は、係数ずれやセンサーノイズだけでなく、段差外力に対するRTSのR/q設定にも強く依存する。
+
+![理論入力別の誤差比較](../ow05_theoretical_error_separation/ow05_theoretical_error_summary.png)
+
+![自由振動ステップ応答](../ow05_theoretical_error_separation/ow05_theoretical_step_comparison.png)
+
+![風モデル応答](../ow05_theoretical_error_separation/ow05_theoretical_wind_model_responses.png)
+
+[理論値による切り分けレポート](../ow05_theoretical_error_separation/OW05_THEORETICAL_ERROR_SEPARATION.md)、係数・センサー条件ごとのCSV、および再生成スクリプト `python 06_Analysis/simulation/src/run_ow05_theoretical_error_separation.py` を参照。
+
 ## 再実行
 
 ```bash
