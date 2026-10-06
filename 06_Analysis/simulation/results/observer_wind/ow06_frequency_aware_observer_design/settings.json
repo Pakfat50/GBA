@@ -1,0 +1,57 @@
+{
+  "task_id": "OW-06 WBS 0-1",
+  "hardware_configuration": "BALL",
+  "coefficient_source": "06_Analysis/simulation/config/hbk_model_coefficients.json",
+  "coefficient_status": "provisional adopted coefficients for next simulation; physical validation pending",
+  "axis_model": "independent single-axis 1-DOF for IN and OUT; no cross-axis coupling",
+  "mechanical_limit_deg": 60,
+  "sample_rate_hz": 100,
+  "mean_wind_sweep_m_s": [
+    0,
+    1,
+    2,
+    4,
+    6
+  ],
+  "mean_wind_for_frequency_response_m_s": 2,
+  "mean_force_n": 0.009352691475673192,
+  "drag_coefficient": 0.4860496586340641,
+  "force_lever_m": 0.18061,
+  "friction_smoothing_speed_deg_s": 0.5,
+  "rts_q_n_per_sample": {
+    "IN": 0.00003,
+    "OUT": 0.0003
+  },
+  "assumed_angle_noise_deg": 0.02,
+  "angle_noise_tone_amplitude_deg": 0.02,
+  "frequency_sweep_hz": [
+    0.2,
+    0.5,
+    0.9,
+    1,
+    1.1,
+    2,
+    5,
+    10
+  ],
+  "finite_force_amplitude_ratio": [
+    0.1,
+    0.25,
+    0.35
+  ],
+  "wind_speed_tracking_target_hz": 10,
+  "ideal_tracking_target_hz": 30,
+  "sensor_model_assumptions": {
+    "angle_resolution_bits": 14,
+    "quantization_lsb_deg": 0.02197266,
+    "white_noise_sigma_deg": 0.015,
+    "colored_noise_sigma_deg": 0.01,
+    "colored_noise_time_constant_s": 0.475,
+    "fixed_delay_ms": 10,
+    "note": "Noise and delay values other than encoder bit/resolution are provisional assumptions, not measured characteristics."
+  },
+  "ow04_mismatch_corner": "joint_mass_high_arm_high_tau-high_c-high",
+  "local_linearization_scope": "static equilibrium, rate=0; c_quad slope is zero; smoothed Coulomb friction local slope is tau/epsilon",
+  "noise_tone_method": "apply pure sinusoidal measurement-angle error to nonlinear 3-state RTS; 30 s record, fit last 25 s",
+  "finite_amplitude_damping_method": "energy-equivalent viscous damping from one sinusoidal rate cycle, evaluated at inertial frequency scale; descriptive approximation"
+}
