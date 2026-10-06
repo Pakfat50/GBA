@@ -120,7 +120,7 @@ Aは線形化した伝達関数ではなく、sin/cos項と二乗抗力を保持
 
 ### C. 係数ずれによる推定力ゲイン誤差
 
-![係数ずれによる推定力ゲイン誤差](ow06_wbs12_sensitivity_plots/coefficient_error_sensitivity_vs_frequency.svg)
+![係数ずれによる推定力ゲイン誤差](ow06_wbs12_sensitivity_plots/coefficient_error_sensitivity_report.svg)
 
 OW-04係数ずれ100%高側コーナーでのRTSシミュレーション。力振幅比は0.10、0.25、0.35。縦軸は
 
