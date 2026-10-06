@@ -1,9 +1,12 @@
 """WBS 1.1-1.2 local linearization and sensitivity reference for OW-06.
 
 Uses the adopted new-hardware BALL coefficients. Each axis is modeled as an
-independent 1-DOF plant. The local transfer calculations are small-signal
-references; the smoothed Coulomb-friction equivalent damping is separately
-computed for finite sinusoidal angle amplitudes. RTS noise-tone response is
+independent 1-DOF plant. The local transfer calculations are small-signal references for the
+regularized tanh-friction model. In particular, c=b+tau/epsilon is the
+zero-rate tangent of tanh friction, not a damping coefficient for ideal
+sgn Coulomb friction (which is not differentiable at zero rate). It must not
+be used to conclude that the physical free-decay plant cannot oscillate.
+Finite-amplitude energy-equivalent damping is computed separately. RTS noise-tone response is
 measured by driving a pure angle-measurement perturbation through the existing
 nonlinear EKF-RTS implementation.
 """
@@ -54,6 +57,8 @@ def local_properties(coeff: dict, force: float) -> dict:
     theta = float(np.arctan(lever * force / coeff["restoring_n_m_per_rad"]))
     k_eff = (coeff["restoring_n_m_per_rad"] * np.cos(theta)
              + lever * force * np.sin(theta))
+    # Local tangent only for tau*tanh(rate/EPS); ideal tau*sgn(rate) has
+    # no derivative at rate=0, so this is not its physical damping ratio.
     c_local = (coeff["viscous_damping_n_m_s_per_rad"]
                + coeff["tau_n_m"] / EPS)
     inertia = coeff["inertia_kg_m2"]
