@@ -1,0 +1,8 @@
+{
+  "rk4_max_abs_difference": 0.0,
+  "transition_max_abs_difference": 1.3600232051658168e-14,
+  "fixed_error_polynomial_max_difference": 5.329070518200751e-15,
+  "ekf_force_vs_existing_max_n": 6.245004513516506e-17,
+  "rts_force_vs_existing_max_n": 6.231126725708691e-15,
+  "causal_prefix_max_difference_n": 0.0
+}

@@ -1,0 +1,167 @@
+{
+  "task": "WBS 2.2",
+  "base_commit": "4cc3b63260c8800807bca8769938e85e3bdd7270",
+  "frequencies_hz": [
+    0.2,
+    0.8,
+    0.95,
+    0.975,
+    0.98,
+    1.0,
+    1.05,
+    1.2,
+    3.0,
+    10.0,
+    30.0
+  ],
+  "main_amplitude_ratio": 0.35,
+  "low_amplitude_cases": {
+    "ratio": 0.1,
+    "frequencies_hz": [
+      1.0,
+      10.0
+    ]
+  },
+  "mean_force_n": 0.009352691475673192,
+  "mean_force_wind_equivalent_m_s": 2.0,
+  "sample_period_s": 0.01,
+  "plant_internal_dt_s": 0.002,
+  "continuous_sine_force": true,
+  "friction": "tanh(rate/epsilon)",
+  "epsilon_rad_s": 0.008726646259971648,
+  "q_multiplier": [
+    0.03,
+    0.1,
+    0.3,
+    1.0,
+    30.0,
+    300.0
+  ],
+  "base_q": {
+    "IN": 3e-05,
+    "OUT": 0.0003
+  },
+  "fixed_poles_hz": [
+    1.0,
+    2.0,
+    5.0,
+    10.0,
+    20.0
+  ],
+  "fixed_design_wind_m_s": [
+    2.0,
+    4.0
+  ],
+  "sensor": {
+    "sample_rate_hz": 100.0,
+    "resolution_bits": 14,
+    "full_scale_deg": 360.0,
+    "white_noise_std_deg": 0.015,
+    "coloured_noise_std_deg": 0.01,
+    "coloured_noise_time_constant_s": 0.475,
+    "fixed_delay_s": 0.01,
+    "sampling_jitter_std_s": 0.0,
+    "gain_error_fraction": 0.0,
+    "offset_deg": 0.0
+  },
+  "noise_seeds": [
+    20261007,
+    20261008,
+    20261009
+  ],
+  "mismatch_scenario": "joint_mass_high_arm_high_tau-high_c-high",
+  "perturbation_side": "plant only; force lever and wind conversion fixed as in OW04",
+  "nominal": {
+    "IN": {
+      "axis": "IN",
+      "configuration": "BALL",
+      "inertia_kg_m2": 0.000368211940722,
+      "restoring_n_m_per_rad": 0.0149632406043,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5664419286471763e-07,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 1.3775329466423476e-05,
+      "total_quadratic_drag_n_m_s2_per_rad2": 1.4031973659288193e-05,
+      "tau_n_m": 7.945731419193821e-05,
+      "ball_center_arm_m": 0.18061,
+      "ball_mass_kg": 0.0039,
+      "sources": {
+        "I_and_K": "IHB-05 position-adjusted coefficient table; arm=180.61 mm, mass=3.9 g",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    "OUT": {
+      "axis": "OUT",
+      "configuration": "BALL",
+      "inertia_kg_m2": 0.000370937577141,
+      "restoring_n_m_per_rad": 0.0142210781279,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5664419286471763e-07,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 1.3775329466423476e-05,
+      "total_quadratic_drag_n_m_s2_per_rad2": 1.4031973659288193e-05,
+      "tau_n_m": 0.0001769496760658,
+      "ball_center_arm_m": 0.18061,
+      "ball_mass_kg": 0.0039,
+      "sources": {
+        "I_and_K": "IHB-05 position-adjusted coefficient table; arm=180.61 mm, mass=3.9 g",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    }
+  },
+  "perturbed": {
+    "IN": {
+      "axis": "IN",
+      "configuration": "BALL",
+      "inertia_kg_m2": 0.000401355606772,
+      "restoring_n_m_per_rad": 0.013646158476049998,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5664419286471763e-07,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 1.4157291e-05,
+      "total_quadratic_drag_n_m_s2_per_rad2": 1.4413935192864716e-05,
+      "tau_n_m": 8.009445599304879e-05,
+      "ball_center_arm_m": 0.18061,
+      "ball_mass_kg": 0.0039,
+      "sources": {
+        "I_and_K": "IHB-05 position-adjusted coefficient table; arm=180.61 mm, mass=3.9 g",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    },
+    "OUT": {
+      "axis": "OUT",
+      "configuration": "BALL",
+      "inertia_kg_m2": 0.00040408124319100003,
+      "restoring_n_m_per_rad": 0.012903995999649998,
+      "viscous_damping_n_m_s_per_rad": 0.0,
+      "rod_quadratic_drag_n_m_s2_per_rad2": 2.5664419286471763e-07,
+      "ball_quadratic_drag_n_m_s2_per_rad2": 1.4157291e-05,
+      "total_quadratic_drag_n_m_s2_per_rad2": 1.4413935192864716e-05,
+      "tau_n_m": 0.00018026976059303294,
+      "ball_center_arm_m": 0.18061,
+      "ball_mass_kg": 0.0039,
+      "sources": {
+        "I_and_K": "IHB-05 position-adjusted coefficient table; arm=180.61 mm, mass=3.9 g",
+        "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+        "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+        "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+        "b": "Fixed to zero under adopted identification assumptions"
+      }
+    }
+  },
+  "provisional_screening_criteria": {
+    "gain_min": 0.9,
+    "gain_max": 1.1,
+    "phase_abs_max_deg": 20.0,
+    "wind_rmse_max_m_s": 0.1,
+    "noise_reduction_min_fraction": 0.1,
+    "rmse_increase_max_fraction": 0.05
+  },
+  "warning": "Thresholds are analysis working criteria, not approved product requirements. No online frequency detection or switching."
+}

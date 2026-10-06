@@ -1,0 +1,27 @@
+{
+  "metric_rows": 3380,
+  "plant_cases": 52,
+  "invalid_rows": 194,
+  "invalid_by_method": {
+    "Fixed_p1": 23,
+    "Fixed_p2": 122,
+    "Fixed_p5_design4": 49
+  },
+  "max_physical_angle_deg": 59.84741776977456,
+  "contact_samples_max": 0,
+  "reduced_setting_gate_pass_count": 0,
+  "validation_response_pass_count_by_family": {
+    "Any_online": 0,
+    "EKF": 0,
+    "Fixed": 0
+  },
+  "provisional_criteria": {
+    "gain_min": 0.9,
+    "gain_max": 1.1,
+    "phase_abs_max_deg": 20.0,
+    "wind_rmse_max_m_s": 0.1,
+    "noise_reduction_min_fraction": 0.1,
+    "rmse_increase_max_fraction": 0.05
+  },
+  "stage_23_authorized": false
+}
