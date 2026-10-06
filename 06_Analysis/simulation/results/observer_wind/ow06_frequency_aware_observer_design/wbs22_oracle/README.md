@@ -104,7 +104,7 @@ $$
 \quad\Longrightarrow\quad
 |V|=\sqrt{\frac{|F|}{\alpha}}
 \quad\Longrightarrow\quad
-V=\operatorname{sgn}(F)\sqrt{\frac{|F|}{\alpha}}
+V=\mathrm{sgn}(F)\sqrt{\frac{|F|}{\alpha}}
 $$
 
 真値と推定値に同じ換算を適用し、負の推定風力をゼロへ切り捨てない。真の風速は主振幅で約1.612～2.324 m/sとなる。
@@ -164,7 +164,7 @@ $$
 各時刻のsin、cos、1を並べた行列Xと信号ベクトルzについて、残差二乗和を最小にする係数を求める。
 
 $$
-\hat\beta=\operatorname*{arg\,min}_{\beta}
+\hat\beta=\underset{\beta}{\mathrm{arg\,min}}
 \|X\beta-z\|_2^2,\qquad \beta=[a,b,d]^T
 $$
 
@@ -184,7 +184,7 @@ $$
 なので、a=B cosφ、b=B sinφとなり、
 
 $$
-B=\sqrt{a^2+b^2},\qquad \phi=\operatorname{atan2}(b,a)
+B=\sqrt{a^2+b^2},\qquad \phi=\mathrm{atan2}(b,a)
 $$
 
 が得られる。推定・真値の基本波振幅を使って
