@@ -80,7 +80,7 @@ $$
 今回の基準モデルでは、1サンプルの積分中は風力 $F$ を一定とし、サンプル間の風力変化を $w_F$ として表す。したがって、基準の過程雑音共分散は次の形である。
 
 $$
-Q=\operatorname{diag}(0,0,q_F^2)
+Q=
 =
 \begin{bmatrix}
 0&0&0\\
@@ -123,13 +123,13 @@ $$
 $$
 P=
 \begin{bmatrix}
-\operatorname{Var}(e_\theta)&\operatorname{Cov}(e_\theta,e_\omega)&\operatorname{Cov}(e_\theta,e_F)\\
-\operatorname{Cov}(e_\omega,e_\theta)&\operatorname{Var}(e_\omega)&\operatorname{Cov}(e_\omega,e_F)\\
-\operatorname{Cov}(e_F,e_\theta)&\operatorname{Cov}(e_F,e_\omega)&\operatorname{Var}(e_F)
+\mathrm{Var}(e_\theta)&\mathrm{Cov}(e_\theta,e_\omega)&\mathrm{Cov}(e_\theta,e_F)\\
+\mathrm{Cov}(e_\omega,e_\theta)&\mathrm{Var}(e_\omega)&\mathrm{Cov}(e_\omega,e_F)\\
+\mathrm{Cov}(e_F,e_\theta)&\mathrm{Cov}(e_F,e_\omega)&\mathrm{Var}(e_F)
 \end{bmatrix}
 $$
 
-対角成分は角度・角速度・風力それぞれの推定誤差の分散、非対角成分は誤差どうしの共分散を示す。たとえば $\operatorname{Cov}(e_F,e_\theta)$ があれば、角度観測のずれから風力推定も修正できる。
+対角成分は角度・角速度・風力それぞれの推定誤差の分散、非対角成分は誤差どうしの共分散を示す。たとえば $\mathrm{Cov}(e_F,e_\theta)$ があれば、角度観測のずれから風力推定も修正できる。
 
 前時刻の誤差は局所線形化により次のように伝わる。
 
