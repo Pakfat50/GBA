@@ -18,7 +18,7 @@ I\ddot{\theta}=LF\cos\theta-K\sin\theta-b\dot\theta
 -c|\dot\theta|\dot\theta-\tau_f\tanh(\dot\theta/\epsilon)
 $$
 
-基本状態を $x=[\theta,\omega,F]^T$（$\omega=\dot\theta$）とし、風力をサンプル間でランダムウォークさせる。
+基本状態を $x=[\theta,\omega,F]^T$（角速度はω=θ̇）とし、風力をサンプル間でランダムウォークさせる。
 
 $$
 \dot x=f(x),\qquad \dot F=0\;\text{（連続時間の状態予測）},\qquad
