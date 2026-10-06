@@ -167,4 +167,4 @@ OUTでは雑音から推定風への伝達が1〜2 Hzで大きく、2 Hzで入�
 - [線形化係数誤差参考CSV](ow06_unregularized_mismatch_reference.csv)
 - [RTS測角誤差伝達CSV](ow06_rts_angle_noise_transfer.csv)
 - 使用係数: `06_Analysis/simulation/config/hbk_model_coefficients.json`
-- OW-05ベースライン照合: `ow05_model_error_slew_comparison/metrics.csv`、`ow05_force_gain_frequency_response/force_gain_metrics.csv`
+- OW-05ベースライン照合: `../ow05_model_error_slew_comparison/metrics.csv`、`../ow05_force_gain_frequency_response/force_gain_metrics.csv`
