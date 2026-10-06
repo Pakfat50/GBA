@@ -1,0 +1,8 @@
+{
+  "coefficients": "OW-04 high I, arm, tau, c corner on plant only; nominal BALL in observers",
+  "signals": "free-decay release, independent Kaimal mean 2 m/s TI20%, gust 2 to 6 m/s",
+  "sensor": "ideal angle, no added sensor noise; isolates coefficient effect",
+  "methods": "EKF q1, offline RTS q1 using same EKF forward pass, fixed p5",
+  "frequency_band": "0.75 to 1.25 times nominal natural frequency",
+  "limitation": "synthetic known-wind benchmark, not real field truth"
+}
