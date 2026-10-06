@@ -1,0 +1,17 @@
+﻿axis,mean_wind_m_s,frequency_hz,observer_model_to_plant_force_ratio_unregularized,phase_error_deg,relative_force_error_amplitude,scope_note
+IN,2.0,0.2,0.9477519479117491,3.0044780689141293,0.07304341417566368,linearized inverse reference; excludes RTS/Kalman regularization
+IN,2.0,0.5,0.989856258304244,3.018633147796342,0.0533837266709375,linearized inverse reference; excludes RTS/Kalman regularization
+IN,2.0,0.9,1.007411606520301,2.6381686168201095,0.04680155008956661,linearized inverse reference; excludes RTS/Kalman regularization
+IN,2.0,1.0,1.0099247179689583,2.602775208157868,0.04671439270173422,linearized inverse reference; excludes RTS/Kalman regularization
+IN,2.0,1.1,1.012163174498788,2.5824458748938692,0.046944711654551136,linearized inverse reference; excludes RTS/Kalman regularization
+IN,2.0,2.0,1.0282817417423384,2.647036692897144,0.054719514687019716,linearized inverse reference; excludes RTS/Kalman regularization
+IN,2.0,5.0,1.0638198399201175,2.3714934432363592,0.0767802591041335,linearized inverse reference; excludes RTS/Kalman regularization
+IN,2.0,10.0,1.0821732994116908,1.526423034207087,0.08672068216935493,linearized inverse reference; excludes RTS/Kalman regularization
+OUT,2.0,0.2,0.9949561127225877,2.8370235622685245,0.04964223003460053,linearized inverse reference; excludes RTS/Kalman regularization
+OUT,2.0,0.5,1.015975676879503,1.5820316194146355,0.032089823315145344,linearized inverse reference; excludes RTS/Kalman regularization
+OUT,2.0,0.9,1.0200479502209334,1.1833286729326455,0.028930984294229183,linearized inverse reference; excludes RTS/Kalman regularization
+OUT,2.0,1.0,1.0205403835310676,1.1516430116134317,0.028882528467059666,linearized inverse reference; excludes RTS/Kalman regularization
+OUT,2.0,1.1,1.0209712943470042,1.132905234282704,0.028964632227172014,linearized inverse reference; excludes RTS/Kalman regularization
+OUT,2.0,2.0,1.0242979539616317,1.21878573699106,0.03246318189984429,linearized inverse reference; excludes RTS/Kalman regularization
+OUT,2.0,5.0,1.039048659164638,1.8217787530708782,0.05074618222440273,linearized inverse reference; excludes RTS/Kalman regularization
+OUT,2.0,10.0,1.0617950194682297,1.9396560626315147,0.07096041259305322,linearized inverse reference; excludes RTS/Kalman regularization
