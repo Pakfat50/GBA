@@ -15,6 +15,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Keep text as text so repository SVG previews stay compact and upload intact.
+plt.rcParams["svg.fonttype"] = "none"
+
 HERE = Path(__file__).resolve()
 SIM = HERE.parents[1]
 RESULTS = SIM / "results" / "observer_wind" / "ow06_frequency_aware_observer_design"
