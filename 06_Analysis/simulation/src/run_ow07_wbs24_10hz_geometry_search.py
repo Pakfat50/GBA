@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""OW-07 WBS2.4: compact geometry search for 10 Hz wind response.
+"""OW-07 WBS2.4: compact geometry and same-grease damper search at 10 Hz.
 
-This is an exploratory model. It preserves the WBS2.3 grease b and axis-specific
-tau, samples candidate geometry, then validates minimum-sphere, minimum-ballast
-and best-linear-signal candidates with the nonlinear plant, sensor and RTS.
+This is an exploratory model. It preserves grease type and axis-specific tau,
+varies the damper geometry, then validates finalist designs with the existing
+nonlinear plant, sensor and RTS implementations.
 """
 from __future__ import annotations
 
@@ -51,6 +51,9 @@ BALL_ARM_MAX_M = 0.500
 BALLAST_ARM_MIN_M, BALLAST_ARM_MAX_M = 0.002, 0.070
 BALLAST_MASS_MIN_KG, BALLAST_MASS_MAX_KG = 0.05, 1000.0
 ROD_D_MIN_M, ROD_D_MAX_M = 0.002, 0.008
+SHAFT_D_MIN_MM, SHAFT_D_MAX_MM = 2.0, 8.0
+CONTACT_MIN_MM, CONTACT_MAX_MM = 0.0, 30.0
+GAP_MIN_MM, GAP_MAX_MM = 0.5, 1.0
 SAMPLES = 2_000_000
 SEED = 20261008
 
@@ -62,6 +65,12 @@ def write_csv(path: Path, rows: list[dict]) -> None:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def normalize_svg(path: Path) -> None:
+    """Remove whitespace emitted at line ends by Matplotlib's SVG backend."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    path.write_text("\n".join(line.rstrip() for line in lines) + "\n", encoding="utf-8")
 
 
 def load_baseline() -> dict[str, dict]:
@@ -93,7 +102,28 @@ def tube_terms(rod_od: np.ndarray | float, length: np.ndarray | float,
     return mass * length ** 2 / 3, -G * mass * length / 2
 
 
+def choose_damper_geometry(target_b: float) -> dict | None:
+    """Choose the smallest ideal Couette envelope that reaches target b."""
+    options = []
+    for shaft_d in np.arange(SHAFT_D_MIN_MM, SHAFT_D_MAX_MM + 0.001, 0.5):
+        for gap in np.arange(GAP_MIN_MM, GAP_MAX_MM + 0.001, 0.1):
+            b_30 = equivalent_b(30.0, float(shaft_d), float(gap))
+            length = target_b / b_30 * 30.0
+            if CONTACT_MIN_MM < length <= CONTACT_MAX_MM:
+                outer_d = shaft_d + 2 * gap
+                volume_proxy = math.pi * (outer_d / 2) ** 2 * length
+                options.append((volume_proxy, length, shaft_d, gap))
+    if not options:
+        return None
+    _, length, shaft_d, gap = min(options)
+    return {"damper_shaft_diameter_mm": float(shaft_d),
+            "damper_contact_length_mm": float(length),
+            "damper_radial_gap_mm": float(gap),
+            "b_Nms_per_rad": float(equivalent_b(length, shaft_d, gap))}
+
+
 def sample_screen(records: dict[str, dict], residuals: dict[str, tuple[float, float]]):
+    """Sample mechanics, then size a same-grease damper to the required b."""
     rng = np.random.default_rng(SEED)
     n = SAMPLES
     d = rng.uniform(BALL_D_MIN_M, BALL_D_MAX_M, n)
@@ -110,52 +140,81 @@ def sample_screen(records: dict[str, dict], residuals: dict[str, tuple[float, fl
     Iweight = mw * rw ** 2
     mean_force = 0.5 * RHO_AIR * CD * math.pi * d ** 2 / 4 * VMEAN_M_S ** 2
     force8 = 0.5 * RHO_AIR * CD * math.pi * d ** 2 / 4 * 8.0 ** 2
-    B = equivalent_b(30.0, 8.0, 1.0)
-    common_geometry = dict(ball_d_m=d, ball_arm_m=arm, ballast_mass_kg=mw,
-                           ballast_arm_m=rw, rod_od_m=rod_od,
-                           ball_mass_kg=mb, rod_length_m=rod_len)
-    axis_passes = []
-    axis_metrics = {}
     omega = 2 * math.pi * F_HZ
+    axis_static, axis_values = [], {}
+    b_required_mild = np.zeros(n)
+    b_required_strict = np.zeros(n)
     for axis in ("IN", "OUT"):
         ifr, kfr = residuals[axis]
         I = ifr + Iball + Iweight + Irod
         K = kfr + G * mw * rw - G * mb * arm + Krod
         th_mean = np.arctan2(mean_force * arm, K)
         keff = K * np.cos(th_mean) + mean_force * arm * np.sin(th_mean)
-        zeta = B / (2 * np.sqrt(np.maximum(I * keff, 1e-300)))
-        denom = np.sqrt((keff - I * omega ** 2) ** 2 + (B * omega) ** 2)
-        gain = keff / denom
-        torque_gain = arm * np.cos(th_mean) * RHO_AIR * CD * math.pi * d ** 2 / 4 * VMEAN_M_S
-        angle_amp = torque_gain * DV_M_S / denom
+        b_required_mild = np.maximum(b_required_mild,
+                                      2 * ZETA_MIN * np.sqrt(np.maximum(I * keff, 1e-300)))
+        b_required_strict = np.maximum(b_required_strict,
+                                       2 * np.sqrt(np.maximum(I * keff, 1e-300)))
         th8 = np.arctan2(force8 * arm, K)
-        fn = np.sqrt(np.maximum(keff / I, 0)) / (2 * math.pi)
-        valid = (K > 0) & (th8 <= math.radians(60)) & (zeta >= ZETA_MIN) & (gain >= GAIN_MIN)
-        axis_passes.append(valid)
-        axis_metrics[axis] = dict(I=I, K=K, keff=keff, zeta=zeta, gain=gain,
-                                  angle_amp=angle_amp, th8=th8, fn=fn)
-    joint = axis_passes[0] & axis_passes[1]
-    strict_joint = joint.copy()
+        axis_static.append((K > 0) & (th8 <= math.radians(60)))
+        axis_values[axis] = dict(I=I, K=K, keff=keff, th_mean=th_mean, th8=th8)
+    valid_static = axis_static[0] & axis_static[1]
+    b_max = equivalent_b(CONTACT_MAX_MM, SHAFT_D_MAX_MM, GAP_MIN_MM)
+
+    def metrics_at_b(b):
+        passed, strict_passed, metrics = [], [], {}
+        for axis in ("IN", "OUT"):
+            vals = axis_values[axis]
+            I, keff = vals["I"], vals["keff"]
+            zeta = b / (2 * np.sqrt(np.maximum(I * keff, 1e-300)))
+            denom = np.sqrt((keff - I * omega ** 2) ** 2 + (b * omega) ** 2)
+            gain = keff / denom
+            torque_gain = arm * np.cos(vals["th_mean"]) * RHO_AIR * CD * math.pi * d ** 2 / 4 * VMEAN_M_S
+            angle_amp = torque_gain * DV_M_S / denom
+            fn = np.sqrt(np.maximum(keff / I, 0)) / (2 * math.pi)
+            passed.append((zeta >= ZETA_MIN) & (gain >= GAIN_MIN))
+            strict_passed.append((zeta >= 1.0) & (gain >= GAIN_MIN))
+            metrics[axis] = dict(I=I, K=vals["K"], zeta=zeta, gain=gain,
+                                angle_amp=angle_amp, th8=vals["th8"], fn=fn)
+        return passed[0] & passed[1], strict_passed[0] & strict_passed[1], metrics
+
+    joint, _, values = metrics_at_b(b_required_mild)
+    strict_joint, _, _ = metrics_at_b(b_required_strict)
+    joint &= valid_static & (b_required_mild <= b_max)
+    strict_joint &= valid_static & (b_required_strict <= b_max)
+    axis_passes = []
     for axis in ("IN", "OUT"):
-        strict_joint &= axis_metrics[axis]["zeta"] >= 1.0
-    # Preserve all jointly feasible points plus a compact shortlist by package
-    # envelope, then ballast mass. Geometry feasibility is only a first screen.
-    idx = np.flatnonzero(joint)
-    if idx.size:
-        envelope = arm[idx] + d[idx] / 2
-        order = np.lexsort((mw[idx], envelope))
-        idx = idx[order[:250]]
+        axis_passes.append(valid_static & (values[axis]["zeta"] >= ZETA_MIN) &
+                           (values[axis]["gain"] >= GAIN_MIN) & (b_required_mild <= b_max))
+
+    idx_all = np.flatnonzero(joint)
+    idx = idx_all
+    if idx_all.size:
+        envelope = arm[idx_all] + d[idx_all] / 2
+        order = np.lexsort((mw[idx_all], envelope))
+        compact = idx_all[order[:500]]
+        best_signal_i = idx_all[np.argmax(np.minimum(
+            values["IN"]["angle_amp"][idx_all], values["OUT"]["angle_amp"][idx_all]))]
+        extrema = np.array([idx_all[np.argmin(d[idx_all])],
+                            idx_all[np.argmin(mw[idx_all])], best_signal_i])
+        idx = np.unique(np.concatenate((compact, extrema)))
     rows = []
     for i in idx:
-        row = {k: float(v[i]) for k, v in common_geometry.items()}
-        row["package_envelope_m"] = float(arm[i] + d[i] / 2)
+        damper = choose_damper_geometry(float(b_required_mild[i]))
+        if damper is None:
+            continue
+        row = {"ball_d_m": float(d[i]), "ball_arm_m": float(arm[i]),
+               "ballast_mass_kg": float(mw[i]), "ballast_arm_m": float(rw[i]),
+               "rod_od_m": float(rod_od[i]), "ball_mass_kg": float(mb[i]),
+               "rod_length_m": float(rod_len[i]), **damper,
+               "package_envelope_m": float(arm[i] + d[i] / 2)}
         for axis in ("IN", "OUT"):
             for key in ("I", "K", "zeta", "gain", "angle_amp", "th8", "fn"):
-                value = axis_metrics[axis][key][i]
+                val = values[axis][key][i]
                 suffix = "_rad" if key in ("angle_amp", "th8") else ""
-                row[f"{axis}_{key}{suffix}"] = float(value)
+                row[f"{axis}_{key}{suffix}"] = float(val)
         rows.append(row)
-    return rows, int(joint.sum()), int(axis_passes[0].sum()), int(axis_passes[1].sum()), int(strict_joint.sum()), axis_metrics, common_geometry
+    return (rows, int(joint.sum()), int(axis_passes[0].sum()), int(axis_passes[1].sum()),
+            int(strict_joint.sum()), values, b_max)
 
 
 def evaluate_fixed_candidate(records, residuals, candidate, candidate_name):
@@ -167,7 +226,10 @@ def evaluate_fixed_candidate(records, residuals, candidate, candidate_name):
     Irod, Krod = float(Irod), float(Krod)
     Iball = 0.4 * mball * (d / 2) ** 2 + mball * arm ** 2
     Iweight = mw * rw ** 2
-    b = equivalent_b(30.0, 8.0, 1.0)
+    shaft_d_mm = c["damper_shaft_diameter_mm"]
+    contact_mm = c["damper_contact_length_mm"]
+    gap_mm = c["damper_radial_gap_mm"]
+    b = equivalent_b(contact_mm, shaft_d_mm, gap_mm)
     wbs23.DT = 0.01
     wbs23.FS = 100.0
     wbs23.LEVER_M = arm
@@ -211,12 +273,16 @@ def evaluate_fixed_candidate(records, residuals, candidate, candidate_name):
                          "normalized_mechanical_gain_10Hz": keff / denom,
                          "natural_frequency_hz": math.sqrt(keff / I) / (2 * math.pi),
                          "static_angle_8m_s_deg": math.degrees(theta8),
-                         "linear_angle_amplitude_10Hz_deg": math.degrees(torque_gain * DV_M_S / denom)}
+                         "linear_angle_amplitude_10Hz_deg": math.degrees(torque_gain * DV_M_S / denom),
+                         "tau_over_10Hz_wind_torque": base["tau_n_m"] / (arm * RHO_AIR * CD * math.pi * d**2 / 4 * VMEAN_M_S * DV_M_S)}
         theta, _ = wbs23.rk4_plant(t, force, coeff, theta0)
         angle_fit = np.linalg.lstsq(X, theta[Xmask], rcond=None)[0]
         angle_amp_deg = math.degrees(math.hypot(angle_fit[1], angle_fit[2]))
         angle_data[axis] = theta
-        for q in (0.003, 0.01, 0.03):
+        q_sweep = ((3.0e-5, 3.0e-4, 1.0e-3, 3.0e-3, 1.0e-2)
+                   if axis == "IN" else
+                   (3.0e-4, 1.0e-3, 3.0e-3, 1.0e-2, 3.0e-2))
+        for q in q_sweep:
             gains, phases, rmses = [], [], []
             for seed in (20261007, 20261008, 20261009):
                 observed, _ = apply_angle_sensor_model(t, theta, sensor, seed)
@@ -237,9 +303,10 @@ def evaluate_fixed_candidate(records, residuals, candidate, candidate_name):
                          "RTS_phase_deg_seeds": ";".join(f"{x:.2f}" for x in phases),
                          "wind_RMSE_m_s_mean": float(np.mean(rmses)),
                          "wind_RMSE_m_s_seeds": ";".join(f"{x:.4f}" for x in rmses)})
-    return rows, angle_data, dict(c, rod_length_m=rod_len, ball_mass_kg=mball, metrics=metrics,
+    return rows, angle_data, dict(c, rod_length_m=rod_len, ball_mass_kg=mball,
+                                  b_Nms_per_rad=b, metrics=metrics,
                                   tau_IN=records["IN"]["tau_n_m"], tau_OUT=records["OUT"]["tau_n_m"],
-                                  b_Nms_per_rad=b)
+                                  )
 
 
 def plot_results(screen_rows, rts_rows, metadata):
@@ -262,7 +329,9 @@ def plot_results(screen_rows, rts_rows, metadata):
     ax.legend()
     fig.tight_layout()
     fig.savefig(OUT / "geometry_search_screen.png", dpi=180)
-    fig.savefig(OUT / "geometry_search_screen.svg")
+    svg_path = OUT / "geometry_search_screen.svg"
+    fig.savefig(svg_path)
+    normalize_svg(svg_path)
     plt.close(fig)
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 8), sharex="col")
@@ -296,7 +365,9 @@ def plot_results(screen_rows, rts_rows, metadata):
     fig.suptitle("Raising RTS Q may recover apparent gain while degrading wind RMSE")
     fig.tight_layout()
     fig.savefig(OUT / "rts_q_sensitivity.png", dpi=180)
-    fig.savefig(OUT / "rts_q_sensitivity.svg")
+    svg_path = OUT / "rts_q_sensitivity.svg"
+    fig.savefig(svg_path)
+    normalize_svg(svg_path)
     plt.close(fig)
 
 
@@ -304,15 +375,15 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     records = load_baseline()
     residuals = reference_residuals(records)
-    shortlist, joint_count, in_count, out_count, strict_count, _, _ = sample_screen(records, residuals)
+    shortlist, joint_count, in_count, out_count, strict_count, _, b_max = sample_screen(records, residuals)
     write_csv(OUT / "jointly_feasible_geometry_shortlist.csv", shortlist)
     min_sphere_row = min(shortlist, key=lambda r: r["ball_d_m"])
     min_mass_row = min(shortlist, key=lambda r: r["ballast_mass_kg"])
     best_signal = max(shortlist, key=lambda r: min(r["IN_angle_amp_rad"], r["OUT_angle_amp_rad"]))
     candidate_specs = {
-        "minimum_sphere": {k: min_sphere_row[k] for k in ("ball_d_m", "ball_arm_m", "ballast_mass_kg", "ballast_arm_m", "rod_od_m")},
-        "minimum_ballast": {k: min_mass_row[k] for k in ("ball_d_m", "ball_arm_m", "ballast_mass_kg", "ballast_arm_m", "rod_od_m")},
-        "best_signal": {k: best_signal[k] for k in ("ball_d_m", "ball_arm_m", "ballast_mass_kg", "ballast_arm_m", "rod_od_m")},
+        "minimum_sphere": {k: min_sphere_row[k] for k in ("ball_d_m", "ball_arm_m", "ballast_mass_kg", "ballast_arm_m", "rod_od_m", "damper_shaft_diameter_mm", "damper_contact_length_mm", "damper_radial_gap_mm")},
+        "minimum_ballast": {k: min_mass_row[k] for k in ("ball_d_m", "ball_arm_m", "ballast_mass_kg", "ballast_arm_m", "rod_od_m", "damper_shaft_diameter_mm", "damper_contact_length_mm", "damper_radial_gap_mm")},
+        "best_signal": {k: best_signal[k] for k in ("ball_d_m", "ball_arm_m", "ballast_mass_kg", "ballast_arm_m", "rod_od_m", "damper_shaft_diameter_mm", "damper_contact_length_mm", "damper_radial_gap_mm")},
     }
     rts_rows = []
     candidate_meta = {}
@@ -328,7 +399,9 @@ def main():
         "ball_density_kg_m3": RHO_FOAM,
         "foam_density_basis": "1050 kg/m3 solid polystyrene divided by expansion ratio 60",
         "fixed_tau_Nm": {axis: records[axis]["tau_n_m"] for axis in ("IN", "OUT")},
-        "fixed_b_Nms_per_rad": equivalent_b(30.0, 8.0, 1.0),
+        "damper_grease": "Shin-Etsu G-331; same grease assumption as WBS2.3",
+        "damper_b_model": "WBS2.1 ideal annular-Couette geometric scaling of single catalog point; exploratory only",
+        "maximum_available_b_in_sampled_damper_range_Nms_per_rad": b_max,
         "nonlinear_rts_candidates": candidate_meta,
         "strict_overdamped_joint_passes_in_sample": strict_count,
         "best_screened_angle_amplitude_candidate": best_signal,
@@ -342,7 +415,10 @@ def main():
                             "counterweight_arm_m": [BALLAST_ARM_MIN_M, BALLAST_ARM_MAX_M],
                             "rod_OD_m": [ROD_D_MIN_M, ROD_D_MAX_M],
                             "rod_wall_m": ROD_WALL_M,
-                            "rod_material_density_kg_m3": RHO_ROD},
+                            "rod_material_density_kg_m3": RHO_ROD,
+                            "damper_shaft_diameter_mm": [SHAFT_D_MIN_MM, SHAFT_D_MAX_MM],
+                            "damper_contact_length_mm": [CONTACT_MIN_MM, CONTACT_MAX_MM],
+                            "damper_radial_gap_mm": [GAP_MIN_MM, GAP_MAX_MM]},
     }
     (OUT / "search_settings_and_summary.json").write_text(
         json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
