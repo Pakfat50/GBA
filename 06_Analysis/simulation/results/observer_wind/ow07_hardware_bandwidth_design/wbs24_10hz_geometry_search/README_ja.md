@@ -35,7 +35,7 @@
 
 「最小球径」は球を下限まで縮められますが、錘が重く、信号が最小です。「最小錘質量」は今回通過した集合内で錘を最軽量にした候補です。いずれも8 m/s時の静的角度は60°制約を大きく下回り、測定角度の利用範囲をほとんど使いません。「最大線形信号」でも、非線形モデルの10 Hz角度は仮定ノイズ標準偏差0.02°のIN約36%、OUT約19%です。実センサーモデルの白色・有色ノイズ合成RMSは約0.018°です。
 
-![探索で通過した形状候補](geometry_search_screen.png)
+![探索で通過した形状候補](geometry_search_screen.svg)
 
 ## 固定`τ`が効く大きさ
 
@@ -47,7 +47,7 @@
 
 ベスト信号候補でも、`Q=0.01`時の平均ゲインはIN 0.801、OUT 0.635ですが、RMSEは0.666、0.843 m/s、seedごとの位相はIN −16〜−33°、OUT −17〜−41°でした。ゲインだけを見れば目標を越える設定がありますが、実際の風速波形を回収したとは言えません。
 
-![RTSのQに対するゲインと風速RMSE](rts_q_sensitivity.png)
+![RTSのQに対するゲインと風速RMSE](rts_q_sensitivity.svg)
 
 ## 判定と次の設計判断
 
@@ -67,6 +67,6 @@ python 06_Analysis/simulation/src/run_ow07_wbs24_10hz_geometry_search.py
 - `search_settings_and_summary.json` — 固定値、探索範囲、候補の物理係数
 - `jointly_feasible_geometry_shortlist.csv` — 条件を通過した16形状
 - `candidate_rts_noise_validation.csv` — 3候補×2軸×3`Q`の結果
-- `geometry_search_screen.png`、`rts_q_sensitivity.png` — 判定図
+- `geometry_search_screen.svg`、`rts_q_sensitivity.svg` — 判定図（PNG版も同じフォルダーに保存）
 
 この検討は数値モデルによる設計スクリーニングです。グリスの実機粘性、シール摩擦、部品たわみ、錘保持部の強度と寸法、公差、質量分布は未検証です。
