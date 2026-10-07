@@ -1,0 +1,9 @@
+{
+  "sample_rate_hz": 100,
+  "noise": "OW-05 white 0.015 deg + coloured 0.010 deg, tau 0.475s, delay 0.01s; seed 20261007",
+  "plant_mismatch": "OW-04 correlated high I/arm/tau/c corner applied to plant; nominal coefficients retained by estimators except calibration-fit arm",
+  "frequency_adaptation": "dominant frequency estimated from full analyzed-record baseline RTS force periodogram; q lookup is used only for a concentrated tone estimate between 0.7 and 1.3 Hz, otherwise fixed q is retained",
+  "harmonic_state": "force represented as random-walk mean plus known/estimated-frequency oscillator quadrature pair; compared on tone and broadband/gust data",
+  "coefficient_calibration": "six synthetic zero-wind releases at 15..40 deg with angle noise; fit normalized K/I,b/I,c/I,tau/I; inertia assumed independently known; leave-one-release-angle-out validation",
+  "limits": "synthetic truth available for score; field wind cannot supervise estimator; unknown-wind coefficient co-estimation is not claimed identifiable"
+}
