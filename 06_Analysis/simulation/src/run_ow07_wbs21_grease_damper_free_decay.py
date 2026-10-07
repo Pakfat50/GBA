@@ -17,8 +17,10 @@ CONFIG = ROOT / "06_Analysis/simulation/config/hbk_model_coefficients.json"
 OUT_DIR = ROOT / "06_Analysis/simulation/results/observer_wind/ow07_hardware_bandwidth_design"
 
 # Shin-Etsu G-331 reference test: 4 mm shaft, 8 mm grease contact length,
-# 35 um clearance, 10 rpm running torque 34 x 10^-4 N m.
+# 35 um radial clearance, 10 rpm running torque 34 x 10^-4 N m.
 SHAFT_DIAMETER_MM = 4.0
+REFERENCE_GAP_MM = 0.035
+DESIGN_GAP_MM = 2.0  # interpreted as radial clearance
 REFERENCE_CONTACT_MM = 8.0
 REFERENCE_TORQUE_NM = 34e-4
 REFERENCE_RPM = 10.0
@@ -37,10 +39,23 @@ def load_ball_records():
 
 
 def equivalent_b(length_mm: float) -> float:
-    """Linear b surrogate using the catalog torque at 10 rpm and length scaling."""
+    """Ideal annular-Couette scaling of the catalog torque to the design gap.
+
+    This is only a geometric shear proxy: G-331 is a grease and the catalog
+    provides neither viscosity nor a torque-speed curve. Torque per length
+    scales with a^2 R^2/(R^2-a^2) for Newtonian annular Couette flow.
+    """
     omega = REFERENCE_RPM * 2.0 * math.pi / 60.0
-    return (REFERENCE_TORQUE_NM / omega
-            * length_mm / REFERENCE_CONTACT_MM)
+    shaft_radius = SHAFT_DIAMETER_MM / 2.0
+
+    def geometry_factor(gap_mm):
+        outer_radius = shaft_radius + gap_mm
+        return (shaft_radius**2 * outer_radius**2
+                / (outer_radius**2 - shaft_radius**2))
+
+    gap_ratio = geometry_factor(DESIGN_GAP_MM) / geometry_factor(REFERENCE_GAP_MM)
+    return (REFERENCE_TORQUE_NM / omega * length_mm / REFERENCE_CONTACT_MM
+            * gap_ratio)
 
 
 def half_cycle(I, K, c_quad, tau_dyn, b, theta, t_start):
@@ -135,6 +150,8 @@ def write_results(records):
                 result = free_decay(record, b, ratio)
                 rows.append({
                     "shaft_diameter_mm": SHAFT_DIAMETER_MM,
+                    "radial_gap_mm": DESIGN_GAP_MM,
+                    "reference_radial_gap_mm": REFERENCE_GAP_MM,
                     "grease_contact_length_mm": length,
                     "grease": "Shin-Etsu G-331",
                     "axis": axis,
@@ -174,12 +191,12 @@ def plot_timeseries(records):
         ax.axhline(60.0, color="gray", linewidth=0.7, linestyle="--")
         ax.set_title(f"{axis} axis — release from +60°, τs/τdyn=2")
         ax.set_ylabel("Angle [deg]")
-        ax.set_ylim(-25, 65)
+        ax.set_ylim(-65, 65)
         ax.grid(True, alpha=.3)
         ax.legend(loc="upper right", ncol=2, fontsize=8)
     axes[-1].set_xlabel("Time [s]")
     axes[-1].set_xlim(0, PLOT_DURATION_S)
-    fig.suptitle("WBS2.1: G-331 grease damper — 4 mm shaft nonlinear free decay")
+    fig.suptitle("WBS2.1: G-331 grease damper — 4 mm shaft, 2 mm radial gap")
     fig.tight_layout()
     image_path = OUT_DIR / "wbs21_grease_damper_free_decay.png"
     fig.savefig(image_path, dpi=136)
@@ -196,6 +213,9 @@ def main():
     rows = write_results(records)
     plot_timeseries(records)
     print(f"Wrote {len(rows)} nonlinear free-decay cases")
+    omega_ref = REFERENCE_RPM * 2.0 * math.pi / 60.0
+    gap_scale = equivalent_b(REFERENCE_CONTACT_MM) / (REFERENCE_TORQUE_NM / omega_ref)
+    print(f"annular-Couette geometry ratio (2 mm / 35 um) = {gap_scale:.5f}")
     for length in (8.0, 12.0, 20.0, 30.0):
         b = equivalent_b(length)
         print(f"L={length:>4.0f} mm: b_eq={b*1e3:.3f} mN m s/rad")
