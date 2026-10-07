@@ -59,7 +59,7 @@ SEED = 20261008
 
 def write_csv(path: Path, rows: list[dict]) -> None:
     if not rows:
-        path.write_text("", encoding="utf-8")
+        path.write_text("status,detail\nnone,No feasible candidate rows\n", encoding="utf-8")
         return
     with path.open("w", encoding="utf-8-sig", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
@@ -460,7 +460,7 @@ def main():
             "result": "No design met all joint screening criteria; nonlinear RTS finalist validation skipped."
         }
         (OUT / "search_settings_and_summary.json").write_text(
-            json.dumps(summary, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+            json.dumps(summary, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         write_no_solution_plots()
         print(json.dumps({"output": str(OUT), "joint_pass_count": joint_count,
                           "mechanical_candidates_before_10hz_gain_gate": mechanical_pass_count,
