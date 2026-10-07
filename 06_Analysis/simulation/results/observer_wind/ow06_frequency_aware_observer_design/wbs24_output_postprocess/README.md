@@ -6,6 +6,16 @@
 
 一方で、1 Hz正弦では位置合わせ後も改善せず、0.25秒窓で振幅ゲインがIN 0.330→0.298、OUT 0.410→0.369へ低下した。固有振動数ノッチはゲインを約0.012/0.004まで下げ、形状相関も約0.19/0.20となった。したがって、**特定の乱流条件で見えた改善だけでは、0〜10 Hz全域向けのフィルターとして採用できない**。この比較では振幅を補正していないため、形状相関と振幅ゲインを分けて判断する。
 
+### 時系列の概要
+
+以下の図は、自由減衰、1 Hz正弦、Kaimal乱流、ガストについて、IN/OUT各軸の真値と全フィルター出力を同じ時刻軸に重ね、プラント一致/OW-04ずれと理想/OW-05ノイズの4条件を並べたものです。
+
+![WBS 2.4 IN時系列サマリー](timeseries_summary_IN.png)
+
+![WBS 2.4 OUT時系列サマリー](timeseries_summary_OUT.png)
+
+図の再生成はリポジトリのルートから `python 06_Analysis/simulation/src/run_ow06_wbs23_offline_observer.py` と `python 06_Analysis/simulation/src/run_ow06_wbs23_output_postfilter.py` を実行した後、`python 06_Analysis/simulation/src/plot_ow06_wbs23_24_summary.py` を実行する。
+
 ## 条件
 
 - 100 Hz、IN/OUT、固定ゲイン `Fixed_p5`。ゲインは2 m/s設計点で設定し、記録中は一定。

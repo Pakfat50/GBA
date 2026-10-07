@@ -8,6 +8,16 @@
 
 このためWBS 2.3の結論は「オフライン周波数適応/調波状態に採用根拠なし、係数校正は条件付きの研究候補」である。ご指定の判断に従い、単純な固定ゲイン出力フィルターをWBS 2.4で比較した。結果は[WBS 2.4レポート](../wbs24_output_postprocess/README.md)。
 
+### 時系列の概要
+
+以下の図は、自由減衰、1 Hz正弦、Kaimal乱流、ガストについて、IN/OUT各軸の真値と主要方式を同じ時刻軸に重ね、プラント一致/OW-04ずれと理想/OW-05ノイズの4条件を並べたものです。
+
+![WBS 2.3 IN時系列サマリー](timeseries_summary_IN.png)
+
+![WBS 2.3 OUT時系列サマリー](timeseries_summary_OUT.png)
+
+図の再生成はリポジトリのルートから `python 06_Analysis/simulation/src/run_ow06_wbs23_offline_observer.py` と `python 06_Analysis/simulation/src/run_ow06_wbs23_output_postfilter.py` を実行した後、`python 06_Analysis/simulation/src/plot_ow06_wbs23_24_summary.py` を実行する。
+
 ## 条件
 
 - 100 Hz、IN/OUT、採用BALLモデル。

@@ -223,7 +223,7 @@ def main():
     mismatch={a:mismatch_coefficients(a,nominal[a]) for a in axes}
     inputs={a:build_inputs(CONFIG,a) for a in axes}
     oracle=pd.read_csv(SIM/"results/observer_wind/ow06_frequency_aware_observer_design/wbs22_oracle/oracle_selection.csv")
-    rows=[]; calibration=[]; fitmeta=[]
+    rows=[]; calibration=[]; fitmeta=[]; series_meta=[]; series_arrays={}; series_cases={}
     for axis in axes:
         # Replace the old 60-degree hold/release with a free release from rest.
         tdec=np.arange(3001)*DT
@@ -284,10 +284,19 @@ def main():
                             aa,bb,_=np.linalg.lstsq(X,speed[mask],rcond=None)[0]
                             rec["sine_gain"]=float(np.hypot(a,bias)/np.hypot(aa,bb))
                             rec["sine_phase_deg"]=float(np.rad2deg(np.arctan2(bias,a)-np.arctan2(bb,aa)))
+                        case=(axis,input_name,plant_case,sensor_case)
+                        if case not in series_cases:
+                            cid=f"c{len(series_cases):03d}"; series_cases[case]=cid
+                            series_arrays[f"{cid}_t"]=t.copy(); series_arrays[f"{cid}_truth"]=speed.copy()
+                        cid=series_cases[case]; eid=f"e{len(series_meta):03d}"
+                        series_arrays[eid]=estimate_speed.copy()
+                        series_meta.append({"axis":axis,"input":input_name,"plant_case":plant_case,
+                            "sensor_case":sensor_case,"method":method,"case_id":cid,"estimate_id":eid})
                         rows.append(rec)
                 print(f"{axis} {plant_case} {input_name}: {len(rows)} rows",flush=True)
     pd.DataFrame(rows).to_csv(OUT/"metrics.csv",index=False,float_format="%.9g")
     pd.DataFrame(calibration).to_csv(OUT/"coefficient_calibration_loco.csv",index=False,float_format="%.9g")
+    np.savez_compressed(OUT/"timeseries.npz",__metadata__=np.array(json.dumps(series_meta,ensure_ascii=False)),**series_arrays)
     (OUT/"coefficient_fit_settings.json").write_text(json.dumps(fitmeta,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     settings={"sample_rate_hz":100,"noise":"OW-05 white 0.015 deg + coloured 0.010 deg, tau 0.475s, delay 0.01s; seed 20261007",
       "plant_mismatch":"OW-04 correlated high I/arm/tau/c corner applied to plant; nominal coefficients retained by estimators except calibration-fit arm",

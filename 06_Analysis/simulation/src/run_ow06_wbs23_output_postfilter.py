@@ -57,7 +57,7 @@ def main():
     axes=("IN","OUT"); nominal={a:select_coefficients(a,"BALL") for a in axes}
     mismatch={a:mismatch_coefficients(a,nominal[a]) for a in axes}
     inputs={a:build_inputs(CONFIG,a) for a in axes}
-    records=[]; responses=[]
+    records=[]; responses=[]; series_meta=[]; series_arrays={}; series_cases={}
     for axis in axes:
         tdec=np.arange(3001)*DT
         inputs[axis].pop("自由振動ステップ",None)
@@ -87,6 +87,14 @@ def main():
                             at,bt,_=np.linalg.lstsq(X,speed[mask],rcond=None)[0]
                             row["sine_gain"]=float(np.hypot(aa,bb)/np.hypot(at,bt))
                             row["sine_phase_deg"]=float(np.rad2deg(np.arctan2(bb,aa)-np.arctan2(bt,at)))
+                        case=(axis,input_name,plant_case,sensor_case)
+                        if case not in series_cases:
+                            cid=f"c{len(series_cases):03d}"; series_cases[case]=cid
+                            series_arrays[f"{cid}_t"]=t.copy(); series_arrays[f"{cid}_truth"]=speed.copy()
+                        cid=series_cases[case]; eid=f"e{len(series_meta):03d}"
+                        series_arrays[eid]=vhat.copy()
+                        series_meta.append({"axis":axis,"input":input_name,"plant_case":plant_case,
+                            "sensor_case":sensor_case,"method":method,"case_id":cid,"estimate_id":eid})
                         records.append(row)
         # Analytic zero-phase filter attenuation at selected frequencies.
         freqs=np.array([.5,fn,1.5,5.,10.])
@@ -103,6 +111,7 @@ def main():
             for f,g in zip(freqs,gains): responses.append({"axis":axis,"method":method,"frequency_hz":f,"zero_phase_gain":g})
     pd.DataFrame(records).to_csv(OUT/"postfilter_metrics.csv",index=False,float_format="%.9g")
     pd.DataFrame(responses).to_csv(OUT/"postfilter_frequency_response.csv",index=False,float_format="%.9g")
+    np.savez_compressed(OUT/"timeseries.npz",__metadata__=np.array(json.dumps(series_meta,ensure_ascii=False)),**series_arrays)
     data=pd.DataFrame(records)
     fig,axs=plt.subplots(1,2,figsize=(11,4.5),layout="constrained")
     for ax,axis in zip(axs,axes):
