@@ -345,4 +345,142 @@ def run() -> tuple[pd.DataFrame, dict]:
         "q_force_rw_N_per_sample":Q_BY_AXIS,"lpf_cutoff_hz":LPF_CUTOFF_HZ,
         "ow04_scenario":OW04_SCENARIO,"coefficient_cases":coeff_report,
         "input_meta":{k:{kk:vv for kk,vv in v.items() if kk not in ("time","speed","force")} for k,v in inputs.items()},
-    }, indent=2
+    }, indent=2, ensure_ascii=False), encoding="utf-8")
+    make_plots(plots)
+    # Keep the line-art figures compact for GitHub while retaining legible axes.
+    for png in OUT.glob("*.png"):
+        optimized = png.with_name(png.stem + ".optimized.png")
+        with Image.open(png) as image:
+            image.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT).save(
+                optimized, optimize=True,
+            )
+        optimized.replace(png)
+    return frame, coeff_report
+
+
+def make_plots(plots: dict) -> None:
+    for axis in ("IN", "OUT"):
+        for input_name in build_inputs():
+            t, data, traces = plots[axis, input_name]
+            fig, axs = plt.subplots(2, 1, figsize=(11, 7), sharex=True)
+            configs = [("matched", "ideal", "Matched coefficients, ideal angle"),
+                       ("OW04_plus_b_high", f"noise_seed_{NOISE_SEEDS[0]}",
+                        "OW-04 + b=1.5x, sensor noise (seed 20261007)")]
+            for ax, (case, sensor, title) in zip(axs, configs):
+                payload = traces.get((case, sensor))
+                if payload is None:
+                    continue
+                ax.plot(t, payload["truth"], color="black", lw=2.0, label="True wind")
+                for method in METHODS:
+                    ax.plot(t, payload[method], lw=1.0, alpha=.9,
+                            color=METHOD_COLORS[method], label=method)
+                ax.set_title(title); ax.set_ylabel("Wind speed [m/s]")
+                ax.grid(True, alpha=.25)
+                if input_name == "sine_10Hz":
+                    ax.set_xlim(0.0, 1.0)
+                elif len(t) > 4000:
+                    if input_name.startswith("gust"):
+                        ax.set_xlim(25, 48)
+                    else:
+                        ax.set_xlim(0, 30)
+            axs[-1].set_xlabel("Time [s]")
+            handles, labels = axs[0].get_legend_handles_labels()
+            fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False)
+            fig.suptitle(f"{input_name} — {axis}, 70 mm sphere with assumed grease b", y=.99)
+            fig.tight_layout(rect=(0, .13, 1, .96))
+            fig.savefig(OUT/f"timeseries_{axis}_{input_name}.png", dpi=160)
+            plt.close(fig)
+
+    # Show every plant-side coefficient case in RTS time series, for both
+    # ideal angle and one explicitly labeled noisy sensor realization.
+    for input_name in build_inputs():
+        fig, axs = plt.subplots(2, 2, figsize=(13, 8), sharex=True, sharey=True)
+        for column, axis in enumerate(("IN", "OUT")):
+            t, data, traces = plots[axis, input_name]
+            for row, sensor in enumerate(("ideal", f"noise_seed_{NOISE_SEEDS[0]}")):
+                ax = axs[row, column]
+                first = traces.get(("matched", sensor))
+                if first is None:
+                    continue
+                ax.plot(t, first["truth"], color="black", lw=1.8, label="True wind")
+                for case in CASE_COLORS:
+                    item = traces.get((case, sensor))
+                    if item is None:
+                        continue
+                    ax.plot(t, item["RTS"], color=CASE_COLORS[case], lw=1.0,
+                            label=case, alpha=.9)
+                ax.set_title(f"{axis}: {'ideal angle' if sensor=='ideal' else 'sensor noise, seed 20261007'}")
+                ax.grid(True, alpha=.25)
+                if input_name == "sine_10Hz":
+                    ax.set_xlim(0, 1)
+                elif len(t) > 4000:
+                    if input_name.startswith("gust"):
+                        ax.set_xlim(25, 48)
+                    else:
+                        ax.set_xlim(0, 30)
+        axs[1, 0].set_xlabel("Time [s]"); axs[1, 1].set_xlabel("Time [s]")
+        axs[0, 0].set_ylabel("Wind speed [m/s]"); axs[1, 0].set_ylabel("Wind speed [m/s]")
+        handles, labels = axs[0, 0].get_legend_handles_labels()
+        fig.legend(handles, labels, loc="lower center", ncol=4, frameon=False)
+        fig.suptitle(f"RTS sensitivity to all plant coefficient cases — {input_name}")
+        fig.tight_layout(rect=(0, .10, 1, .95))
+        fig.savefig(OUT/f"rts_sensitivity_allcases_{input_name}.png", dpi=160)
+        plt.close(fig)
+
+    # High-level metrics for each input and axis. Nonzero inputs show lag-aligned
+    # shape error and amplitude retention separately; the release shows false wind.
+    frame = pd.read_csv(OUT/"wbs23_observer_metrics.csv")
+    fig, axs = plt.subplots(2, 2, figsize=(13, 8))
+    method_colors = METHOD_COLORS
+    for row, axis in enumerate(("IN", "OUT")):
+        for col, metric in enumerate(("lag_aligned_nrmse", "amplitude_ratio")):
+            ax = axs[row, col]
+            sub = frame[(frame.axis == axis) & (frame.sensor_case == "ideal")
+                        & (frame.plant_case.isin(["matched", "OW04_joint", "b_low_0.5x", "b_high_1.5x", "OW04_plus_b_low", "OW04_plus_b_high"]))]
+            inputs = [name for name in dict.fromkeys(sub["input"])
+                      if name != "release_60deg_zero_wind"]
+            methods = list(METHODS)
+            x = np.arange(len(inputs)); width=.13
+            for mi, method in enumerate(methods):
+                vals=[]
+                for inp in inputs:
+                    v=sub[(sub.input==inp)&(sub.plant_case=="matched")&(sub.method==method)][metric]
+                    vals.append(float(v.iloc[0]) if not v.empty else np.nan)
+                ax.bar(x+(mi-(len(methods)-1)/2)*width, vals, width, label=method,
+                       color=method_colors[method])
+            ax.set_xticks(x, [s.replace("wind_model_", "wind ").replace("release_60deg_zero_wind", "release 60°")
+                              .replace("gust_2_to_6m_s", "gust") for s in inputs], rotation=20, ha="right")
+            ax.set_title(f"{axis}: {'lag-aligned NRMSE' if metric=='lag_aligned_nrmse' else 'amplitude ratio'}")
+            ax.grid(axis="y", alpha=.25)
+            if metric == "amplitude_ratio": ax.axhline(1.0,color="black",ls="--",lw=.8)
+            if row == 0 and col == 1: ax.legend(fontsize=8, ncol=2)
+    fig.suptitle("Matched, ideal-angle comparison; release evaluated separately")
+    fig.tight_layout()
+    fig.savefig(OUT/"matched_metrics_comparison.png", dpi=160)
+    plt.close(fig)
+
+    release = frame[(frame.input == "release_60deg_zero_wind")
+                    & (frame.plant_case == "matched") & (frame.sensor_case == "ideal")]
+    fig, ax = plt.subplots(figsize=(9, 5))
+    x = np.arange(len(METHODS)); width = .34
+    for i, axis in enumerate(("IN", "OUT")):
+        vals = [float(release[(release.axis == axis) & (release.method == method)].rmse_m_s.iloc[0])
+                for method in METHODS]
+        ax.bar(x+(i-.5)*width, vals, width, label=axis,
+               color="#0072B2" if axis == "IN" else "#D55E00")
+    ax.set_xticks(x, METHODS, rotation=15, ha="right")
+    ax.set_ylabel("False-wind RMSE [m/s]")
+    ax.set_title("60° release with zero wind: residual estimated wind")
+    ax.grid(axis="y", alpha=.25); ax.legend()
+    fig.tight_layout()
+    fig.savefig(OUT/"release_false_wind_metrics.png", dpi=160)
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    frame, coeff = run()
+    print(f"rows={len(frame)} output={OUT}")
+    print("mean matched RTS RMSE by input/axis:")
+    print(frame[(frame.plant_case=="matched")&(frame.sensor_case=="ideal")&(frame.method=="RTS")]
+          [["axis","input","rmse_m_s","lag_aligned_nrmse","amplitude_ratio","best_lag_s"]]
+          .to_string(index=False))
