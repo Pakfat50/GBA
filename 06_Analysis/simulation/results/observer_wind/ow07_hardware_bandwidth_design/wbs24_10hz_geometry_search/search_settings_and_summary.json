@@ -1,0 +1,169 @@
+{
+  "sample_count": 2000000,
+  "seed": 20261008,
+  "single_axis_pass_counts": {
+    "IN": 22,
+    "OUT": 16
+  },
+  "joint_pass_count": 16,
+  "ball_density_kg_m3": 17.5,
+  "foam_density_basis": "1050 kg/m3 solid polystyrene divided by expansion ratio 60",
+  "fixed_tau_Nm": {
+    "IN": 7.945731419193821e-05,
+    "OUT": 0.0001769496760658
+  },
+  "fixed_b_Nms_per_rad": 0.004613407460939706,
+  "nonlinear_rts_candidates": {
+    "minimum_sphere": {
+      "ball_d_m": 0.030032920485348034,
+      "ball_arm_m": 0.029968288190707855,
+      "ballast_mass_kg": 8.89396050616475,
+      "ballast_arm_m": 0.0020864330585895134,
+      "rod_od_m": 0.0021515910212617883,
+      "rod_length_m": 0.04998474843338187,
+      "ball_mass_kg": 0.0002482157697330354,
+      "metrics": {
+        "IN": {
+          "I_kg_m2": 5.554497505228947e-05,
+          "K_Nm_per_rad": 0.18102367765637123,
+          "zeta_linearized": 0.7274476335862199,
+          "normalized_mechanical_gain_10Hz": 0.6191322396198191,
+          "natural_frequency_hz": 9.085847394218654,
+          "static_angle_8m_s_deg": 0.14329078447629912,
+          "linear_angle_amplitude_10Hz_deg": 0.002772378971876828
+        },
+        "OUT": {
+          "I_kg_m2": 5.827061147128951e-05,
+          "K_Nm_per_rad": 0.18028151517997124,
+          "zeta_linearized": 0.711690924705604,
+          "normalized_mechanical_gain_10Hz": 0.6129747598300758,
+          "natural_frequency_hz": 8.852602140707406,
+          "static_angle_8m_s_deg": 0.14388066523685697,
+          "linear_angle_amplitude_10Hz_deg": 0.00275610623232615
+        }
+      },
+      "tau_IN": 7.945731419193821e-05,
+      "tau_OUT": 0.0001769496760658,
+      "b_Nms_per_rad": 0.004613407460939706
+    },
+    "minimum_ballast": {
+      "ball_d_m": 0.04486247908878213,
+      "ball_arm_m": 0.043447089399294044,
+      "ballast_mass_kg": 5.835823675585768,
+      "ballast_arm_m": 0.002747483079017752,
+      "rod_od_m": 0.0025988295246290355,
+      "rod_length_m": 0.07087832894368512,
+      "ball_mass_kg": 0.0008273446782518365,
+      "metrics": {
+        "IN": {
+          "I_kg_m2": 6.281666237193118e-05,
+          "K_Nm_per_rad": 0.1559245570836117,
+          "zeta_linearized": 0.7370502406659287,
+          "normalized_mechanical_gain_10Hz": 0.5126766306393754,
+          "natural_frequency_hz": 7.9293940376793275,
+          "static_angle_8m_s_deg": 0.5381426535740832,
+          "linear_angle_amplitude_10Hz_deg": 0.008621911887990087
+        },
+        "OUT": {
+          "I_kg_m2": 6.554229879093122e-05,
+          "K_Nm_per_rad": 0.1551823946072117,
+          "zeta_linearized": 0.7232854370074664,
+          "normalized_mechanical_gain_10Hz": 0.5041410439348805,
+          "natural_frequency_hz": 7.744271305723615,
+          "static_angle_8m_s_deg": 0.5407161776431908,
+          "linear_angle_amplitude_10Hz_deg": 0.00851891301301587
+        }
+      },
+      "tau_IN": 7.945731419193821e-05,
+      "tau_OUT": 0.0001769496760658,
+      "b_Nms_per_rad": 0.004613407460939706
+    },
+    "best_signal": {
+      "ball_d_m": 0.06718183146134003,
+      "ball_arm_m": 0.042537845767277704,
+      "ballast_mass_kg": 6.961540205052174,
+      "ballast_arm_m": 0.002373897093893875,
+      "rod_od_m": 0.007461480157294156,
+      "rod_length_m": 0.08112876149794773,
+      "ball_mass_kg": 0.002778383481306643,
+      "metrics": {
+        "IN": {
+          "I_kg_m2": 6.50362091365788e-05,
+          "K_Nm_per_rad": 0.15950971011265172,
+          "zeta_linearized": 0.7161771710451578,
+          "normalized_mechanical_gain_10Hz": 0.5217082748770104,
+          "natural_frequency_hz": 7.881996857915991,
+          "static_angle_8m_s_deg": 1.1548636337674842,
+          "linear_angle_amplitude_10Hz_deg": 0.01883070512112537
+        },
+        "OUT": {
+          "I_kg_m2": 6.776184555557885e-05,
+          "K_Nm_per_rad": 0.15876754763625173,
+          "zeta_linearized": 0.703263637691631,
+          "normalized_mechanical_gain_10Hz": 0.5128224491881269,
+          "natural_frequency_hz": 7.703863176836683,
+          "static_angle_8m_s_deg": 1.1602605975292561,
+          "linear_angle_amplitude_10Hz_deg": 0.018596502319337578
+        }
+      },
+      "tau_IN": 7.945731419193821e-05,
+      "tau_OUT": 0.0001769496760658,
+      "b_Nms_per_rad": 0.004613407460939706
+    }
+  },
+  "strict_overdamped_joint_passes_in_sample": 0,
+  "best_screened_angle_amplitude_candidate": {
+    "ball_d_m": 0.06718183146134003,
+    "ball_arm_m": 0.042537845767277704,
+    "ballast_mass_kg": 6.961540205052174,
+    "ballast_arm_m": 0.002373897093893875,
+    "rod_od_m": 0.007461480157294156,
+    "ball_mass_kg": 0.002778383481306643,
+    "rod_length_m": 0.08112876149794773,
+    "package_envelope_m": 0.07612876149794773,
+    "IN_I": 6.50362091365788e-05,
+    "IN_K": 0.15950971011265172,
+    "IN_zeta": 0.7161771710451578,
+    "IN_gain": 0.5217082748770104,
+    "IN_angle_amp_rad": 0.00032865780483579533,
+    "IN_th8_rad": 0.020156172820788566,
+    "IN_fn": 7.881996857915991,
+    "OUT_I": 6.776184555557885e-05,
+    "OUT_K": 0.15876754763625173,
+    "OUT_zeta": 0.703263637691631,
+    "OUT_gain": 0.5128224491881269,
+    "OUT_angle_amp_rad": 0.0003245701948272027,
+    "OUT_th8_rad": 0.020250367608042306,
+    "OUT_fn": 7.703863176836683
+  },
+  "screen_thresholds": {
+    "zeta_min_mild_overshoot": 0.7,
+    "strict_overdamped_zeta": 1.0,
+    "normalized_mechanical_gain_min": 0.5,
+    "static_angle_at_8m_s_max_deg": 60.0
+  },
+  "sampling_bounds": {
+    "ball_D_m": [
+      0.03,
+      0.1
+    ],
+    "ball_center_arm_m": [
+      null,
+      0.5
+    ],
+    "counterweight_mass_kg": [
+      0.05,
+      1000.0
+    ],
+    "counterweight_arm_m": [
+      0.002,
+      0.07
+    ],
+    "rod_OD_m": [
+      0.002,
+      0.008
+    ],
+    "rod_wall_m": 0.0005,
+    "rod_material_density_kg_m3": 1600.0
+  }
+}
