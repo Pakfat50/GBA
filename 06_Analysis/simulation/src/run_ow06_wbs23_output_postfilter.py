@@ -80,7 +80,7 @@ def main():
                         vhat=wind(fhat); mask=t>=start
                         row={"axis":axis,"input":input_name,"plant_case":plant_case,"sensor_case":sensor_case,
                              "method":method,"natural_frequency_hz":fn,"evaluation_start_s":start,
-                             **metrics(t,speed,vhat,start,fn)}
+                             **metrics(t,speed,vhat,start,fn,max_lag_s=.5 if input_name=="1Hz_sine" else None)}
                         if input_name=="1Hz_sine":
                             X=np.column_stack((np.sin(2*np.pi*t[mask]),np.cos(2*np.pi*t[mask]),np.ones(mask.sum())))
                             aa,bb,_=np.linalg.lstsq(X,vhat[mask],rcond=None)[0]

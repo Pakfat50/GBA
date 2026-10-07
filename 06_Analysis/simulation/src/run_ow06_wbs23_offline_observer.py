@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from scipy.linalg import expm
 from scipy.optimize import least_squares
-from scipy.signal import butter, periodogram, sosfiltfilt
+from scipy.signal import butter, correlate, correlation_lags, periodogram, sosfiltfilt
 
 HERE = Path(__file__).resolve().parent
 SIM = HERE.parent
@@ -123,13 +123,51 @@ def harmonic_rts(angle, c, frequency, initial_force, q_force):
     return xs[:,2]+xs[:,3]
 
 
-def metrics(t, truth, estimate, start, fn):
+def metrics(t, truth, estimate, start, fn, max_lag_s=None):
     mask=t>=start; e=estimate[mask]-truth[mask]
+    # The project permits time shifts when judging waveform shape. Select the
+    # lag with the highest demeaned correlation, allowing at most 20% of the
+    # scored window (so at least 80% of samples remain in the comparison).
+    yt=np.asarray(truth[mask],float); yh=np.asarray(estimate[mask],float)
+    if np.std(yt)<1e-12:
+        # With zero true input, there is no waveform to align against; the
+        # false-output RMSE must remain an absolute magnitude check.
+        lag=0; ya,ha=yt,yh; shape_corr=float("nan")
+    else:
+        yc=yt-yt.mean(); hc=yh-yh.mean()
+        cross=correlate(yh,yt,mode="full",method="fft")
+        lags=correlation_lags(len(hc),len(yc),mode="full")
+        max_lag=int(.2*len(yc))
+        if max_lag_s is not None: max_lag=min(max_lag,int(round(max_lag_s/DT)))
+        allowed=np.abs(lags)<=max_lag
+        # Normalize each overlap independently; otherwise the raw covariance
+        # can favor a longer overlap when its waveform correlation is lower.
+        ey=np.r_[0.,np.cumsum(yh)]; ty=np.r_[0.,np.cumsum(yt)]
+        ey2=np.r_[0.,np.cumsum(yh*yh)]; ty2=np.r_[0.,np.cumsum(yt*yt)]
+        candidates=[]
+        for idx in np.flatnonzero(allowed):
+            lag_i=int(lags[idx]); n=len(yh)-abs(lag_i)
+            if lag_i>=0: e0,t0=lag_i,0
+            else: e0,t0=0,-lag_i
+            se=ey[e0+n]-ey[e0]; st=ty[t0+n]-ty[t0]
+            ve=max(0.,ey2[e0+n]-ey2[e0]-se*se/n)
+            vt=max(0.,ty2[t0+n]-ty2[t0]-st*st/n)
+            covariance=cross[idx]-se*st/n
+            candidates.append(covariance/np.sqrt(ve*vt) if ve>0 and vt>0 else -np.inf)
+        lag=int(lags[np.flatnonzero(allowed)[int(np.argmax(candidates))]])
+        if lag>0: ya,ha=yt[:-lag],yh[lag:]
+        elif lag<0: ya,ha=yt[-lag:],yh[:lag]
+        else: ya,ha=yt,yh
+        denom=np.sqrt(np.sum((ya-ya.mean())**2)*np.sum((ha-ha.mean())**2))
+        shape_corr=float(np.sum((ya-ya.mean())*(ha-ha.mean()))/denom) if denom>0 else float("nan")
+    lag_rmse=float(np.sqrt(np.mean((ha-ya)**2)))
     lo=max(.05,.75*fn); hi=min(20.,1.25*fn)
     sos=butter(4,(lo,hi),btype="bandpass",fs=1/DT,output="sos")
     band=float(np.sqrt(np.mean(sosfiltfilt(sos,e)**2)))
     return {"rmse_m_s":float(np.sqrt(np.mean(e*e))),"bias_m_s":float(np.mean(e)),
-            "centered_rms_m_s":float(np.std(e)),"near_fn_error_rms_m_s":band}
+            "centered_rms_m_s":float(np.std(e)),"near_fn_error_rms_m_s":band,
+            "best_lag_s":float(lag*DT),"lag_aligned_rmse_m_s":lag_rmse,
+            "lag_aligned_shape_corr":shape_corr}
 
 
 def fit_normalized_free_decay(axis, true_coeff, noise_seed=991):
@@ -233,7 +271,8 @@ def main():
                         candidates["RTS_estimated_frequency_harmonic_state"]=harmonic_rts(measured,nominal[axis],freq_est,float(initial_force),Q0[axis])
                     for method,force_hat in candidates.items():
                         estimate_speed=wind(force_hat)
-                        m=metrics(t,speed,estimate_speed,start,math.sqrt(nominal[axis]["restoring_n_m_per_rad"]/nominal[axis]["inertia_kg_m2"])/(2*np.pi))
+                        m=metrics(t,speed,estimate_speed,start,math.sqrt(nominal[axis]["restoring_n_m_per_rad"]/nominal[axis]["inertia_kg_m2"])/(2*np.pi),
+                                  max_lag_s=.5 if input_name=="1Hz_sine" else None)
                         rec={"axis":axis,"input":input_name,"plant_case":plant_case,"sensor_case":sensor_case,
                              "method":method,"estimated_frequency_hz":freq_est,"frequency_line_fraction":freq_concentration,
                              "nearest_oracle_frequency_hz":grid_f,
