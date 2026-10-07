@@ -18,13 +18,13 @@ OUT_DIR = ROOT / "06_Analysis/simulation/results/observer_wind/ow07_hardware_ban
 
 # Shin-Etsu G-331 reference test: 4 mm shaft, 8 mm grease contact length,
 # 35 um radial clearance, 10 rpm running torque 34 x 10^-4 N m.
-SHAFT_DIAMETER_MM = 4.0
+REFERENCE_SHAFT_DIAMETER_MM = 4.0
 REFERENCE_GAP_MM = 0.035
-DESIGN_GAP_MM = 2.0  # interpreted as radial clearance
 REFERENCE_CONTACT_MM = 8.0
 REFERENCE_TORQUE_NM = 34e-4
 REFERENCE_RPM = 10.0
 CONTACT_LENGTHS_MM = (0.0, 8.0, 10.0, 12.0, 15.0, 20.0, 30.0)
+GEOMETRY_CASES = ((4.0, 0.5), (4.0, 1.0), (8.0, 0.5), (8.0, 1.0))
 STATIC_RATIOS = (1.0, 1.5, 2.0)
 INITIAL_ANGLE_DEG = 60.0
 PLOT_DURATION_S = 8.0
@@ -38,7 +38,7 @@ def load_ball_records():
     return {r["axis"]: r for r in records if r["configuration"] == "BALL"}
 
 
-def equivalent_b(length_mm: float) -> float:
+def equivalent_b(length_mm: float, shaft_diameter_mm: float, gap_mm: float) -> float:
     """Ideal annular-Couette scaling of the catalog torque to the design gap.
 
     This is only a geometric shear proxy: G-331 is a grease and the catalog
@@ -46,16 +46,18 @@ def equivalent_b(length_mm: float) -> float:
     scales with a^2 R^2/(R^2-a^2) for Newtonian annular Couette flow.
     """
     omega = REFERENCE_RPM * 2.0 * math.pi / 60.0
-    shaft_radius = SHAFT_DIAMETER_MM / 2.0
+    reference_radius = REFERENCE_SHAFT_DIAMETER_MM / 2.0
+    shaft_radius = shaft_diameter_mm / 2.0
 
-    def geometry_factor(gap_mm):
-        outer_radius = shaft_radius + gap_mm
-        return (shaft_radius**2 * outer_radius**2
-                / (outer_radius**2 - shaft_radius**2))
+    def geometry_factor(radius_mm, radial_gap_mm):
+        outer_radius = radius_mm + radial_gap_mm
+        return (radius_mm**2 * outer_radius**2
+                / (outer_radius**2 - radius_mm**2))
 
-    gap_ratio = geometry_factor(DESIGN_GAP_MM) / geometry_factor(REFERENCE_GAP_MM)
+    geometry_ratio = (geometry_factor(shaft_radius, gap_mm)
+                      / geometry_factor(reference_radius, REFERENCE_GAP_MM))
     return (REFERENCE_TORQUE_NM / omega * length_mm / REFERENCE_CONTACT_MM
-            * gap_ratio)
+            * geometry_ratio)
 
 
 def half_cycle(I, K, c_quad, tau_dyn, b, theta, t_start):
@@ -140,33 +142,35 @@ def trajectory(result):
 
 def write_results(records):
     rows = []
-    for length in CONTACT_LENGTHS_MM:
-        b = equivalent_b(length)
-        for axis, record in records.items():
-            I = record["inertia_kg_m2"]
-            K = record["restoring_n_m_per_rad"]
-            b_critical = 2.0 * math.sqrt(I * K)
-            for ratio in STATIC_RATIOS:
-                result = free_decay(record, b, ratio)
-                rows.append({
-                    "shaft_diameter_mm": SHAFT_DIAMETER_MM,
-                    "radial_gap_mm": DESIGN_GAP_MM,
-                    "reference_radial_gap_mm": REFERENCE_GAP_MM,
-                    "grease_contact_length_mm": length,
-                    "grease": "Shin-Etsu G-331",
-                    "axis": axis,
-                    "tau_static_over_tau_dynamic": ratio,
-                    "equivalent_b_Nm_s_per_rad": b,
-                    "b_critical_Nm_s_per_rad": b_critical,
-                    "zeta_equivalent": b / b_critical,
-                    "I_kg_m2": I,
-                    "K_Nm_per_rad": K,
-                    "status": result["status"],
-                    "zero_crossings": result["zero_crossings"],
-                    "first_opposite_peak_deg": result["first_opposite_peak_deg"],
-                    "stop_angle_deg": result["stop_angle_deg"],
-                    "stop_time_s": result["stop_time_s"],
-                })
+    for shaft_diameter, gap in GEOMETRY_CASES:
+        for length in CONTACT_LENGTHS_MM:
+            b = equivalent_b(length, shaft_diameter, gap)
+            for axis, record in records.items():
+                I = record["inertia_kg_m2"]
+                K = record["restoring_n_m_per_rad"]
+                b_critical = 2.0 * math.sqrt(I * K)
+                for ratio in STATIC_RATIOS:
+                    result = free_decay(record, b, ratio)
+                    rows.append({
+                        "shaft_diameter_mm": shaft_diameter,
+                        "radial_gap_mm": gap,
+                        "reference_shaft_diameter_mm": REFERENCE_SHAFT_DIAMETER_MM,
+                        "reference_radial_gap_mm": REFERENCE_GAP_MM,
+                        "grease_contact_length_mm": length,
+                        "grease": "Shin-Etsu G-331",
+                        "axis": axis,
+                        "tau_static_over_tau_dynamic": ratio,
+                        "equivalent_b_Nm_s_per_rad": b,
+                        "b_critical_Nm_s_per_rad": b_critical,
+                        "zeta_equivalent": b / b_critical,
+                        "I_kg_m2": I,
+                        "K_Nm_per_rad": K,
+                        "status": result["status"],
+                        "zero_crossings": result["zero_crossings"],
+                        "first_opposite_peak_deg": result["first_opposite_peak_deg"],
+                        "stop_angle_deg": result["stop_angle_deg"],
+                        "stop_time_s": result["stop_time_s"],
+                    })
     out = OUT_DIR / "wbs21_grease_damper_free_decay.csv"
     with out.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=list(rows[0]), lineterminator="\n")
@@ -179,24 +183,30 @@ def write_results(records):
 def plot_timeseries(records):
     shown_lengths = (0.0, 8.0, 12.0, 20.0, 30.0)
     colors = dict(zip(shown_lengths, plt.cm.viridis(np.linspace(.05, .95, len(shown_lengths)))))
-    fig, axes = plt.subplots(2, 1, figsize=(11, 8), sharex=True)
-    for ax, axis in zip(axes, ("IN", "OUT")):
-        for length in shown_lengths:
-            b = equivalent_b(length)
-            result = free_decay(records[axis], b, 2.0)
-            t, theta = trajectory(result)
-            ax.plot(t, theta, color=colors[length], linewidth=1.7,
-                    label=f"L={length:g} mm (ζeq={b/(2*math.sqrt(records[axis]['inertia_kg_m2']*records[axis]['restoring_n_m_per_rad'])):.2f})")
-        ax.axhline(0.0, color="black", linewidth=0.8)
-        ax.axhline(60.0, color="gray", linewidth=0.7, linestyle="--")
-        ax.set_title(f"{axis} axis — release from +60°, τs/τdyn=2")
-        ax.set_ylabel("Angle [deg]")
-        ax.set_ylim(-65, 65)
-        ax.grid(True, alpha=.3)
-        ax.legend(loc="upper right", ncol=2, fontsize=8)
-    axes[-1].set_xlabel("Time [s]")
-    axes[-1].set_xlim(0, PLOT_DURATION_S)
-    fig.suptitle("WBS2.1: G-331 grease damper — 4 mm shaft, 2 mm radial gap")
+    fig, axes = plt.subplots(4, 2, figsize=(14, 16), sharex=True, sharey=True)
+    for row, (diameter, gap) in enumerate(GEOMETRY_CASES):
+        for col, axis in enumerate(("IN", "OUT")):
+            ax = axes[row, col]
+            for length in shown_lengths:
+                b = equivalent_b(length, diameter, gap)
+                result = free_decay(records[axis], b, 2.0)
+                t, theta = trajectory(result)
+                zeta = b / (2 * math.sqrt(records[axis]["inertia_kg_m2"]
+                                          * records[axis]["restoring_n_m_per_rad"]))
+                ax.plot(t, theta, color=colors[length], linewidth=1.5,
+                        label=f"L={length:g} mm (ζ={zeta:.2f})")
+            ax.axhline(0.0, color="black", linewidth=0.8)
+            ax.axhline(60.0, color="gray", linewidth=0.7, linestyle="--")
+            ax.set_title(f"{axis}: d={diameter:g} mm, h={gap:g} mm radial")
+            ax.set_ylabel("Angle [deg]")
+            ax.set_ylim(-65, 65)
+            ax.grid(True, alpha=.3)
+            if row == 0 and col == 1:
+                ax.legend(loc="upper right", ncol=2, fontsize=8)
+    axes[-1, 0].set_xlabel("Time [s]")
+    axes[-1, 1].set_xlabel("Time [s]")
+    axes[-1, 0].set_xlim(0, PLOT_DURATION_S)
+    fig.suptitle("WBS2.1: G-331 grease damper — nonlinear free decay from +60°; τs/τdyn=2")
     fig.tight_layout()
     image_path = OUT_DIR / "wbs21_grease_damper_free_decay.png"
     fig.savefig(image_path, dpi=136)
@@ -214,11 +224,11 @@ def main():
     plot_timeseries(records)
     print(f"Wrote {len(rows)} nonlinear free-decay cases")
     omega_ref = REFERENCE_RPM * 2.0 * math.pi / 60.0
-    gap_scale = equivalent_b(REFERENCE_CONTACT_MM) / (REFERENCE_TORQUE_NM / omega_ref)
-    print(f"annular-Couette geometry ratio (2 mm / 35 um) = {gap_scale:.5f}")
-    for length in (8.0, 12.0, 20.0, 30.0):
-        b = equivalent_b(length)
-        print(f"L={length:>4.0f} mm: b_eq={b*1e3:.3f} mN m s/rad")
+    for shaft_diameter, gap in GEOMETRY_CASES:
+        b = equivalent_b(30.0, shaft_diameter, gap)
+        ratio = b / (REFERENCE_TORQUE_NM / omega_ref) * (REFERENCE_CONTACT_MM / 30.0)
+        print(f"D={shaft_diameter:g} mm, h={gap:g} mm: geometry ratio={ratio:.5f}, "
+              f"b_eq(30mm)={b*1e3:.3f} mN m s/rad")
         for axis, record in records.items():
             r = free_decay(record, b, 2.0)
             print(f"  {axis}: zeta_eq={b/(2*math.sqrt(record['inertia_kg_m2']*record['restoring_n_m_per_rad'])):.3f}, "
