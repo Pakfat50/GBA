@@ -49,7 +49,7 @@ ZETA_MIN = 0.70  # about 4.6% overshoot in a linear 2nd-order step response
 BALL_D_MIN_M, BALL_D_MAX_M = 0.030, 0.100
 BALL_ARM_MAX_M = 0.500
 BALLAST_ARM_MIN_M, BALLAST_ARM_MAX_M = 0.002, 0.070
-BALLAST_MASS_MIN_KG, BALLAST_MASS_MAX_KG = 0.05, 1000.0
+BALLAST_MASS_MIN_KG, BALLAST_MASS_MAX_KG = 0.0001, 0.05072
 ROD_D_MIN_M, ROD_D_MAX_M = 0.002, 0.008
 SHAFT_D_MIN_MM, SHAFT_D_MAX_MM = 2.0, 8.0
 CONTACT_MIN_MM, CONTACT_MAX_MM = 0.0, 30.0
@@ -179,6 +179,35 @@ def sample_screen(records: dict[str, dict], residuals: dict[str, tuple[float, fl
 
     joint, _, values = metrics_at_b(b_required_mild)
     strict_joint, _, _ = metrics_at_b(b_required_strict)
+    mechanical_ok = valid_static & (b_required_mild <= b_max)
+    mechanical_pass_count = int(mechanical_ok.sum())
+
+    def describe_candidate(i):
+        damper = choose_damper_geometry(float(b_required_mild[i]))
+        if damper is None:
+            return None
+        row = {"ball_d_m": float(d[i]), "ball_arm_m": float(arm[i]),
+               "ballast_mass_kg": float(mw[i]), "ballast_arm_m": float(rw[i]),
+               "rod_od_m": float(rod_od[i]), "ball_mass_kg": float(mb[i]),
+               "rod_length_m": float(rod_len[i]), **damper}
+        for axis in ("IN", "OUT"):
+            for key in ("I", "K", "zeta", "gain", "angle_amp", "th8", "fn"):
+                suffix = "_rad" if key in ("angle_amp", "th8") else ""
+                row[f"{axis}_{key}{suffix}"] = float(values[axis][key][i])
+        return row
+
+    mechanical_idx = np.flatnonzero(mechanical_ok)
+    best_mechanical_gain = None
+    best_mechanical_signal = None
+    if mechanical_idx.size:
+        gain_idx = mechanical_idx[np.argmax(np.minimum(
+            values["IN"]["gain"][mechanical_idx], values["OUT"]["gain"][mechanical_idx]))]
+        signal_idx = mechanical_idx[np.argmax(np.minimum(
+            values["IN"]["angle_amp"][mechanical_idx],
+            values["OUT"]["angle_amp"][mechanical_idx]))]
+        best_mechanical_gain = describe_candidate(int(gain_idx))
+        best_mechanical_signal = describe_candidate(int(signal_idx))
+
     joint &= valid_static & (b_required_mild <= b_max)
     strict_joint &= valid_static & (b_required_strict <= b_max)
     axis_passes = []
@@ -214,7 +243,8 @@ def sample_screen(records: dict[str, dict], residuals: dict[str, tuple[float, fl
                 row[f"{axis}_{key}{suffix}"] = float(val)
         rows.append(row)
     return (rows, int(joint.sum()), int(axis_passes[0].sum()), int(axis_passes[1].sum()),
-            int(strict_joint.sum()), values, b_max)
+            int(strict_joint.sum()), values, b_max, mechanical_pass_count,
+            best_mechanical_gain, best_mechanical_signal)
 
 
 def evaluate_fixed_candidate(records, residuals, candidate, candidate_name):
@@ -371,12 +401,74 @@ def plot_results(screen_rows, rts_rows, metadata):
     plt.close(fig)
 
 
+def write_no_solution_plots() -> None:
+    panels = {
+        "geometry_search_screen.svg": (
+            "10 Hz geometry search with the current counterweight cap",
+            "No sampled design met both the damping and 10 Hz gain criteria.",
+            "2,000,000 samples; counterweight mass <= 50.72 g"),
+        "rts_q_sensitivity.svg": (
+            "RTS noise validation not run",
+            "No mechanical candidate passed the 10 Hz screening criteria.",
+            "Select a mechanically feasible design before testing observer tuning"),
+    }
+    for filename, (title, line1, line2) in panels.items():
+        svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="560" viewBox="0 0 1000 560">
+<rect width="1000" height="560" fill="#ffffff"/>
+<text x="60" y="90" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#24364b">{title}</text>
+<rect x="60" y="140" width="880" height="300" rx="18" fill="#f2f5f8" stroke="#bcc8d4" stroke-width="2"/>
+<text x="500" y="260" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" fill="#9b2525">{line1}</text>
+<text x="500" y="315" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" fill="#44566b">{line2}</text>
+</svg>
+'''
+        (OUT / filename).write_text(svg, encoding="utf-8")
+
+
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     records = load_baseline()
     residuals = reference_residuals(records)
-    shortlist, joint_count, in_count, out_count, strict_count, _, b_max = sample_screen(records, residuals)
+    (shortlist, joint_count, in_count, out_count, strict_count, _, b_max,
+     mechanical_pass_count, best_mechanical_gain, best_mechanical_signal) = sample_screen(records, residuals)
     write_csv(OUT / "jointly_feasible_geometry_shortlist.csv", shortlist)
+    if not shortlist:
+        write_csv(OUT / "candidate_rts_noise_validation.csv", [])
+        summary = {
+            "sample_count": SAMPLES, "seed": SEED,
+            "single_axis_pass_counts": {"IN": in_count, "OUT": out_count},
+            "joint_pass_count": joint_count,
+            "mechanical_candidates_before_10hz_gain_gate": mechanical_pass_count,
+            "best_mechanical_gain_candidate_before_10hz_gain_gate": best_mechanical_gain,
+            "best_mechanical_signal_candidate_before_10hz_gain_gate": best_mechanical_signal,
+            "ball_density_kg_m3": RHO_FOAM,
+            "foam_density_basis": "1050 kg/m3 solid polystyrene divided by expansion ratio 60",
+            "fixed_tau_Nm": {axis: records[axis]["tau_n_m"] for axis in ("IN", "OUT")},
+            "damper_grease": "Shin-Etsu G-331; same grease assumption as WBS2.3",
+            "maximum_available_b_in_sampled_damper_range_Nms_per_rad": b_max,
+            "strict_overdamped_joint_passes_in_sample": strict_count,
+            "screen_thresholds": {"zeta_min_mild_overshoot": ZETA_MIN,
+                                  "strict_overdamped_zeta": 1.0,
+                                  "normalized_mechanical_gain_min": GAIN_MIN,
+                                  "static_angle_at_8m_s_max_deg": 60.0},
+            "sampling_bounds": {"ball_D_m": [BALL_D_MIN_M, BALL_D_MAX_M],
+                                "counterweight_mass_kg": [BALLAST_MASS_MIN_KG, BALLAST_MASS_MAX_KG],
+                                "counterweight_arm_m": [BALLAST_ARM_MIN_M, BALLAST_ARM_MAX_M],
+                                "rod_OD_m": [ROD_D_MIN_M, ROD_D_MAX_M],
+                                "damper_shaft_diameter_mm": [SHAFT_D_MIN_MM, SHAFT_D_MAX_MM],
+                                "damper_contact_length_mm": [CONTACT_MIN_MM, CONTACT_MAX_MM],
+                                "damper_radial_gap_mm": [GAP_MIN_MM, GAP_MAX_MM]},
+            "result": "No design met all joint screening criteria; nonlinear RTS finalist validation skipped."
+        }
+        (OUT / "search_settings_and_summary.json").write_text(
+            json.dumps(summary, indent=2, ensure_ascii=False) + "\\n", encoding="utf-8")
+        write_no_solution_plots()
+        print(json.dumps({"output": str(OUT), "joint_pass_count": joint_count,
+                          "mechanical_candidates_before_10hz_gain_gate": mechanical_pass_count,
+                          "strict_overdamped_joint_passes": strict_count,
+                          "best_mechanical_gain_candidate": best_mechanical_gain,
+                          "best_mechanical_signal_candidate": best_mechanical_signal},
+                         ensure_ascii=False, indent=2))
+        return
     min_sphere_row = min(shortlist, key=lambda r: r["ball_d_m"])
     min_mass_row = min(shortlist, key=lambda r: r["ballast_mass_kg"])
     best_signal = max(shortlist, key=lambda r: min(r["IN_angle_amp_rad"], r["OUT_angle_amp_rad"]))
