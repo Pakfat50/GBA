@@ -9,6 +9,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 from scipy.integrate import solve_ivp
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -44,7 +45,7 @@ def equivalent_b(length_mm: float) -> float:
 
 def half_cycle(I, K, c_quad, tau_dyn, b, theta, t_start):
     direction = -1.0 if theta > 0 else 1.0
-    y0 = [theta, direction * 1e-4]
+    y0 = [theta, 0.0]
 
     def rhs(_t, y):
         angle, omega = y
@@ -180,8 +181,13 @@ def plot_timeseries(records):
     axes[-1].set_xlim(0, PLOT_DURATION_S)
     fig.suptitle("WBS2.1: G-331 grease damper — 4 mm shaft nonlinear free decay")
     fig.tight_layout()
-    fig.savefig(OUT_DIR / "wbs21_grease_damper_free_decay.png", dpi=180)
+    image_path = OUT_DIR / "wbs21_grease_damper_free_decay.png"
+    fig.savefig(image_path, dpi=136)
     plt.close(fig)
+    image = Image.open(image_path)
+    image.thumbnail((1500, 1200), Image.Resampling.LANCZOS)
+    image.convert("P", palette=Image.Palette.ADAPTIVE, colors=256).save(
+        image_path, optimize=True)
 
 
 def main():
