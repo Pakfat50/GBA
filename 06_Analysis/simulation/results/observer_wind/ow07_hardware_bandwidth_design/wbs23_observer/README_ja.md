@@ -172,7 +172,13 @@ INは約1.00 Hzで最大ゲイン1.069、OUTは約1.53 Hzで最大ゲイン1.019
 
 ![Kaimal IN](timeseries_IN_wind_model_Kaimal.png)
 
+![Kaimal IN 15–20秒拡大](timeseries_IN_wind_model_Kaimal_zoom_15-20s.png)
+
 ![Kaimal OUT](timeseries_OUT_wind_model_Kaimal.png)
+
+![Kaimal OUT 15–20秒拡大](timeseries_OUT_wind_model_Kaimal_zoom_15-20s.png)
+
+全区間図に加え、Kaimal風の評価開始後の15–20秒を拡大した図をIN/OUT各軸に追加した。高周波側の風速変動と各推定方式の追従を確認しやすい時間幅で表示している。
 
 ### 1 Hz正弦風
 

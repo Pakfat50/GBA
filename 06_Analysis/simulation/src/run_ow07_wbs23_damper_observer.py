@@ -349,6 +349,8 @@ def run() -> tuple[pd.DataFrame, dict]:
     make_plots(plots)
     # Keep the line-art figures compact for GitHub while retaining legible axes.
     for png in OUT.glob("*.png"):
+        if png.name.endswith(".optimized.png"):
+            continue
         optimized = png.with_name(png.stem + ".optimized.png")
         with Image.open(png) as image:
             image.convert("RGB").quantize(colors=256, method=Image.Quantize.MEDIANCUT).save(
@@ -390,6 +392,38 @@ def make_plots(plots: dict) -> None:
             fig.tight_layout(rect=(0, .13, 1, .96))
             fig.savefig(OUT/f"timeseries_{axis}_{input_name}.png", dpi=160)
             plt.close(fig)
+
+            # Add a short evaluation-window view for inspecting the high-
+            # frequency content of the stochastic Kaimal input and estimates.
+            if input_name == "wind_model_Kaimal":
+                zoom = (t >= 15.0) & (t <= 20.0)
+                fig, axs = plt.subplots(2, 1, figsize=(11, 7), sharex=True)
+                zoom_configs = [
+                    ("matched", "ideal", "Matched coefficients, ideal angle"),
+                    ("OW04_plus_b_high", f"noise_seed_{NOISE_SEEDS[0]}",
+                     "OW-04 + b=1.5x, sensor noise"),
+                ]
+                for ax, (case, sensor, title) in zip(axs, zoom_configs):
+                    payload = traces.get((case, sensor))
+                    if payload is None:
+                        continue
+                    ax.plot(t[zoom], payload["truth"][zoom], color="black", lw=2.0,
+                            label="True wind")
+                    for method in METHODS:
+                        ax.plot(t[zoom], payload[method][zoom], lw=1.0, alpha=.9,
+                                color=METHOD_COLORS[method], label=method)
+                    ax.set_title(title)
+                    ax.set_ylabel("Wind speed [m/s]")
+                    ax.grid(True, alpha=.25)
+                axs[-1].set_xlabel("Time [s]")
+                handles, labels = axs[0].get_legend_handles_labels()
+                fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False)
+                fig.suptitle(
+                    f"Kaimal wind model — {axis}, 15–20 s zoom", y=.99,
+                )
+                fig.tight_layout(rect=(0, .13, 1, .96))
+                fig.savefig(OUT/f"timeseries_{axis}_{input_name}_zoom_15-20s.png", dpi=160)
+                plt.close(fig)
 
     # Show every plant-side coefficient case in RTS time series, for both
     # ideal angle and one explicitly labeled noisy sensor realization.
