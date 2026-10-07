@@ -1,0 +1,156 @@
+{
+  "task": "OW-07 WBS2.3",
+  "sphere_diameter_mm": 70.0,
+  "sphere_mass_same_density_g": 1.3377000000000003,
+  "shaft_diameter_mm": 8.0,
+  "grease_contact_length_mm": 30.0,
+  "radial_gap_mm": 1.0,
+  "sample_rate_hz": 100.0,
+  "force_lever_m": 0.174,
+  "aerodynamic_cd": 0.544,
+  "assumed_angle_noise_deg": 0.02,
+  "sensor": {
+    "bits": 14,
+    "full_scale_deg": 360,
+    "white_noise_std_deg": 0.015,
+    "coloured_noise_std_deg": 0.01,
+    "coloured_time_constant_s": 0.475,
+    "delay_s": 0.01,
+    "seeds": [
+      20261007,
+      20261008,
+      20261009
+    ]
+  },
+  "q_force_rw_N_per_sample": {
+    "IN": 3e-05,
+    "OUT": 0.0003
+  },
+  "lpf_cutoff_hz": {
+    "IN": 0.5,
+    "OUT": 0.75
+  },
+  "ow04_scenario": "joint_mass_high_arm_high_tau-high_c-high",
+  "coefficient_cases": {
+    "IN": {
+      "nominal": {
+        "axis": "IN",
+        "configuration": "BALL",
+        "inertia_kg_m2": 0.000287391218922,
+        "restoring_n_m_per_rad": 0.01933543940163,
+        "viscous_damping_n_m_s_per_rad": 0.004613407460939706,
+        "rod_quadratic_drag_n_m_s2_per_rad2": 2.5664419286471763e-07,
+        "ball_quadratic_drag_n_m_s2_per_rad2": 6.749911438547505e-06,
+        "total_quadratic_drag_n_m_s2_per_rad2": 7.006555631412223e-06,
+        "tau_n_m": 7.945731419193821e-05,
+        "ball_center_arm_m": 0.18061,
+        "ball_mass_kg": 0.0039,
+        "sources": {
+          "I_and_K": "IHB-05 position-adjusted coefficient table; arm=180.61 mm, mass=3.9 g",
+          "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+          "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+          "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+          "b": "Fixed to zero under adopted identification assumptions"
+        }
+      },
+      "ow04_ratios": {
+        "inertia_kg_m2": 1.0900124694082733,
+        "restoring_n_m_per_rad": 0.9119788177521178,
+        "tau_n_m": 1.0080186677285805,
+        "ball_quadratic_drag_n_m_s2_per_rad2": 1.0277279417895253
+      },
+      "case_b_Nm_s_rad": {
+        "matched": 0.004613407460939706,
+        "OW04_joint": 0.004613407460939706,
+        "b_low_0.5x": 0.002306703730469853,
+        "b_high_1.5x": 0.006920111191409558,
+        "OW04_plus_b_low": 0.002306703730469853,
+        "OW04_plus_b_high": 0.006920111191409558
+      }
+    },
+    "OUT": {
+      "nominal": {
+        "axis": "OUT",
+        "configuration": "BALL",
+        "inertia_kg_m2": 0.00029011685534099994,
+        "restoring_n_m_per_rad": 0.01859327692523,
+        "viscous_damping_n_m_s_per_rad": 0.004613407460939706,
+        "rod_quadratic_drag_n_m_s2_per_rad2": 2.5664419286471763e-07,
+        "ball_quadratic_drag_n_m_s2_per_rad2": 6.749911438547505e-06,
+        "total_quadratic_drag_n_m_s2_per_rad2": 7.006555631412223e-06,
+        "tau_n_m": 0.0001769496760658,
+        "ball_center_arm_m": 0.18061,
+        "ball_mass_kg": 0.0039,
+        "sources": {
+          "I_and_K": "IHB-05 position-adjusted coefficient table; arm=180.61 mm, mass=3.9 g",
+          "rod_drag": "IHB-04 theoretical_c cylinder drag; BALL uses exposed length factor (0.129/0.229)^4",
+          "ball_drag": "IHB-05 Method A monotone-amplitude fit; zero when no ball is installed",
+          "tau": "IHB-03 monotone-smoothed amplitude one-integral method; adopted axis value reused by IHB-05",
+          "b": "Fixed to zero under adopted identification assumptions"
+        }
+      },
+      "ow04_ratios": {
+        "inertia_kg_m2": 1.0893510609128758,
+        "restoring_n_m_per_rad": 0.9073852125412314,
+        "tau_n_m": 1.0187628742874801,
+        "ball_quadratic_drag_n_m_s2_per_rad2": 1.0277279417895253
+      },
+      "case_b_Nm_s_rad": {
+        "matched": 0.004613407460939706,
+        "OW04_joint": 0.004613407460939706,
+        "b_low_0.5x": 0.002306703730469853,
+        "b_high_1.5x": 0.006920111191409558,
+        "OW04_plus_b_low": 0.002306703730469853,
+        "OW04_plus_b_high": 0.006920111191409558
+      }
+    }
+  },
+  "input_meta": {
+    "wind_model_Kaimal": {
+      "eval_start": 15.0,
+      "kind": "turbulent",
+      "meta": {
+        "target_turbulence_intensity": 0.2,
+        "realized_turbulence_intensity": 0.2,
+        "fluctuation_scale_for_bounds": 1.0,
+        "minimum_speed_m_s": 0.7468833890123021,
+        "maximum_speed_m_s": 3.2704330899395186
+      }
+    },
+    "sine_1Hz": {
+      "eval_start": 3.0,
+      "kind": "sine",
+      "frequency_hz": 1.0,
+      "meta": {
+        "mean_m_s": 2.0,
+        "amplitude_m_s": 0.5
+      }
+    },
+    "sine_10Hz": {
+      "eval_start": 3.0,
+      "kind": "sine",
+      "frequency_hz": 10.0,
+      "meta": {
+        "mean_m_s": 2.0,
+        "amplitude_m_s": 0.5
+      }
+    },
+    "gust_2_to_6m_s": {
+      "eval_start": 15.0,
+      "kind": "gust",
+      "meta": {
+        "base_m_s": 2.0,
+        "peak_m_s": 6.0
+      }
+    },
+    "release_60deg_zero_wind": {
+      "eval_start": 0.0,
+      "kind": "release",
+      "initial_angle_deg": 60.0,
+      "meta": {
+        "initial_angle_deg": 60.0,
+        "post_release_wind_m_s": 0.0
+      }
+    }
+  }
+}
