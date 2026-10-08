@@ -1,0 +1,9 @@
+﻿axis,parameter,unit,K_fixed_Nm_per_rad,initial,fitted,change_percent,lower_bound_ratio,upper_bound_ratio,nfev,cost,jacobian_rank,jacobian_condition_number,optimizer_message
+IN,I,kg m^2,0.0149632406,0.0003682119407,0.0003674213306,-0.2147160429,0.5,1.5,,,,,
+IN,tau,N m,0.0149632406,7.945731419e-05,8.331655463e-05,4.856998351,0.1,8,,,,,
+IN,c,N m s^2/rad^2,0.0149632406,1.403197366e-05,1.527032928e-05,8.825241915,0.1,8,,,,,
+IN,fit_diagnostic,,0.0149632406,,,,,,11,1537.383476,3,120.8334855,`ftol` termination condition is satisfied.
+OUT,I,kg m^2,0.01422107813,0.0003709375771,0.0003711819961,0.06589220654,0.5,1.5,,,,,
+OUT,tau,N m,0.01422107813,0.0001769496761,0.0001272924984,-28.06288134,0.1,8,,,,,
+OUT,c,N m s^2/rad^2,0.01422107813,1.403197366e-05,2.073690309e-05,47.78322416,0.1,8,,,,,
+OUT,fit_diagnostic,,0.01422107813,,,,,,15,1048.257987,3,99.88674591,`ftol` termination condition is satisfied.
